@@ -1,0 +1,98 @@
+/* Navbar styles */
+.navbar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 60px;
+  background-color: #007bff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 70px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000; /* Ensure navbar stays on top */
+}
+
+/* Navbar links */
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 100px; /* More space between navbar links */
+  padding: 0;
+  margin: 0;
+}
+
+.navbar li {
+  display: inline;
+}
+
+.navbar a {
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 10px 15px;
+}
+
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Buttons container */
+.auth-buttons {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 100px;
+  max-width: 300px; /* Prevents them from going too far */
+}
+
+/* Common button styles */
+.start-btn {
+  background-color: #dc3545;
+  color: white;
+  font-size: 14px;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  min-width: 110px;
+  max-width: 140px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.start-btn:hover {
+  background-color: #c82333;
+}
+
+/* Home Content */
+.home-container {
+  text-align: center;
+  margin-top: 100px; /* Ensure content doesn't overlap navbar */
+  padding: 40px 20px;
+}
+
+.home-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.home-content h1 {
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.home-content p {
+  font-size: 18px;
+  color: #666;
+  line-height: 1.6;
+}
