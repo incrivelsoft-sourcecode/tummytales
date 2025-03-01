@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/register-user', createUser);
 router.post('/login', loginUser);
 
-router.get("/check/username", checkUsernameAvailability);
+//router.get("/check/username", checkUsernameAvailability);
 
 router.get("/google", (req, res, next) => {
     const { user_name, role, referral_code, permissions = [] } = req.query;

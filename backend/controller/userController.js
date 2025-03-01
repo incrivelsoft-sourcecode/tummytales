@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../model/User.js');
-const redisClient = require("../config/redisClient");
+//const redisClient = require("../config/redisClient");
 
 
 
@@ -49,6 +49,11 @@ const createUser = async (req, res) => {
 		// Save user
 		await user.save();
 
+		const token = jwt.sign(
+			{ userId: user._id, role: user.role },
+			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
+			{ expiresIn: "1h" } // Token expires in 1 hour
+		);
 		res.status(201).json({ message: "User created successfully!", token, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
 	} catch (err) {
 		res.status(500).json({ message: err.message });
@@ -183,37 +188,37 @@ const googleCallback = async (req, res) => {
 	}
 };
 
-const checkUsernameAvailability = async (req, res) => {
-	const { user_name } = req.query;
+// const checkUsernameAvailability = async (req, res) => {
+// 	const { user_name } = req.query;
   
-	if (!user_name || user_name.length < 3) {
-	  return res.status(400).json({ message: "Invalid username" });
-	}
+// 	if (!user_name || user_name.length < 3) {
+// 	  return res.status(400).json({ message: "Invalid username" });
+// 	}
   
-	try {
-	  // ✅ Use `await` instead of callback-based `get`
-	  const cachedUsername = await redisClient.get(`username:${user_name}`);
+// 	try {
+// 	  // ✅ Use `await` instead of callback-based `get`
+// 	  const cachedUsername = await redisClient.get(`username:${user_name}`);
   
-	  if (cachedUsername !== null) {
-		return res.status(200).json({ available: false, message: "Username already taken" });
-	  }
+// 	  if (cachedUsername !== null) {
+// 		return res.status(200).json({ available: false, message: "Username already taken" });
+// 	  }
   
-	  // If not in Redis, check MongoDB
-	  const existingUser = await User.findOne({ user_name });
+// 	  // If not in Redis, check MongoDB
+// 	  const existingUser = await User.findOne({ user_name });
   
-	  if (existingUser) {
-		await redisClient.set(`username:${user_name}`, "true", { EX: 3600 }); // Store in Redis for 1 hour
-		return res.status(200).json({ available: false, message: "Username already taken" });
-	  }
+// 	  if (existingUser) {
+// 		await redisClient.set(`username:${user_name}`, "true", { EX: 3600 }); // Store in Redis for 1 hour
+// 		return res.status(200).json({ available: false, message: "Username already taken" });
+// 	  }
   
-	  res.status(200).json({ available: true, message: "Username available" });
-	} catch (err) {
-	  console.log("❌ Error in checkUsernameAvailability:", err);
-	  res.status(500).json({ message: "Server error" });
-	}
-  };
+// 	  res.status(200).json({ available: true, message: "Username available" });
+// 	} catch (err) {
+// 	  console.log("❌ Error in checkUsernameAvailability:", err);
+// 	  res.status(500).json({ message: "Server error" });
+// 	}
+//   };
   
 
 
 
-module.exports = { googleCallback, deleteUser, updatePassword, getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability }
+module.exports = { googleCallback, deleteUser, updatePassword, getUser, getAllUsers, loginUser, createUser }

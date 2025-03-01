@@ -6,6 +6,7 @@ const passport  = require('passport');
 require("./utils/passport.js");
 const connectDB = require('./config/db.js');
 const userRouter  = require('./route/userRoutes.js');
+const momsurvey_router=require('./route/momsurvey_router.js')
 
 const port = process.env.DB_PORT || 3000;  
 
@@ -40,7 +41,7 @@ app.use((err, req, res, next) => {
 
 
 app.use('/users', userRouter);
-
+app.use('/mom',momsurvey_router)
 
 app.get("/", (req, res) => {
   res.status(200).send(`Server running upon the port : ${port}`);
