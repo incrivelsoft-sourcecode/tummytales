@@ -60,7 +60,7 @@ const Home = () => {
               className={activeTab === "mom-support" ? "active-tab" : ""}
               onClick={() => setActiveTab("mom-support")}
             >
-              Mom/Supporter Network
+              Mom Network
             </a>
           </li>
           <li>
