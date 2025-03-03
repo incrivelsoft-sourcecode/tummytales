@@ -18,7 +18,7 @@
 .navbar ul {
   list-style: none;
   display: flex;
-  gap: 100px; /* More space between navbar links */
+  gap: 200px; /* More space between navbar links */
   padding: 0;
   margin: 0;
 }
@@ -96,3 +96,43 @@
   color: #666;
   line-height: 1.6;
 }
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  list-style: none;
+  padding: 10px;
+  margin: 0;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
+  z-index: 10;
+}
+
+.dropdown-menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background: #f0f0f0;
+}
+/* Highlight Active Tab */
+.active-tab {
+  color: yellow !important; /* Change the text color for the active tab */
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+/* Dropdown Symbol */
+.dropdown-symbol {
+  margin-left: 5px;
+  font-size: 14px;
+}
+
