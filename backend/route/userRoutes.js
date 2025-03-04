@@ -14,9 +14,9 @@ router.get("/google", (req, res, next) => {
     const { user_name, role, referral_code, permissions = [] } = req.query;
   
     // Validate role before redirecting
-    if (!role || !["mom", "supporter"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
-    }
+    // if (!role || !["mom", "supporter"].includes(role)) {
+    //   return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+    // }
   
     // Encode user details in the state parameter
     const state = JSON.stringify({ user_name, role, referral_code, permissions });

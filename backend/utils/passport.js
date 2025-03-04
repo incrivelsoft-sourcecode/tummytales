@@ -22,14 +22,16 @@ passport.use(
         const { user_name, role, referral_code, permissions = [] } = state;
 
         // Validate role
-        if (!["mom", "supporter"].includes(role)) {
-          return done(new Error("Invalid role. Must be 'mom' or 'supporter'"), null);
-        }
+        
+console.log("email", profile.emails[0].value)
+        let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
 
-        let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }, {user_name: user_name}] });
-
+        console.log("Existing user ", user);
         if (!user) {
           // Validate referral_code if role is "supporter"
+          if (!["mom", "supporter"].includes(role)) {
+            return done(new Error("Invalid role. Must be 'mom' or 'supporter'"), null);
+          }
           if (role === "supporter") {
             const existingMom = await User.findById(referral_code);
             if (!existingMom) {

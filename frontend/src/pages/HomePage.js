@@ -2,12 +2,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/HomePage.css";
 import PregnancyMap from "./auth/PregnancyMap.js";
+import ChatBox from "./auth/ChatBox.js"; // Import ChatBox component
 
 const Home = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(""); // Track active tab
   const [showPregnancyContent, setShowPregnancyContent] = useState(false);
+  const [showChatBox, setShowChatBox] = useState(false); // Track Ask AI page
   const pregnancyRef = useRef(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Close PregnancyMap when clicking outside
   useEffect(() => {
@@ -27,6 +30,17 @@ const Home = () => {
     };
   }, [showPregnancyContent]);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if(!token)
+    {
+      setIsLoggedIn(false);
+    }
+    else{
+      setIsLoggedIn(true);
+    }
+  })
+
   return (
     <div className="home-container">
       {/* Navbar */}
@@ -36,7 +50,10 @@ const Home = () => {
             <a
               href="/"
               className={activeTab === "home" ? "active-tab" : ""}
-              onClick={() => setActiveTab("home")}
+              onClick={() => {
+                setActiveTab("home");
+                setShowChatBox(false); // Hide Ask AI when clicking Home
+              }}
             >
               Home
             </a>
@@ -49,6 +66,7 @@ const Home = () => {
                 e.preventDefault();
                 setShowPregnancyContent(true);
                 setActiveTab("pregnancy");
+                setShowChatBox(false); // Hide Ask AI when clicking Pregnancy Map
               }}
             >
               Pregnancy Map <span className="dropdown-symbol">🔽</span>
@@ -58,16 +76,24 @@ const Home = () => {
             <a
               href="/mom-supporter-network"
               className={activeTab === "mom-support" ? "active-tab" : ""}
-              onClick={() => setActiveTab("mom-support")}
+              onClick={() => {
+                setActiveTab("mom-support");
+                setShowChatBox(false);
+              }}
             >
               Mom Network
             </a>
           </li>
           <li>
             <a
-              href="/ask-ai"
+              href="#"
               className={activeTab === "ask-ai" ? "active-tab" : ""}
-              onClick={() => setActiveTab("ask-ai")}
+              onClick={(e) => {
+                e.preventDefault();
+                setShowChatBox(true); // Show ChatBox when clicking Ask AI
+                setActiveTab("ask-ai");
+                setShowPregnancyContent(false); // Hide Pregnancy Map
+              }}
             >
               Ask AI
             </a>
@@ -76,7 +102,10 @@ const Home = () => {
             <a
               href="/resources"
               className={activeTab === "resources" ? "active-tab" : ""}
-              onClick={() => setActiveTab("resources")}
+              onClick={() => {
+                setActiveTab("resources");
+                setShowChatBox(false);
+              }}
             >
               Resources
             </a>
@@ -85,12 +114,19 @@ const Home = () => {
 
         {/* Sign-up & Sign-in Buttons */}
         <div className="auth-buttons">
-          <button className="start-btn" onClick={() => navigate("/SelectRole")}>
-            Sign Up
+          {
+            isLoggedIn?
+            (
+              <button className="start-btn" onClick={() =>{ localStorage.clear(); navigate("/signin")}}>
+            Sign Out
           </button>
-          <button className="start-btn" onClick={() => navigate("/signin")}>
+            ):
+            (
+              <button className="start-btn" onClick={() => navigate("/signin")}>
             Sign In
           </button>
+            )           
+          }
         </div>
       </nav>
 
@@ -100,6 +136,8 @@ const Home = () => {
           <div ref={pregnancyRef}>
             <PregnancyMap />
           </div>
+        ) : showChatBox ? (
+          <ChatBox />
         ) : (
           <div className="home-content">
             <h1>Welcome to Our Platform</h1>
