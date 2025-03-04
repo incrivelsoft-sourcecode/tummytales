@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
 import "../../styles/Register.css"; // Import CSS file for styling
+import axios from "axios";
+import { toast } from 'react-toastify';
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +12,7 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+  const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -31,12 +35,43 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted successfully", formData);
+    try {
+      if (validateForm()) {
+        console.log("Form submitted successfully", formData);
+        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`,
+          {
+            user_name: formData.username,
+            email: formData.email,
+            password: formData.password,
+            confirm_password: formData.confirmPassword,
+            role: "mom"
+          }
+        );
+        if (res.status === 201) {
+          console.log(res.data);
+          localStorage.setItem("token", res.data.token);
+          localStorage.setItem("userName", res.data.userName);
+          localStorage.setItem("role", res.data.role);
+          toast.success(res.data.message || "Registeration successful...", { "position": "top-center" });
+          setTimeout(() => {
+            navigate("/");
+          }, 3000);
+
+        }
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message || "Internal server error", { "position": "top-center" });
     }
   };
+
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/")
+    }
+  }, []);
 
   return (
     <div className="signup-container">

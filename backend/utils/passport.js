@@ -26,7 +26,7 @@ passport.use(
           return done(new Error("Invalid role. Must be 'mom' or 'supporter'"), null);
         }
 
-        let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
+        let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }, {user_name: user_name}] });
 
         if (!user) {
           // Validate referral_code if role is "supporter"
