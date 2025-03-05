@@ -106,7 +106,7 @@ const SignIn = () => {
         {/* Sign Up Link */}
         <p className="signin-signup-text">
           Create an account with us!{" "}
-          <button onClick={() => navigate("/signup")} className="signup-button">
+          <button onClick={() => navigate("/SelectRole")} className="signup-button">
             Sign up
           </button>
         </p>
