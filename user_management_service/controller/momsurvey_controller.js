@@ -75,65 +75,8 @@ const getAllSurveys = async (req,res)=>{
         return res.status(505).json({error:"Failed to retrive surveys"})
     }
 }
-// const update_momsurvey = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const updates = req.body;
 
-//         // 🚨 Check if the survey exists
-//         const existingSurvey = await Survey.findById(id);
-//         if (!existingSurvey) {
-//             return res.status(404).json({ error: "Survey not found" });
-//         }
 
-//         // ✅ Convert updates to use correct MongoDB dot-notation
-//         const updateQuery = {};
-//         for (const key in updates) {
-//             if (updates[key] !== undefined) {
-//                 // 🛠 If the field is in `pregnancyStatus`, prepend the key with `pregnancyStatus.`
-//                 if (["currentlyPregnant", "pregnancyWeeks", "estimatedDueDate", "firstPregnancy"].includes(key)) {
-//                     updateQuery[`pregnancyStatus.${key}`] = updates[key];
-//                 } 
-//                 // 🛠 If the field is in `generalDetails`, prepend `generalDetails.`
-//                 else if (["age", "gender", "identity", "nationality", "generation"].includes(key)) {
-//                     updateQuery[`generalDetails.${key}`] = updates[key];
-//                 } 
-//                 // 🛠 If the field is in `healthCare`, prepend `healthCare.`
-//                 else if (["hasProvider", "prenatalServices", "healthcareSystem", "navigationExperience", "culturalChallenges"].includes(key)) {
-//                     updateQuery[`healthCare.${key}`] = updates[key];
-//                 } 
-//                 // 🛠 If the field is in `lifestylePreferences`, prepend `lifestylePreferences.`
-//                 else if (["preferredLanguage", "dietaryPreferences", "physicalActivity", "primaryInfoSource"].includes(key)) {
-//                     updateQuery[`lifestylePreferences.${key}`] = updates[key];
-//                 } 
-//                 // 🛠 If the field is in `experienceAndExpectations`, prepend `experienceAndExpectations.`
-//                 else if (["expectations", "challenges", "wantsPersonalizedResources", "additionalComments"].includes(key)) {
-//                     updateQuery[`experienceAndExpectations.${key}`] = updates[key];
-//                 } 
-//                 // 🛠 Otherwise, just add it as is
-//                 else {
-//                     updateQuery[key] = updates[key];
-//                 }
-//             }
-//         }
-
-//         // 🛠 Debugging - Check final update query
-//         console.log("Final updateQuery:", updateQuery);
-
-//         // ✅ Apply the update correctly using $set
-//         const updatedSurvey = await Survey.findByIdAndUpdate(
-//             id,
-//             { $set: updateQuery },  // Ensure only specific fields get updated
-//             { new: true, runValidators: true }
-//         );
-
-//         return res.status(200).json({ message: 'Survey updated successfully', survey: updatedSurvey });
-
-//     } catch (error) {
-//         console.error('Failed to update survey:', error);
-//         return res.status(500).json({ error: "Failed to update survey" });
-//     }
-// };
 
 const update_momsurvey = async (req,res)=>{
     try{ 
@@ -167,34 +110,25 @@ const update_momsurvey = async (req,res)=>{
     }
 }
 
-const delete_momsurvey= async(req,res)=>{
-    try{
-        const {id}= req.params;
-        const remove =req.body;
+const delete_momsurvey = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-        const existingSurvey =await Survey.findById(id);
-        if(!existingSurvey){
-            return res.status(404).json({error:'suvery not found'});
+        // Check if the survey exists
+        const existingSurvey = await Survey.findById(id);
+        if (!existingSurvey) {
+            return res.status(404).json({ error: 'Survey not found' });
         }
 
-        const deletequery={}
-        for(const key in remove){
-            if(remove!=undefined){
-                deletequery[key]=""
-            }
-        }
- const deletedsurvey = await Survey.findByIdAndUpdate(
-    id,
-    {$unset:deletequery},
-    {new:true,runValidators:true}
-);
-  return res.status(200).json({message:'survey deleted successfully',survey:deletedsurvey})
-   
-    }catch(error){
-        console.error('error:failed to delete',error);
-        return res.status(404).json({error:'failed to delete files'});
+        // Delete the survey
+        await Survey.findByIdAndDelete(id);
+
+        return res.status(200).json({ message: 'Survey deleted successfully' });
+    } catch (error) {
+        console.error('Error: Failed to delete', error);
+        return res.status(500).json({ error: 'Failed to delete survey' });
     }
-}
+};
 
 
 
