@@ -6,6 +6,9 @@ import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn"
 import { ToastContainer } from 'react-toastify';
+import Pregnancy from "./pages/auth/PregnancyMap";
+import FirstTrimester from "./pages/auth/FirstTrimester";
+import ProfileSetup from "./pages/auth/ProfileSetup";
 
 function App() {
   useEffect(() => {
@@ -29,6 +32,9 @@ function App() {
         <Route path="/SelectRole" element={<SelectRole />} />  
         <Route path="/signup" element={<Register />} />  
         <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
+        <Route path="/first-trimester" element={<FirstTrimester />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+
         <Route path="/SignIn" element={<SignIn/>}/>
         <Route path="*" element={<h1>Page Not Found</h1>} />  
       </Routes>

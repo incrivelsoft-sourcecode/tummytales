@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/HomePage.css";
 import PregnancyMap from "./auth/PregnancyMap.js";
-import ChatBox from "./auth/ChatBox.js"; // Import ChatBox component
+import ChatBox from "./auth/ChatBox.js";
 
 const Home = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(""); // Track active tab
+  const [activeTab, setActiveTab] = useState("");
   const [showPregnancyContent, setShowPregnancyContent] = useState(false);
-  const [showChatBox, setShowChatBox] = useState(false); // Track Ask AI page
+  const [showChatBox, setShowChatBox] = useState(false);
   const pregnancyRef = useRef(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Close PregnancyMap when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (pregnancyRef.current && !pregnancyRef.current.contains(event.target)) {
         setShowPregnancyContent(false);
-        setActiveTab(""); // Reset active tab
+        setActiveTab("");
       }
     };
 
@@ -32,27 +30,21 @@ const Home = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if(!token)
-    {
-      setIsLoggedIn(false);
-    }
-    else{
-      setIsLoggedIn(true);
-    }
-  })
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
-    <div className="home-container">
+    <div className="text-center mt-24 px-4">
       {/* Navbar */}
-      <nav className="navbar">
-        <ul>
+      <nav className="fixed top-0 left-0 w-full flex justify-between items-center px-16 py-4 bg-blue-500 shadow-md z-50">
+        <ul className="flex gap-52 text-white font-bold text-lg">
           <li>
             <a
               href="/"
-              className={activeTab === "home" ? "active-tab" : ""}
+              className={`px-4 py-2 ${activeTab === "home" ? "text-yellow-300 underline" : ""}`}
               onClick={() => {
                 setActiveTab("home");
-                setShowChatBox(false); // Hide Ask AI when clicking Home
+                setShowChatBox(false);
               }}
             >
               Home
@@ -61,21 +53,21 @@ const Home = () => {
           <li>
             <a
               href="#"
-              className={activeTab === "pregnancy" ? "active-tab" : ""}
+              className={`px-4 py-2 ${activeTab === "pregnancy" ? "text-yellow-300 underline" : ""}`}
               onClick={(e) => {
                 e.preventDefault();
                 setShowPregnancyContent(true);
                 setActiveTab("pregnancy");
-                setShowChatBox(false); // Hide Ask AI when clicking Pregnancy Map
+                setShowChatBox(false);
               }}
             >
-              Pregnancy Map <span className="dropdown-symbol">🔽</span>
+              Pregnancy Map <span className="ml-2 text-sm">🔽</span>
             </a>
           </li>
           <li>
             <a
               href="/mom-supporter-network"
-              className={activeTab === "mom-support" ? "active-tab" : ""}
+              className={`px-4 py-2 ${activeTab === "mom-support" ? "text-yellow-300 underline" : ""}`}
               onClick={() => {
                 setActiveTab("mom-support");
                 setShowChatBox(false);
@@ -87,12 +79,12 @@ const Home = () => {
           <li>
             <a
               href="#"
-              className={activeTab === "ask-ai" ? "active-tab" : ""}
+              className={`px-4 py-2 ${activeTab === "ask-ai" ? "text-yellow-300 underline" : ""}`}
               onClick={(e) => {
                 e.preventDefault();
-                setShowChatBox(true); // Show ChatBox when clicking Ask AI
+                setShowChatBox(true);
                 setActiveTab("ask-ai");
-                setShowPregnancyContent(false); // Hide Pregnancy Map
+                setShowPregnancyContent(false);
               }}
             >
               Ask AI
@@ -101,7 +93,7 @@ const Home = () => {
           <li>
             <a
               href="/resources"
-              className={activeTab === "resources" ? "active-tab" : ""}
+              className={`px-4 py-2 ${activeTab === "resources" ? "text-yellow-300 underline" : ""}`}
               onClick={() => {
                 setActiveTab("resources");
                 setShowChatBox(false);
@@ -113,25 +105,31 @@ const Home = () => {
         </ul>
 
         {/* Sign-up & Sign-in Buttons */}
-        <div className="auth-buttons">
-          {
-            isLoggedIn?
-            (
-              <button className="start-btn" onClick={() =>{ localStorage.clear(); navigate("/signin")}}>
-            Sign Out
-          </button>
-            ):
-            (
-              <button className="start-btn" onClick={() => navigate("/signin")}>
+        <div className="flex gap-6">
+          {isLoggedIn ? (
+            <button
+              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+              onClick={() => {
+                localStorage.clear();
+                navigate("/signin");
+              }}
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+            className="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-red-600 transition"
+            onClick={() => navigate("/signin")}
+          >
             Sign In
           </button>
-            )           
-          }
+          
+          )}
         </div>
       </nav>
 
       {/* Content Below Navbar */}
-      <div className="content-below-navbar">
+      <div className="mt-16 px-8 py-8 bg-gray-100 rounded-lg shadow-md mx-auto max-w-2xl">
         {showPregnancyContent ? (
           <div ref={pregnancyRef}>
             <PregnancyMap />
@@ -139,9 +137,9 @@ const Home = () => {
         ) : showChatBox ? (
           <ChatBox />
         ) : (
-          <div className="home-content">
-            <h1>Welcome to Our Platform</h1>
-            <p>Your journey starts here.</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-4">Welcome to Our Platform</h1>
+            <p className="text-lg text-gray-600">Your journey starts here.</p>
           </div>
         )}
       </div>

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
-import "../../styles/Register.css"; // Import CSS file for styling
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
-import { toast } from 'react-toastify';
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
@@ -40,98 +39,73 @@ const Register = () => {
     try {
       if (validateForm()) {
         console.log("Form submitted successfully", formData);
-        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`,
-          {
-            user_name: formData.username,
-            email: formData.email,
-            password: formData.password,
-            confirm_password: formData.confirmPassword,
-            role: "mom"
-          }
-        );
+        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
+          user_name: formData.username,
+          email: formData.email,
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+          role: "mom",
+        });
         if (res.status === 201) {
-          console.log(res.data);
           localStorage.setItem("token", res.data.token);
           localStorage.setItem("userName", res.data.userName);
           localStorage.setItem("role", res.data.role);
-          toast.success(res.data.message || "Registeration successful...", { "position": "top-center" });
+          toast.success(res.data.message || "Registration successful...", { position: "top-center" });
           setTimeout(() => {
             navigate("/");
           }, 3000);
-
         }
       }
     } catch (error) {
-      console.log(error);
-      toast.error(error.response.data.message || "Internal server error", { "position": "top-center" });
+      toast.error(error.response?.data?.message || "Internal server error", { position: "top-center" });
     }
   };
 
   useEffect(() => {
     if (localStorage.getItem("token")) {
-      navigate("/")
+      navigate("/");
     }
   }, []);
 
   return (
-    <div className="signup-container">
-      <h2>Sign Up For Mother</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="input-group">
-          <label>Username</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-          />
-          {errors.username && <p className="error">{errors.username}</p>}
+    <div className="max-w-md mx-auto mt-12 p-8 bg-white shadow-lg rounded-lg text-center">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Sign Up For Mother</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-600">Username</label>
+          <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+          {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
         </div>
 
-        <div className="input-group">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          {errors.email && <p className="error">{errors.email}</p>}
+        <div>
+          <label className="block text-sm font-semibold text-gray-600">Email</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
-        <div className="input-group password-group">
-          <label>Create Password</label>
-          <div className="password-wrapper">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            <span onClick={() => setShowPassword(!showPassword)} className="eye-icon">
+        <div>
+          <label className="block text-sm font-semibold text-gray-600">Create Password</label>
+          <div className="relative">
+            <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+            <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 cursor-pointer text-gray-600">
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-          {errors.password && <p className="error">{errors.password}</p>}
+          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
         </div>
 
-        <div className="input-group password-group">
-          <label>Confirm Password</label>
-          <div className="password-wrapper">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-            <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="eye-icon">
+        <div>
+          <label className="block text-sm font-semibold text-gray-600">Confirm Password</label>
+          <div className="relative">
+            <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+            <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3 cursor-pointer text-gray-600">
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-          {errors.confirmPassword && <p className="error">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        <button type="submit">Sign Up</button>
+        <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-400 transition duration-300">Sign Up</button>
       </form>
     </div>
   );

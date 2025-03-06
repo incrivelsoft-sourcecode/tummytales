@@ -1,22 +1,33 @@
 import React from "react";
-import "../../styles/PregnancyMap.css"; // Create a CSS file for styling
+import { useNavigate } from "react-router-dom";
 
 const Pregnancy = () => {
+  const navigate=useNavigate();
   return (
-    <div className="pregnancy-container">
-      <div className="pregnancy-content">
-        <div className="catalog">
-          <h2><b>CATALOG</b></h2>
-          <button className="trimester-btn">1st Trimester</button>
-          <button className="trimester-btn">2nd Trimester</button>
-          <button className="trimester-btn">3rd Trimester</button>
+    <div className="flex justify-center items-center mt-5 bg-purple-100 p-5 rounded-lg">
+      <div className="flex w-5/6 p-5 rounded-lg bg-purple-50 shadow-lg">
+        <div className="flex-1 text-center">
+          <h2 className="font-bold text-lg">CATALOG</h2>
+          <button
+            className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700"
+            onClick={() => navigate("/first-trimester")}
+
+          >
+            1st Trimester
+          </button>
+          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700">
+            2nd Trimester
+          </button>
+          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700">
+            3rd Trimester
+          </button>
         </div>
-        <div className="features">
-          <h2><b>FEATURES</b></h2>
-          <p><u>Pregnancy Tracker</u></p>
-          <p><u>Daily Journal</u></p>
-          <p><u>MOM Network</u></p>
-          <p><u>Ask AI</u></p>
+        <div className="flex-1 text-center ">
+          <h2 className="font-bold text-lg">FEATURES</h2>
+          <p className="text-base cursor-pointer underline hover:no-underline">Pregnancy Tracker</p>
+          <p className="text-base cursor-pointer underline hover:no-underline">Daily Journal</p>
+          <p className="text-base cursor-pointer underline hover:no-underline">MOM Network</p>
+          <p className="text-base cursor-pointer underline hover:no-underline">Ask AI</p>
         </div>
       </div>
     </div>
