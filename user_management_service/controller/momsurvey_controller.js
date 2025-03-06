@@ -4,9 +4,9 @@ const Survey = require('../model/momsurvey');
 const createsurvey = async (req, res) => {
   try {
       const {
+        full_name,
           age,
           gender,
-          identity,
           nationality,
           generation,
           currentlyPregnant,
@@ -30,7 +30,7 @@ const createsurvey = async (req, res) => {
 
       // 🔍 Define all required fields
       const requiredFields = {
-          age, gender, identity, nationality, generation,
+         full_name,age, gender,nationality, generation,
           currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy,
           hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges,
           preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource,
@@ -48,7 +48,7 @@ const createsurvey = async (req, res) => {
 
       // ✅ Creating a new survey response object
       const newSurvey = new Survey({
-          generalDetails: { age, gender, identity, nationality, generation },
+          generalDetails: { full_name,age, gender,nationality, generation },
           pregnancyStatus: { currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy },
           healthCare: { hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges },
           lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
@@ -63,6 +63,21 @@ const createsurvey = async (req, res) => {
       res.status(500).json({ error: "Failed to save survey data" });
   }
 };
+
+const getbyid_momsurvey = async(req,res)=>{
+    try{
+        const {id}=req.params;
+        const survey = await Survey.findById(id);
+        if(!survey){
+            return res.status(404).json({error:'survey not found'});
+        }
+        return res.status(200).json({message:'Survey retrived successfully',survey})
+
+    }catch(error){
+        console.error('failed to fetch detials',error);
+        return res.status(500).json({error:'failed to fetch details'})
+    }
+}
 
 const getAllSurveys = async (req,res)=>{
     try{
@@ -132,4 +147,4 @@ const delete_momsurvey = async (req, res) => {
 
 
 
-module.exports = {createsurvey ,update_momsurvey,getAllSurveys,delete_momsurvey} 
+module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey} 
