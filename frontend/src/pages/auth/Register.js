@@ -52,7 +52,7 @@ const Register = () => {
           localStorage.setItem("role", res.data.role);
           toast.success(res.data.message || "Registration successful...", { position: "top-center" });
           setTimeout(() => {
-            navigate("/");
+            navigate("/profile-setup");
           }, 3000);
         }
       }
