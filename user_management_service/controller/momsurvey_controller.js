@@ -6,7 +6,7 @@ const createsurvey = async (req, res) => {
       const {
           age,
           gender,
-          identity,
+        //   identity,
           nationality,
           generation,
           currentlyPregnant,
@@ -30,7 +30,7 @@ const createsurvey = async (req, res) => {
 
       // 🔍 Define all required fields
       const requiredFields = {
-          age, gender, identity, nationality, generation,
+          age, gender, nationality, generation,
           currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy,
           hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges,
           preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource,
@@ -48,7 +48,7 @@ const createsurvey = async (req, res) => {
 
       // ✅ Creating a new survey response object
       const newSurvey = new Survey({
-          generalDetails: { age, gender, identity, nationality, generation },
+          generalDetails: { age, gender, nationality, generation },
           pregnancyStatus: { currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy },
           healthCare: { hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges },
           lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
