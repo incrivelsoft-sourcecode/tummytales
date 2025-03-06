@@ -24,7 +24,7 @@ const SignIn = () => {
         localStorage.setItem("role", res.data.role);
         toast.success(res.data.message || "Login successful...", { position: "top-center" });
         setTimeout(() => {
-          navigate("/profile-setup"); // Redirecting to ProfileSetup page
+          navigate("/"); // Redirecting to ProfileSetup page
         }, 3000);
       }
     } catch (error) {

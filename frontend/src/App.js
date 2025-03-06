@@ -9,6 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import Pregnancy from "./pages/auth/PregnancyMap";
 import FirstTrimester from "./pages/auth/FirstTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
+import ProfileDisplay from "./pages/auth/ProfileDisplay";
 
 function App() {
   useEffect(() => {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/signup" element={<Register />} />  
         <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
         <Route path="/first-trimester" element={<FirstTrimester />} />
+        <Route path="/profile-display" element={<ProfileDisplay />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
 
         <Route path="/SignIn" element={<SignIn/>}/>
