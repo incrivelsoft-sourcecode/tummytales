@@ -5,6 +5,7 @@ import SelectRole from "./pages/auth/SelectRole";
 import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn"
+import ThreadDiscussionPage from "./pages/MomNetworkPage";
 import { ToastContainer } from 'react-toastify';
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
         <Route path="/signup" element={<Register />} />  
         <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
         <Route path="/SignIn" element={<SignIn/>}/>
+        {/* <Route path="/network" element={<ThreadDiscussionPage/>}/> */}
+        <Route path="/l" element={<ThreadDiscussionPage/>}/>
         <Route path="*" element={<h1>Page Not Found</h1>} />  
       </Routes>
       <ToastContainer/>

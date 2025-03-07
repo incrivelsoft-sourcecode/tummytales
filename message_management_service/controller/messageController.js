@@ -233,9 +233,9 @@ const setupSocketEvents = () => {
         });
 
         // **4. Get All Messages**
-        socket.on("getMessages", async ({ 
-            chatId, 
-            userId, 
+        socket.on("getMessages", async ({
+            chatId,
+            userId,
             limit = 50,  // Default limit
             next = null  // Cursor for pagination
         }) => {
@@ -248,7 +248,7 @@ const setupSocketEvents = () => {
                         details: "No chat ID provided to fetch messages"
                     });
                 }
-        
+
                 if (!userId) {
                     return socket.emit("error", {
                         type: "VALIDATION_ERROR",
@@ -256,7 +256,7 @@ const setupSocketEvents = () => {
                         details: "No user ID provided to fetch messages"
                     });
                 }
-        
+
                 // Validate limit
                 if (limit <= 0 || limit > 100) {
                     return socket.emit("error", {
@@ -265,7 +265,7 @@ const setupSocketEvents = () => {
                         details: "Limit must be between 1 and 100"
                     });
                 }
-        
+
                 // Check if user exists
                 const userExists = await UserDetails.findById(userId);
                 if (!userExists) {
@@ -275,7 +275,7 @@ const setupSocketEvents = () => {
                         details: `No user found with ID: ${userId}`
                     });
                 }
-        
+
                 // Check if chat exists and user is a participant
                 const chat = await DirectMessage.findById(chatId);
                 if (!chat) {
@@ -285,7 +285,7 @@ const setupSocketEvents = () => {
                         details: `No chat found with ID: ${chatId}`
                     });
                 }
-        
+
                 // Verify user is a participant in the chat
                 const isParticipant = chat.participants.some(
                     participant => participant.toString() === userId
@@ -297,31 +297,31 @@ const setupSocketEvents = () => {
                         details: `User ${userId} is not in chat ${chatId}`
                     });
                 }
-        
+
                 // Prepare query for pagination
-                const query = next 
+                const query = next
                     ? { _id: { $lt: next } }  // If next cursor exists, fetch messages older than the cursor
                     : {};
-        
+
                 // Fetch messages with pagination
                 const messages = await Message.find({
                     ...query,
                     parentThread: chatId  // Assuming parentThread references the chat
                 })
-                .populate('sender', 'username email profilePicture')
-                .populate('receiver', 'username email profilePicture')
-                .sort({ timestamp: -1 })  // Sort by most recent first
-                .limit(limit + 1);  // Fetch one extra to determine if there are more messages
-        
+                    .populate('sender', 'username email profilePicture')
+                    .populate('receiver', 'username email profilePicture')
+                    .sort({ timestamp: -1 })  // Sort by most recent first
+                    .limit(limit + 1);  // Fetch one extra to determine if there are more messages
+
                 // Determine if there are more messages
                 const hasMore = messages.length > limit;
                 const processedMessages = hasMore ? messages.slice(0, limit) : messages;
-        
+
                 // Prepare next cursor (ID of the last message in this batch)
-                const nextCursor = hasMore 
-                    ? messages[limit - 1]._id 
+                const nextCursor = hasMore
+                    ? messages[limit - 1]._id
                     : null;
-        
+
                 // Emit paginated messages
                 socket.emit("messagesPaginated", {
                     messages: processedMessages,
@@ -341,26 +341,44 @@ const setupSocketEvents = () => {
         // **5. Create Thread**
         socket.on("createThread", async ({ creator, title, participants }) => {
             try {
+                if (!creator || !title) {
+                    return socket.emit("error", { message: "creator, title are required.", type: "NOT_FOUND", details: "creator or title not found." });
+                }
                 const thread = new Thread({ creator, title, participants });
                 await thread.save();
                 io.emit("threadCreated", thread);
             } catch (error) {
                 console.error("Error creating thread:", error);
+                socket.emit("error", {
+                    type: "UNEXPECTED_ERROR",
+                    message: "An unexpected error occurred while creating thread",
+                    details: error.message
+                });
             }
         });
 
         // **6. Reply to a Thread**
         socket.on("replyToThread", async ({ threadId, sender, content, file }) => {
             try {
+                // Check if thread exists first
+                const thread = await Thread.findById(threadId);
+                if (!thread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
                 let media = [];
                 if (file) {
-                    const mediaURL = await uploadMedia(file);
-                    if (mediaURL) {
-                        media.push({
-                            url: mediaURL,
-                            type: file.mimetype.split("/")[0],
-                            format: file.mimetype.split("/")[1]
-                        });
+                    try {
+                        const mediaURL = await uploadMedia(file);
+                        if (mediaURL) {
+                            media.push({
+                                url: mediaURL,
+                                type: file.mimetype.split("/")[0],
+                                format: file.mimetype.split("/")[1]
+                            });
+                        }
+                    } catch (mediaError) {
+                        return socket.emit("error", { message: "Failed to upload media", type: "MEDIA_UPLOAD_FAILED", details: mediaError.message });
                     }
                 }
 
@@ -370,50 +388,89 @@ const setupSocketEvents = () => {
                     media,
                     parentThread: threadId
                 });
-                await message.save();
 
+                await message.save();
                 await Thread.findByIdAndUpdate(
                     threadId,
                     { $push: { messages: message._id } }
                 );
-
                 io.emit("threadReplyAdded", { threadId, message });
             } catch (error) {
                 console.error("Error replying to thread:", error);
+                socket.emit("error", { message: "Failed to add reply", type: "REPLY_FAILED", details: error.message });
             }
         });
 
         // **7. Delete a Thread**
         socket.on("deleteThread", async ({ threadId }) => {
             try {
+                // First, check if thread exists
+                const thread = await Thread.findById(threadId);
+                if (!thread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
+                // Get all message IDs associated with the thread
+                const messagesToDelete = thread.messages;
+
+                // Delete all messages first
+                if (messagesToDelete && messagesToDelete.length > 0) {
+                    await Message.deleteMany({ _id: { $in: messagesToDelete } });
+                }
+
+                // Then delete the thread
                 await Thread.findByIdAndDelete(threadId);
+
+                // Notify all clients
                 io.emit("threadDeleted", threadId);
             } catch (error) {
                 console.error("Error deleting thread:", error);
+                socket.emit("error", { message: "Failed to delete thread", type: "DELETE_FAILED", details: error.message });
             }
         });
 
         // **8. Update Thread**
         socket.on("updateThread", async ({ threadId, newTitle }) => {
             try {
+                if (!newTitle || newTitle.trim() === '') {
+                    return socket.emit("error", { message: "Title cannot be empty", type: "INVALID_TITLE" });
+                }
+
                 const updatedThread = await Thread.findByIdAndUpdate(
                     threadId,
                     { title: newTitle },
                     { new: true }
                 );
+
+                if (!updatedThread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
                 io.emit("threadUpdated", updatedThread);
             } catch (error) {
                 console.error("Error updating thread:", error);
+                socket.emit("error", { message: "Failed to update thread", type: "UPDATE_FAILED", details: error.message });
             }
         });
 
         // **9. Get All Threads**
         socket.on("getThreads", async () => {
             try {
-                const threads = await Thread.find().populate("creator participants messages");
+                const threads = await Thread.find()
+                    .populate("creator")
+                    .populate("participants")
+                    .populate({
+                        path: "messages",
+                        populate: {
+                            path: "sender",
+                            model: "UserDetails"
+                        }
+                    });
+
                 socket.emit("allThreads", threads);
             } catch (error) {
                 console.error("Error fetching threads:", error);
+                socket.emit("error", { message: "Failed to fetch threads", type: "FETCH_FAILED", details: error.message });
             }
         });
     });
