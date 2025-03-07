@@ -6,10 +6,12 @@ import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn"
 import { ToastContainer } from 'react-toastify';
-import Pregnancy from "./pages/auth/PregnancyMap";
+import PregnancyMap from "./pages/auth/PregnancyMap";
 import FirstTrimester from "./pages/auth/FirstTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
+import PregnancyTracker from "./pages/auth/PregnancyTracker";
+import DailyJournal from "./pages/auth/DailyJournal";
 
 function App() {
   useEffect(() => {
@@ -36,6 +38,9 @@ function App() {
         <Route path="/first-trimester" element={<FirstTrimester />} />
         <Route path="/profile-display" element={<ProfileDisplay />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/pregnancy-map" element={<PregnancyMap/>}/>
+        <Route path="/pregnancy-tracker" element={<PregnancyTracker/>}/>
+        <Route path="/daily-journal" element={<DailyJournal/>}/>
 
         <Route path="/SignIn" element={<SignIn/>}/>
         <Route path="*" element={<h1>Page Not Found</h1>} />  

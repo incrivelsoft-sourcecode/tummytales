@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+
 const Pregnancy = () => {
   const navigate=useNavigate();
   return (
@@ -24,8 +25,12 @@ const Pregnancy = () => {
         </div>
         <div className="flex-1 text-center ">
           <h2 className="font-bold text-lg">FEATURES</h2>
-          <p className="text-base cursor-pointer underline hover:no-underline">Pregnancy Tracker</p>
-          <p className="text-base cursor-pointer underline hover:no-underline">Daily Journal</p>
+          <p className="text-base cursor-pointer underline hover:no-underline"
+          onClick={() => navigate("/pregnancy-tracker")}>
+            Pregnancy Tracker</p>
+          <p className="text-base cursor-pointer underline hover:no-underline"
+          onClick={() => navigate("/daily-journal")}>
+            Daily Journal</p>
           <p className="text-base cursor-pointer underline hover:no-underline">MOM Network</p>
           <p className="text-base cursor-pointer underline hover:no-underline">Ask AI</p>
         </div>
