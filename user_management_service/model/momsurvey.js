@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const surveySchema = new mongoose.Schema(
   {
     generalDetails: {
+      full_name: String,
       age: Number,
       gender: String,
-      identity: String,
       nationality: String,
       generation: String,
     },

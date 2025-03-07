@@ -7,6 +7,10 @@ import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn"
 import ThreadDiscussionPage from "./pages/MomNetworkPage";
 import { ToastContainer } from 'react-toastify';
+import Pregnancy from "./pages/auth/PregnancyMap";
+import FirstTrimester from "./pages/auth/FirstTrimester";
+import ProfileSetup from "./pages/auth/ProfileSetup";
+import ProfileDisplay from "./pages/auth/ProfileDisplay";
 
 function App() {
   useEffect(() => {
@@ -30,6 +34,10 @@ function App() {
         <Route path="/SelectRole" element={<SelectRole />} />  
         <Route path="/signup" element={<Register />} />  
         <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
+        <Route path="/first-trimester" element={<FirstTrimester />} />
+        <Route path="/profile-display" element={<ProfileDisplay />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+
         <Route path="/SignIn" element={<SignIn/>}/>
         {/* <Route path="/network" element={<ThreadDiscussionPage/>}/> */}
         <Route path="/l" element={<ThreadDiscussionPage/>}/>
