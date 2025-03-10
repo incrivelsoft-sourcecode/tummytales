@@ -16,10 +16,14 @@ const Pregnancy = () => {
           >
             1st Trimester
           </button>
-          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700">
+          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700"
+          onClick={() => navigate("/second-trimester")}
+          
+          >
             2nd Trimester
           </button>
-          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700">
+          <button className="block w-4/5 mx-auto my-2 py-2 text-sm bg-purple-500 text-white rounded-lg transition hover:bg-purple-700"
+          onClick={() => navigate("/third-trimester")}>
             3rd Trimester
           </button>
         </div>

@@ -8,6 +8,8 @@ import SignIn from "./pages/auth/SignIn"
 import { ToastContainer } from 'react-toastify';
 import PregnancyMap from "./pages/auth/PregnancyMap";
 import FirstTrimester from "./pages/auth/FirstTrimester";
+import SecondTrimester from "./pages/auth/SecondTrimester";
+import ThirdTrimester from "./pages/auth/ThirdTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
 import PregnancyTracker from "./pages/auth/PregnancyTracker";
@@ -36,6 +38,8 @@ function App() {
         <Route path="/signup" element={<Register />} />  
         <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
         <Route path="/first-trimester" element={<FirstTrimester />} />
+        <Route path="second-trimester" element={<SecondTrimester/>}/>
+        <Route path="third-trimester" element={<ThirdTrimester/>}/>
         <Route path="/profile-display" element={<ProfileDisplay />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
         <Route path="/pregnancy-map" element={<PregnancyMap/>}/>
