@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const SupportersPage = () => {
   const [hasSupporter, setHasSupporter] = useState(null);
@@ -15,12 +17,31 @@ const SupportersPage = () => {
       setPermissions([...permissions, option]);
     }
   };
-
+/*
   const generateReferralPin = () => {
     const pin = Math.random().toString(36).substring(2, 10).toUpperCase();
     setReferralPin(pin);
-  };
+  };*/
 
+
+
+const generateReferralPin = async () => {
+    try {
+        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/mom/generate-referral-pin`, {}, {
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (res.status === 200) {
+            setReferralPin(res.data.referralPin);
+        } else {
+            console.error("Failed to generate PIN");
+        }
+    } catch (error) {
+        console.error("Error generating PIN:", error.response?.data?.message || error.message);
+    }
+};
+
+/*
   const handleSubmit = () => {
     console.log({
       supporterName,
@@ -30,6 +51,32 @@ const SupportersPage = () => {
       referralPin,
     });
   };
+*/
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/mom/supporter`, {
+          user_name: localStorage.getItem("userName"), 
+          name:supporterName,
+          relationship,
+          hasAccess: shareProgress === "Yes",
+          accessPermissions: permissions,
+          referralPin,
+      }, {
+          headers: { "Content-Type": "application/json" }
+      });
+
+      if (res.status === 200) {
+          console.log(res.data);
+          toast.success(res.data.message || "Supporter added successfully!", { position: "top-center" });
+      }
+  } catch (error) {
+      console.error("Error adding supporter:", error);
+      toast.error(error.response?.data?.message || "Internal server error", { position: "top-center" });
+  }
+};
+
 
   return (
     <div className="max-w-7xl mx-auto mt-10 p-6 border border-gray-300 rounded-lg shadow-lg">
