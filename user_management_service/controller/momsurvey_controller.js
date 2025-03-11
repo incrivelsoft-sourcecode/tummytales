@@ -29,11 +29,7 @@ const createsurvey = async (req, res) => {
 
       // 🔍 Define all required fields
       const requiredFields = {
-         full_name,age, gender,nationality, generation,
-          currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy,
-          hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges,
-          preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource,
-          expectations, challenges, wantsPersonalizedResources, additionalComments
+         full_name,age, gender,nationality, generation
       };
 
       // 🚨 Check for missing fields
@@ -145,6 +141,17 @@ const delete_momsurvey = async (req, res) => {
 };
 
 
+const generateReferralPin = async (req, res) => {
+    try {
+        const referralPin = `SUPP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        
+        return res.status(200).json({ referralPin });
+    } catch (error) {
+        console.error('Failed to generate referral PIN', error);
+        return res.status(500).json({ error: 'Failed to generate referral PIN' });
+    }
+};
+
 const addsupport = async(req,res)=>{
 
     try{
@@ -154,11 +161,11 @@ const addsupport = async(req,res)=>{
             relationship,
             hasAccess,
             accessPermissions,
-           // referralPin
+            referralPin
         }= req.body;
 
          // 🔹 Generate a unique referralPin
-    const referralPin = `SUPP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+   // const referralPin = `SUPP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
         const requiredfields={
            // user_name,
@@ -190,6 +197,7 @@ const addsupport = async(req,res)=>{
         return res.status(500).json({error:'failed to add supporter'})
     }
 }
+
 
 const getallSupporters= async(req,res)=>{
     try{
@@ -267,4 +275,5 @@ const deletesupporter = async(req,res)=>{
 }
 
 
-module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
+module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,
+    generateReferralPin,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
