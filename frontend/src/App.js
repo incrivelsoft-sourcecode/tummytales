@@ -1,11 +1,14 @@
-import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/HomePage";  // Import HomePage
-import SelectRole from "./pages/auth/SelectRole";  
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Importing Pages
+import Home from "./pages/HomePage";
+import SelectRole from "./pages/auth/SelectRole";
 import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
-import SignIn from "./pages/auth/SignIn"
-import { ToastContainer } from 'react-toastify';
+import SignIn from "./pages/auth/SignIn";
 import PregnancyMap from "./pages/auth/PregnancyMap";
 import FirstTrimester from "./pages/auth/FirstTrimester";
 import SecondTrimester from "./pages/auth/SecondTrimester";
@@ -14,42 +17,61 @@ import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
 import PregnancyTracker from "./pages/auth/PregnancyTracker";
 import DailyJournal from "./pages/auth/DailyJournal";
+import ChatBox from "./pages/auth/ChatBox"; // ✅ Ensure this matches the actual filename
+import SupportersPage from "./components/SupportersPage";
+
+// Import Navbar
+import Navbar from "./components/navbar";
 
 function App() {
+  const [activeTab, setActiveTab] = useState("");
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const userName = urlParams.get('userName');
-    const role = urlParams.get('role');
-    
-    
+    const token = urlParams.get("token");
+    const userName = urlParams.get("userName");
+    const role = urlParams.get("role");
+
     if (token && userName) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('userName', userName);
-      localStorage.setItem('role', role);
-      window.location.href = '/';
+      localStorage.setItem("token", token);
+      localStorage.setItem("userName", userName);
+      localStorage.setItem("role", role);
+      window.history.replaceState({}, document.title, "/"); // Removes query params without reload
     }
   }, []);
+
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />  {/* Set Home as the starting page */}
-        <Route path="/SelectRole" element={<SelectRole />} />  
-        <Route path="/signup" element={<Register />} />  
-        <Route path="/SupporterRegister" element={<SupporterRegister />} /> {/* New route */}
-        <Route path="/first-trimester" element={<FirstTrimester />} />
-        <Route path="second-trimester" element={<SecondTrimester/>}/>
-        <Route path="third-trimester" element={<ThirdTrimester/>}/>
-        <Route path="/profile-display" element={<ProfileDisplay />} />
-        <Route path="/profile-setup" element={<ProfileSetup />} />
-        <Route path="/pregnancy-map" element={<PregnancyMap/>}/>
-        <Route path="/pregnancy-tracker" element={<PregnancyTracker/>}/>
-        <Route path="/daily-journal" element={<DailyJournal/>}/>
+      {/* Global Navbar */}
+      <Navbar />
 
-        <Route path="/SignIn" element={<SignIn/>}/>
-        <Route path="*" element={<h1>Page Not Found</h1>} />  
-      </Routes>
-      <ToastContainer/>
+      {/* Page Routes */}
+      <div className="mt-20 p-4"> {/* Prevents content from being hidden behind Navbar */}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/select-role" element={<SelectRole />} />
+          <Route path="/signup" element={<Register />} />
+          <Route path="/supporter-register" element={<SupporterRegister />} />
+          <Route path="/first-trimester" element={<FirstTrimester />} />
+          <Route path="/second-trimester" element={<SecondTrimester />} />
+          <Route path="/chatbox" element={<ChatBox />} /> {/* ✅ Corrected */}
+          <Route path="/third-trimester" element={<ThirdTrimester />} />
+          <Route path="/profile-display" element={<ProfileDisplay />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/pregnancy-map" element={<PregnancyMap />} />
+          <Route path="/pregnancy-tracker" element={<PregnancyTracker />} />
+          <Route path="/daily-journal" element={<DailyJournal />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/register" element={<Register />}></Route>
+          <Route path="/supporters" element={<SupportersPage />} />
+
+          {/* Handle unknown routes */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </Router>
   );
 }

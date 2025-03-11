@@ -106,7 +106,7 @@ const SignIn = () => {
 
         <p className="mt-4 text-gray-600 text-sm">
           Don't have an account?
-          <button onClick={() => navigate("/SelectRole")} className="ml-1 text-blue-600 hover:underline font-bold">
+          <button onClick={() => navigate("/select-role")} className="ml-1 text-blue-600 hover:underline font-bold">
             Register here
           </button>
         </p>

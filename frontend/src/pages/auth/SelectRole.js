@@ -26,10 +26,10 @@ const SelectRole = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 bg-gray-100">
+    <div className="flex flex-col justify-center items-center min-h-screen px-6 bg-gray-100">
       <h2 className="text-3xl font-bold text-gray-800 mb-10">Select Your Role</h2>
       
-      <div className="flex flex-col md:flex-row gap-10 w-full max-w-4xl">
+      <div className="flex flex-col justify-center md:flex-row gap-28 w-full max-w-4xl">
         
         {/* Mother Card */}
         <div className="relative flex flex-col items-center w-full max-w-xs bg-white rounded-lg shadow-lg overflow-hidden">
