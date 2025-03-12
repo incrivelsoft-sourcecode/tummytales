@@ -5,12 +5,13 @@ import SelectRole from "./pages/auth/SelectRole";
 import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn"
-import ThreadDiscussionPage from "./pages/MomNetworkPage";
+// import ThreadDiscussionPage from "./pages/MomNetworkPage";
 import { ToastContainer } from 'react-toastify';
 import Pregnancy from "./pages/auth/PregnancyMap";
 import FirstTrimester from "./pages/auth/FirstTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
+import ThreadAndChatDiscussionPage from "./pages/ThreadAndChatDiscussionPage";
 
 function App() {
   useEffect(() => {
@@ -18,12 +19,13 @@ function App() {
     const token = urlParams.get('token');
     const userName = urlParams.get('userName');
     const role = urlParams.get('role');
-    
+    const userId = urlParams.get('userId');
     
     if (token && userName) {
       localStorage.setItem('token', token);
       localStorage.setItem('userName', userName);
       localStorage.setItem('role', role);
+      localStorage.setItem('userId', userId);
       window.location.href = '/';
     }
   }, []);
@@ -39,8 +41,7 @@ function App() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
 
         <Route path="/SignIn" element={<SignIn/>}/>
-        {/* <Route path="/network" element={<ThreadDiscussionPage/>}/> */}
-        <Route path="/l" element={<ThreadDiscussionPage/>}/>
+        <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage/>}/>
         <Route path="*" element={<h1>Page Not Found</h1>} />  
       </Routes>
       <ToastContainer/>

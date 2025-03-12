@@ -22,6 +22,7 @@ const SignIn = () => {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userName", res.data.userName);
         localStorage.setItem("role", res.data.role);
+        localStorage.setItem("userId", res.data.userId);
         toast.success(res.data.message || "Login successful...", { position: "top-center" });
         setTimeout(() => {
           navigate("/"); // Redirecting to ProfileSetup page
