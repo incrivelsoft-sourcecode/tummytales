@@ -49,7 +49,7 @@ const handleSubmit = async (e) => {
       toast.success("Profile submitted successfully!", { position: "top-center" });
 
       setTimeout(() => {
-        navigate("/profile-display"); // Navigate to profile display page
+        navigate("/supporters"); // Navigate to profile display page
       }, 3000);
     }
   } catch (error) {
@@ -320,7 +320,7 @@ const handleChange = (e) => {
         {/* Submit Button */}
         <div className="mt-6 text-center">
             <button type="submit" className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
-              Submit
+              NEXT
             </button>
           </div>
           </form>
