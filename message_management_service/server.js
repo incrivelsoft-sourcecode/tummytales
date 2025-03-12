@@ -20,21 +20,22 @@ app.get('/', (req, res) => {
     res.send('Socket.io server is running');
 });
 
-// Setup WebSocket connections
-setupSocketConnection();
-
-// Setup socket events from message controller
-try {
-    setupSocketEvents();
-} catch (error) {
-    console.error("Error setting up socket events:", error);
-}
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, async() => {
     try {
-        Connection();
+        await Connection();
         console.log(`Server running on port: ${PORT}`);
+        // Setup WebSocket connections
+        await setupSocketConnection();
+
+        // Setup socket events from message controller
+        try {
+            await setupSocketEvents();
+        } catch (error) {
+            console.error("Error setting up socket events:", error);
+        }
+
     } catch (error) {
         console.error("Error starting server:", error);
     }

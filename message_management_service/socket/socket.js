@@ -40,7 +40,7 @@ const setupSocketConnection = () => {
     io.on("connection", (socket) => {
         try {
             console.log("Socket.io connection established. Socket ID:", socket.id);
-            console.log("Handshake details:", socket.handshake);
+            // console.log("Handshake details:", socket.handshake);
             
             const userId = socket.handshake.query.userId;
             console.log("User ID from query:", userId);
