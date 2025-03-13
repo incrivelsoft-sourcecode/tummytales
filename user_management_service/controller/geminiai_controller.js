@@ -5,6 +5,26 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const askAI = async (req, res) => {
     try {
+        const { message } = req.body;
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" }); // ✅ Correct model
+
+        const result = await model.generateContent({
+            contents: [{ parts: [{ text: message }] }],
+        });
+
+        const response = result.response.candidates[0].content.parts[0].text; // ✅ Extract AI response
+
+        res.json({ reply: response });
+    } catch (error) {
+        console.error("Gemini API Error:", error);
+        res.status(500).json({ error: "AI request failed" });
+    }
+}
+
+
+/*
+const askAI = async (req, res) => {
+    try {
         const { message,chatId } = req.body;
 
         if (!chatId) {
@@ -32,6 +52,7 @@ const askAI = async (req, res) => {
         res.status(500).json({ error: "AI request failed" });
     }
 }
+*/
 
 const createNewAIChat= async(req,res)=>{
     try{
