@@ -1,26 +1,36 @@
-const uploadMedia = async (req) => {
-    try {
-        let resourceType = "image"; // Default
+const cloudinary = require("../cloudinary/config.js");
 
-        if (req.file.mimetype.startsWith("video")) {
-            resourceType = "video";
-        } else if (req.file.mimetype.startsWith("audio")) {
-            resourceType = "raw"; // Cloudinary treats non-image/video files as "raw"
-        } else if (["application/pdf", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(req.file.mimetype)) {
-            resourceType = "raw";
+const uploadMedia = async (fileBuffer, mimetype) => {
+    try {
+        if (!fileBuffer || !mimetype) {
+            throw new Error("No file data received");
         }
 
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            resource_type: resourceType,
+        // Use "auto" to let Cloudinary detect the file type
+        const resourceType = "auto";
+
+        return new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                { resource_type: resourceType },
+                (error, result) => {
+                    if (error) {
+                        console.error("Cloudinary Upload Error:", error.message);
+                        reject(new Error("Failed to upload media"));
+                    } else {
+                        // Append `fl_attachment=false` to the URL to force inline display
+                        const url = `${result.secure_url}?fl_attachment=false`;
+                        resolve(url);
+                    }
+                }
+            );
+
+            uploadStream.end(fileBuffer);
         });
 
-        let mediaURL = result.secure_url;
-        return mediaURL;
-
     } catch (error) {
-        console.log("Error in the uploadMedia, ", error);
+        console.error("Error in uploadMedia:", error.message);
         return null;
     }
-}
+};
 
 module.exports = uploadMedia;

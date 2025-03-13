@@ -15,13 +15,14 @@ import SecondTrimester from "./pages/auth/SecondTrimester";
 import ThirdTrimester from "./pages/auth/ThirdTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
-import PregnancyTracker from "./pages/auth/PregnancyTracker";
-import DailyJournal from "./pages/auth/DailyJournal";
-import ChatBox from "./pages/auth/ChatBox"; // ✅ Ensure this matches the actual filename
-import SupportersPage from "./components/SupportersPage";
+import ThreadAndChatDiscussionPage from "./pages/ThreadAndChatDiscussionPage";
+import Navbar from "../src/components/navbar"
+import ChatBox from '../src/pages/auth/ChatBox';
+import PregnancyTracker from "../src/pages/auth/PregnancyTracker";
+import DailyJournal from "../src/pages/auth/DailyJournal";
 import AskAI from "./pages/auth/AskAI"
-// Import Navbar
-import Navbar from "./components/navbar";
+import SupportersPage from "../src/pages/auth/SupporterRegister"
+
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -65,6 +66,7 @@ function App() {
           <Route path="/register" element={<Register />}></Route>
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
+          <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
 
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />

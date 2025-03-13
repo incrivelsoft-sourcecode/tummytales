@@ -54,7 +54,7 @@ const createUser = async (req, res) => {
 			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
 			{ expiresIn: "1h" } // Token expires in 1 hour
 		);
-		res.status(201).json({ message: "User created successfully!", token, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
+		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
 	} catch (err) {
 		res.status(500).json({ message: err.message });
 	}
@@ -84,7 +84,7 @@ const loginUser = async (req, res) => {
 			{ expiresIn: '1d' }
 		);
 
-		res.json({ message: "Login successfull", token, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
+		res.json({ message: "Login successfull", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
 	} catch (err) {
 		res.status(500).json({ message: err.message });
 	}
@@ -181,7 +181,7 @@ const googleCallback = async (req, res) => {
 			process.env.JWT_SECRET,
 			{ expiresIn: '1d' }
 		);
-		res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+		res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
 	} catch (error) {
 		console.error("Error in googleCallback:", error);
 		res.status(500).send({ error: "Internal server error..." });

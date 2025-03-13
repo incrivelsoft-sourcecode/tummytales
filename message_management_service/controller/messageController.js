@@ -51,6 +51,7 @@ const setupSocketEvents = () => {
                             });
                         }
                     } catch (uploadError) {
+                        console.log("Error in the sendMessage", uploadError);
                         return socket.emit("error", {
                             type: "MEDIA_UPLOAD_ERROR",
                             message: "Failed to upload media",
@@ -233,9 +234,9 @@ const setupSocketEvents = () => {
         });
 
         // **4. Get All Messages**
-        socket.on("getMessages", async ({ 
-            chatId, 
-            userId, 
+        socket.on("getMessages", async ({
+            chatId,
+            userId,
             limit = 50,  // Default limit
             next = null  // Cursor for pagination
         }) => {
@@ -248,7 +249,7 @@ const setupSocketEvents = () => {
                         details: "No chat ID provided to fetch messages"
                     });
                 }
-        
+
                 if (!userId) {
                     return socket.emit("error", {
                         type: "VALIDATION_ERROR",
@@ -256,7 +257,7 @@ const setupSocketEvents = () => {
                         details: "No user ID provided to fetch messages"
                     });
                 }
-        
+
                 // Validate limit
                 if (limit <= 0 || limit > 100) {
                     return socket.emit("error", {
@@ -265,7 +266,7 @@ const setupSocketEvents = () => {
                         details: "Limit must be between 1 and 100"
                     });
                 }
-        
+
                 // Check if user exists
                 const userExists = await UserDetails.findById(userId);
                 if (!userExists) {
@@ -275,7 +276,7 @@ const setupSocketEvents = () => {
                         details: `No user found with ID: ${userId}`
                     });
                 }
-        
+
                 // Check if chat exists and user is a participant
                 const chat = await DirectMessage.findById(chatId);
                 if (!chat) {
@@ -285,7 +286,7 @@ const setupSocketEvents = () => {
                         details: `No chat found with ID: ${chatId}`
                     });
                 }
-        
+
                 // Verify user is a participant in the chat
                 const isParticipant = chat.participants.some(
                     participant => participant.toString() === userId
@@ -297,31 +298,31 @@ const setupSocketEvents = () => {
                         details: `User ${userId} is not in chat ${chatId}`
                     });
                 }
-        
+
                 // Prepare query for pagination
-                const query = next 
+                const query = next
                     ? { _id: { $lt: next } }  // If next cursor exists, fetch messages older than the cursor
                     : {};
-        
+
                 // Fetch messages with pagination
                 const messages = await Message.find({
                     ...query,
                     parentThread: chatId  // Assuming parentThread references the chat
                 })
-                .populate('sender', 'username email profilePicture')
-                .populate('receiver', 'username email profilePicture')
-                .sort({ timestamp: -1 })  // Sort by most recent first
-                .limit(limit + 1);  // Fetch one extra to determine if there are more messages
-        
+                    .populate('sender', 'user_name email ')
+                    .populate('receiver', 'user_name email ')
+                    .sort({ timestamp: -1 })  // Sort by most recent first
+                    .limit(limit + 1);  // Fetch one extra to determine if there are more messages
+
                 // Determine if there are more messages
                 const hasMore = messages.length > limit;
                 const processedMessages = hasMore ? messages.slice(0, limit) : messages;
-        
+
                 // Prepare next cursor (ID of the last message in this batch)
-                const nextCursor = hasMore 
-                    ? messages[limit - 1]._id 
+                const nextCursor = hasMore
+                    ? messages[limit - 1]._id
                     : null;
-        
+
                 // Emit paginated messages
                 socket.emit("messagesPaginated", {
                     messages: processedMessages,
@@ -338,29 +339,138 @@ const setupSocketEvents = () => {
             }
         });
 
-        // **5. Create Thread**
-        socket.on("createThread", async ({ creator, title, participants }) => {
+        socket.on("onSearchUsers", async ({
+            UserNameOrEmail,
+            page,
+            limit
+        }) => {
             try {
-                const thread = new Thread({ creator, title, participants });
+                const skip = (page - 1) * limit;
+                console.log("onSearchUsers: ", UserNameOrEmail, page, limit);
+        
+                const users = await UserDetails.find({
+                    $or: [
+                        { user_name: UserNameOrEmail }, 
+                        { email: UserNameOrEmail }
+                    ]
+                }).select("_id user_name email role").skip(skip).limit(limit);
+                
+                const totalUsers = await UserDetails.countDocuments({
+                    $or: [
+                        { user_name: UserNameOrEmail }, 
+                        { email: UserNameOrEmail }
+                    ]
+                });
+                
+                socket.emit("usersPaginated", {
+                    totalUsers: totalUsers,
+                    totalPages: Math.ceil(totalUsers/limit),
+                    users: users
+                });
+            } catch (error) {
+                console.error("Error while searching the users:", error);
+                socket.emit("error", { message: "Failed to search users", type: "SEARCH_FAILED", details: error.message });
+            }
+        });
+
+        // **5. Create Thread**
+        socket.on("createThread", async ({ creator, title, participants, file, mimetype }) => {
+            try {
+                console.log("createThread", creator, title, participants, mimetype);
+
+                // Validate that the thread has either a title or a file
+                if (!title && !file) {
+                    return socket.emit("error", {
+                        type: "EMPTY_MESSAGE",
+                        message: "Message must contain either text title or a file"
+                    });
+                }
+
+                // Initialize the object to save in the database
+                const fieldToSave = { creator, title, participants };
+
+                // Handle file upload if a file is provided
+                if (file && mimetype) {
+                    try {
+                        // Convert the base64 file to a buffer
+                        const fileBuffer = Buffer.from(file, "base64");
+
+                        // Upload the file to Cloudinary
+                        const mediaURL = await uploadMedia(fileBuffer, mimetype);
+                        console.log("mediaURL-------------------------------------", mediaURL);
+
+                        // If the file was uploaded successfully, add it to the media array
+                        if (mediaURL) {
+                            fieldToSave.media = [{
+                                url: mediaURL,
+                                type: mimetype.split("/")[0], // e.g., "image", "video", "application"
+                                format: mimetype.split("/")[1] // e.g., "png", "pdf", "mpeg"
+                            }];
+                        }
+                    } catch (uploadError) {
+                        console.log("Error in the createThread: ", uploadError);
+                        return socket.emit("error", {
+                            type: "MEDIA_UPLOAD_ERROR",
+                            message: "Failed to upload media",
+                            details: uploadError.message
+                        });
+                    }
+                }
+
+                // Save the thread to the database
+                const thread = new Thread(fieldToSave);
                 await thread.save();
-                io.emit("threadCreated", thread);
+
+                // Populate the thread with creator and participants details
+                const newThread = await Thread.findById(thread._id)
+                    .populate("creator")
+                    .populate("participants")
+                    .populate({
+                        path: "messages",
+                        populate: {
+                            path: "sender",
+                            model: "UserDetails"
+                        }
+                    });
+
+                // Emit the "threadCreated" event to all clients
+                io.emit("threadCreated", newThread);
             } catch (error) {
                 console.error("Error creating thread:", error);
+                socket.emit("error", {
+                    type: "UNEXPECTED_ERROR",
+                    message: "An unexpected error occurred while creating thread",
+                    details: error.message
+                });
             }
         });
 
         // **6. Reply to a Thread**
-        socket.on("replyToThread", async ({ threadId, sender, content, file }) => {
+        socket.on("replyToThread", async ({ threadId, sender, content, file, mimetype }) => {
             try {
+                // Check if thread exists first
+                const thread = await Thread.findById(threadId);
+                console.log("replyToThread: ", threadId, sender, content)
+                if (!thread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
                 let media = [];
-                if (file) {
-                    const mediaURL = await uploadMedia(file);
-                    if (mediaURL) {
-                        media.push({
-                            url: mediaURL,
-                            type: file.mimetype.split("/")[0],
-                            format: file.mimetype.split("/")[1]
-                        });
+                if (file && mimetype) {
+                    try {
+                        const fileBuffer = Buffer.from(file, "base64");
+
+                        const mediaURL = await uploadMedia(fileBuffer, mimetype);
+
+                        if (mediaURL) {
+                            media.push({
+                                url: mediaURL,
+                                type: file.mimetype.split("/")[0],
+                                format: file.mimetype.split("/")[1]
+                            });
+                        }
+                    } catch (mediaError) {
+                        return socket.emit("error", { message: "Failed to upload media", type: "MEDIA_UPLOAD_FAILED", details: mediaError.message });
                     }
                 }
 
@@ -370,50 +480,271 @@ const setupSocketEvents = () => {
                     media,
                     parentThread: threadId
                 });
-                await message.save();
 
+                await message.save();
+                const populatedMessage = await Message.findById(message._id).populate("sender", "role user_name");
                 await Thread.findByIdAndUpdate(
                     threadId,
                     { $push: { messages: message._id } }
                 );
-
-                io.emit("threadReplyAdded", { threadId, message });
+                io.emit("threadReplyAdded", { threadId, message: populatedMessage });
             } catch (error) {
                 console.error("Error replying to thread:", error);
+                socket.emit("error", { message: "Failed to add reply", type: "REPLY_FAILED", details: error.message });
             }
         });
 
         // **7. Delete a Thread**
         socket.on("deleteThread", async ({ threadId }) => {
             try {
+                // First, check if thread exists
+                const thread = await Thread.findById(threadId);
+                if (!thread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
+                // Get all message IDs associated with the thread
+                const messagesToDelete = thread.messages;
+
+                // Delete all messages first
+                if (messagesToDelete && messagesToDelete.length > 0) {
+                    await Message.deleteMany({ _id: { $in: messagesToDelete } });
+                }
+
+                // Then delete the thread
                 await Thread.findByIdAndDelete(threadId);
+
+                // Notify all clients
                 io.emit("threadDeleted", threadId);
             } catch (error) {
                 console.error("Error deleting thread:", error);
+                socket.emit("error", { message: "Failed to delete thread", type: "DELETE_FAILED", details: error.message });
             }
         });
 
         // **8. Update Thread**
         socket.on("updateThread", async ({ threadId, newTitle }) => {
             try {
+                if (!newTitle || newTitle.trim() === '') {
+                    return socket.emit("error", { message: "Title cannot be empty", type: "INVALID_TITLE" });
+                }
+
                 const updatedThread = await Thread.findByIdAndUpdate(
                     threadId,
                     { title: newTitle },
                     { new: true }
                 );
+
+                if (!updatedThread) {
+                    return socket.emit("error", { message: "Thread not found", type: "THREAD_NOT_FOUND" });
+                }
+
                 io.emit("threadUpdated", updatedThread);
             } catch (error) {
                 console.error("Error updating thread:", error);
+                socket.emit("error", { message: "Failed to update thread", type: "UPDATE_FAILED", details: error.message });
             }
         });
 
-        // **9. Get All Threads**
-        socket.on("getThreads", async () => {
+        socket.on("searchThreads", async ({
+            searchTerm = "",
+            page = 1,
+            limit = 10,
+            includeMessages = true,
+            includeUsers = true
+        }) => {
             try {
-                const threads = await Thread.find().populate("creator participants messages");
+                // Validate input
+                if (page < 1 || limit < 1 || limit > 50) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "Invalid pagination parameters",
+                        details: "Page must be >= 1 and limit must be between 1 and 50"
+                    });
+                }
+
+                const skip = (page - 1) * limit;
+                const searchRegex = new RegExp(searchTerm, 'i');
+
+                // Build query based on search term
+                const query = searchTerm ? {
+                    $or: [
+                        { title: searchRegex } // Search in thread titles
+                    ]
+                } : {};
+
+                // If we need to search in messages or users, we need to perform more complex queries
+                let threadIds = [];
+
+                // Search in messages if requested
+                if (searchTerm && includeMessages) {
+                    const matchingMessages = await Message.find({
+                        content: searchRegex,
+                        parentThread: { $ne: null } // Only include messages associated with threads
+                    });
+
+                    const messageThreadIds = matchingMessages.map(msg => msg.parentThread);
+                    threadIds = [...threadIds, ...messageThreadIds];
+                }
+
+                // Search in users if requested
+                if (searchTerm && includeUsers) {
+                    const matchingUsers = await UserDetails.find({
+                        $or: [
+                            { user_name: searchRegex },
+                            { email: searchRegex }
+                        ]
+                    });
+
+                    const userIds = matchingUsers.map(user => user._id);
+
+                    // Find threads where these users are creators or participants
+                    const threadsWithMatchingUsers = await Thread.find({
+                        $or: [
+                            { creator: { $in: userIds } },
+                            { participants: { $in: userIds } }
+                        ]
+                    });
+
+                    const userThreadIds = threadsWithMatchingUsers.map(thread => thread._id);
+                    threadIds = [...threadIds, ...userThreadIds];
+                }
+
+                // Add thread IDs to query if we found matches in messages or users
+                if (threadIds.length > 0) {
+                    // Add unique thread IDs to our query
+                    const uniqueThreadIds = [...new Set(threadIds.map(id => id.toString()))];
+                    query.$or = query.$or || [];
+                    query.$or.push({ _id: { $in: uniqueThreadIds } });
+                }
+
+                // Count total matching threads for pagination info
+                const totalThreads = await Thread.countDocuments(query);
+
+                // Fetch threads with pagination
+                const threads = await Thread.find(query)
+                    .populate("creator")
+                    .populate("participants")
+                    .populate({
+                        path: "messages",
+                        populate: {
+                            path: "sender",
+                            model: "UserDetails"
+                        }
+                    })
+                    .sort({ createdAt: -1 }) // Most recent first
+                    .skip(skip)
+                    .limit(limit);
+
+                // Add highlight information for matched terms
+                const threadsWithHighlighting = threads.map(thread => {
+                    const threadObj = thread.toObject();
+
+                    // If search term is present and found in the title, add highlighting info
+                    if (searchTerm && thread.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        threadObj.searchMatch = {
+                            field: 'title',
+                            value: thread.title,
+                            term: searchTerm
+                        };
+                    }
+
+                    // Check if this thread was found due to message content match
+                    if (includeMessages && searchTerm) {
+                        const matchingMessage = thread.messages.find(msg =>
+                            msg.content && msg.content.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+
+                        if (matchingMessage && (!threadObj.searchMatch || threadObj.searchMatch.field !== 'title')) {
+                            threadObj.searchMatch = {
+                                field: 'message',
+                                value: matchingMessage.content,
+                                messageId: matchingMessage._id,
+                                term: searchTerm
+                            };
+                        }
+                    }
+
+                    return threadObj;
+                });
+
+                // Emit search results
+                socket.emit("searchResults", {
+                    threads: threadsWithHighlighting,
+                    pagination: {
+                        page,
+                        limit,
+                        totalThreads,
+                        totalPages: Math.ceil(totalThreads / limit),
+                        hasMore: skip + threads.length < totalThreads
+                    },
+                    searchTerm
+                });
+
+            } catch (error) {
+                console.error("Error searching threads:", error);
+                socket.emit("error", {
+                    type: "SEARCH_ERROR",
+                    message: "An error occurred while searching threads",
+                    details: error.message
+                });
+            }
+        });
+
+        // Get paginated threads (enhance the existing getThreads event)
+        socket.on("getThreads", async ({ page = 1, limit = 10 } = {}) => {
+            try {
+                // Validate pagination parameters
+                if (page < 1 || limit < 1 || limit > 50) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "Invalid pagination parameters",
+                        details: "Page must be >= 1 and limit must be between 1 and 50"
+                    });
+                }
+
+                const skip = (page - 1) * limit;
+
+                // Count total threads for pagination info
+                const totalThreads = await Thread.countDocuments();
+
+                // Fetch threads with pagination
+                const threads = await Thread.find()
+                    .populate("creator")
+                    .populate("participants")
+                    .populate({
+                        path: "messages",
+                        populate: {
+                            path: "sender",
+                            model: "UserDetails"
+                        }
+                    })
+                    .sort({ createdAt: -1 }) // Most recent first
+                    .skip(skip)
+                    .limit(limit);
+
+                // For backwards compatibility, still emit allThreads for older clients
                 socket.emit("allThreads", threads);
+
+                // Also emit the new paginatedThreads event
+                socket.emit("paginatedThreads", {
+                    threads,
+                    pagination: {
+                        page,
+                        limit,
+                        totalThreads,
+                        totalPages: Math.ceil(totalThreads / limit),
+                        hasMore: skip + threads.length < totalThreads
+                    }
+                });
+
             } catch (error) {
                 console.error("Error fetching threads:", error);
+                socket.emit("error", {
+                    message: "Failed to fetch threads",
+                    type: "FETCH_FAILED",
+                    details: error.message
+                });
             }
         });
     });

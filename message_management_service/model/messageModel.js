@@ -8,7 +8,7 @@ const MessageSchema = new Schema({
   media: {
     type: [{
       url: { type: String, required: true },
-      type: { type: String, enum: ['image', 'audio', 'video', 'document'], required: true },
+      type: { type: String, enum: ['image', 'audio', 'video', 'document', 'application'], required: true },
       format: { type: String, enum: ['jpeg', 'png', 'svg', 'mp3', 'mp4', 'csv', 'pdf', 'docx', 'gsheet'], required: true },
     }],
     default: [],
@@ -18,15 +18,23 @@ const MessageSchema = new Schema({
 });
 
 const ThreadSchema = new Schema({
-  creator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  creator: { type: Schema.Types.ObjectId, ref: 'UserDetails', required: true },
   title: { type: String, required: true },
+  media: {
+    type: [{
+      url: { type: String, required: true },
+      type: { type: String, enum: ['image', 'audio', 'video', 'document', 'application'], required: true },
+      format: { type: String, enum: ['jpeg', 'png', 'svg', 'mp3', 'mp4', 'csv', 'pdf', 'docx', 'gsheet'], required: true },
+    }],
+    default: [],
+  },
   messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }], 
   participants: [{ type: Schema.Types.ObjectId, ref: 'UserDetails' }], 
   createdAt: { type: Date, default: Date.now },
 });
 
 const DirectMessageSchema = new Schema({
-  participants: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }], 
+  participants: [{ type: Schema.Types.ObjectId, ref: 'UserDetails', required: true }], 
   messages: [{ type: Schema.Types.ObjectId, ref: 'Message' }], 
   createdAt: { type: Date, default: Date.now },
 });
