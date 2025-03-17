@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const chatSchema = new mongoose.Schema({
-    name: { type: String, required: true }, // Chat name like "Chat 1", "Chat 2"
+    name: { type: String, default: "" }, // ✅ Default name to avoid undefined issues
     messages: [
         {
             question: { type: String, required: true },
