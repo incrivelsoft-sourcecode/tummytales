@@ -11,11 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-<<<<<<< HEAD
-    "axios": "^1.8.3",
-=======
     "@google/generative-ai": "^0.24.0",
->>>>>>> 671c8d402f0b1bb8f3fde3ac218adb3734dc54f7
+    "axios": "^1.8.3",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "cros": "^1.0.1",
