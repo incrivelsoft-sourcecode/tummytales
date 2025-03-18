@@ -1,18 +1,39 @@
 // ChatForm.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BiSend, BiPaperclip, BiX } from 'react-icons/bi';
 
 const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMessage }) => {
   const [messageContent, setMessageContent] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
   
   // Update content if we're editing a message
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingMessage) {
       setMessageContent(editingMessage.content || '');
+      // Clear any file selection when editing
+      setMediaFile(null);
+      setPreviewUrl(null);
     }
   }, [editingMessage]);
+
+  // Generate a preview for selected images
+  useEffect(() => {
+    if (!mediaFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    
+    // Only generate previews for images
+    if (mediaFile.type.startsWith('image/')) {
+      const objectUrl = URL.createObjectURL(mediaFile);
+      setPreviewUrl(objectUrl);
+      
+      // Clean up the preview URL when component unmounts or when file changes
+      return () => URL.revokeObjectURL(objectUrl);
+    }
+  }, [mediaFile]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,6 +41,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
     if ((!messageContent.trim() && !mediaFile)) return;
     
     if (editingMessage) {
+      // Editing doesn't support file uploads
       onUpdateMessage(editingMessage._id, messageContent.trim());
       setEditingMessage(null);
     } else {
@@ -29,6 +51,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
     // Reset form
     setMessageContent('');
     setMediaFile(null);
+    setPreviewUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -36,12 +59,70 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      setMediaFile(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Check file size (limit to 5MB for example)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size should not exceed 5MB');
+        return;
+      }
+      
+      setMediaFile(file);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="p-3 bg-white border-t border-gray-300">
+      {/* Preview area for selected media */}
+      {previewUrl && (
+        <div className="mb-3 relative inline-block">
+          <img 
+            src={previewUrl} 
+            alt="Preview" 
+            className="max-h-32 rounded"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setMediaFile(null);
+              setPreviewUrl(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }}
+            className="absolute top-1 right-1 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70"
+          >
+            <BiX size={16} />
+          </button>
+        </div>
+      )}
+      
+      {/* File info for non-image files */}
+      {mediaFile && !previewUrl && (
+        <div className="mb-3 p-2 bg-gray-100 rounded flex justify-between items-center">
+          <div className="flex items-center">
+            <span className="mr-2">
+              {mediaFile.type.includes('pdf') ? '📄' : 
+               mediaFile.type.includes('video') ? '🎥' : 
+               mediaFile.type.includes('audio') ? '🎵' : '📎'}
+            </span>
+            <span className="truncate max-w-xs">{mediaFile.name}</span>
+          </div>
+          <button 
+            type="button"
+            onClick={() => {
+              setMediaFile(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+              }
+            }}
+            className="text-red-500 hover:text-red-700 ml-2"
+          >
+            <BiX size={18} />
+          </button>
+        </div>
+      )}
+      
       <div className="flex items-center">
         {!editingMessage && (
           <button 
@@ -57,6 +138,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
           type="file"
           onChange={handleFileChange}
           className="hidden"
+          accept="image/*, video/*, audio/*, application/pdf"
         />
         <input
           type="text"
@@ -77,25 +159,6 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
           <BiSend size={20} />
         </button>
       </div>
-      
-      {/* Selected file preview */}
-      {mediaFile && (
-        <div className="mt-2 p-2 bg-gray-100 rounded flex justify-between items-center">
-          <span className="truncate text-sm">{mediaFile.name}</span>
-          <button 
-            type="button"
-            onClick={() => {
-              setMediaFile(null);
-              if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-              }
-            }}
-            className="text-red-500 hover:text-red-700 ml-2"
-          >
-            <BiX size={18} />
-          </button>
-        </div>
-      )}
       
       {/* Editing indicator */}
       {editingMessage && (

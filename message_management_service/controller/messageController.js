@@ -16,8 +16,11 @@ const setupSocketEvents = () => {
                     });
                 }
 
+                console.log("messages: ", sender, receiver, content);
+
                 // Check if users exist
-                const isUsersExist = await UserDetails.findByIds([sender, receiver]);
+                const isUsersExist = await UserDetails.find({ _id: { $in: [sender, receiver] } });
+
                 if (isUsersExist.length !== 2) {
                     return socket.emit("error", {
                         type: "USER_NOT_FOUND",
@@ -241,6 +244,8 @@ const setupSocketEvents = () => {
             next = null  // Cursor for pagination
         }) => {
             try {
+                console.log("getMessages: ", chatId, userId);
+        
                 // Validate input
                 if (!chatId) {
                     return socket.emit("error", {
@@ -249,7 +254,7 @@ const setupSocketEvents = () => {
                         details: "No chat ID provided to fetch messages"
                     });
                 }
-
+        
                 if (!userId) {
                     return socket.emit("error", {
                         type: "VALIDATION_ERROR",
@@ -257,7 +262,7 @@ const setupSocketEvents = () => {
                         details: "No user ID provided to fetch messages"
                     });
                 }
-
+        
                 // Validate limit
                 if (limit <= 0 || limit > 100) {
                     return socket.emit("error", {
@@ -266,7 +271,7 @@ const setupSocketEvents = () => {
                         details: "Limit must be between 1 and 100"
                     });
                 }
-
+        
                 // Check if user exists
                 const userExists = await UserDetails.findById(userId);
                 if (!userExists) {
@@ -276,9 +281,9 @@ const setupSocketEvents = () => {
                         details: `No user found with ID: ${userId}`
                     });
                 }
-
+        
                 // Check if chat exists and user is a participant
-                const chat = await DirectMessage.findById(chatId);
+                const chat = await DirectMessage.findById(chatId).populate('messages');
                 if (!chat) {
                     return socket.emit("error", {
                         type: "NOT_FOUND",
@@ -286,7 +291,7 @@ const setupSocketEvents = () => {
                         details: `No chat found with ID: ${chatId}`
                     });
                 }
-
+        
                 // Verify user is a participant in the chat
                 const isParticipant = chat.participants.some(
                     participant => participant.toString() === userId
@@ -298,37 +303,36 @@ const setupSocketEvents = () => {
                         details: `User ${userId} is not in chat ${chatId}`
                     });
                 }
-
-                // Prepare query for pagination
-                const query = next
-                    ? { _id: { $lt: next } }  // If next cursor exists, fetch messages older than the cursor
-                    : {};
-
+        
+                // Prepare query for pagination using message IDs stored in chat
+                let query = { _id: { $in: chat.messages } };
+        
+                if (next) {
+                    query = { $and: [{ _id: { $lt: next } }, { _id: { $in: chat.messages } }] };
+                }
+        
                 // Fetch messages with pagination
-                const messages = await Message.find({
-                    ...query,
-                    parentThread: chatId  // Assuming parentThread references the chat
-                })
-                    .populate('sender', 'user_name email ')
-                    .populate('receiver', 'user_name email ')
-                    .sort({ timestamp: -1 })  // Sort by most recent first
-                    .limit(limit + 1);  // Fetch one extra to determine if there are more messages
-
+                const messages = await Message.find(query)
+                    .populate('sender', 'user_name email')
+                    .populate('receiver', 'user_name email')
+                    .sort({ _id: -1 }) // Use `_id` for pagination sorting
+                    .limit(limit + 1)  // Fetch one extra to check for nextCursor
+                    .lean(); // Improve performance
+        
                 // Determine if there are more messages
                 const hasMore = messages.length > limit;
                 const processedMessages = hasMore ? messages.slice(0, limit) : messages;
-
+        
                 // Prepare next cursor (ID of the last message in this batch)
-                const nextCursor = hasMore
-                    ? messages[limit - 1]._id
-                    : null;
-
+                const nextCursor = hasMore ? messages[limit]._id : null;
+        
                 // Emit paginated messages
                 socket.emit("messagesPaginated", {
                     messages: processedMessages,
                     hasMore,
                     nextCursor
                 });
+        
             } catch (error) {
                 console.error("Error fetching messages:", error);
                 socket.emit("error", {
@@ -338,40 +342,139 @@ const setupSocketEvents = () => {
                 });
             }
         });
-
-        socket.on("onSearchUsers", async ({
-            UserNameOrEmail,
-            page,
-            limit
-        }) => {
-            try {
-                const skip = (page - 1) * limit;
-                console.log("onSearchUsers: ", UserNameOrEmail, page, limit);
         
-                const users = await UserDetails.find({
-                    $or: [
-                        { user_name: UserNameOrEmail }, 
-                        { email: UserNameOrEmail }
-                    ]
-                }).select("_id user_name email role").skip(skip).limit(limit);
-                
-                const totalUsers = await UserDetails.countDocuments({
-                    $or: [
-                        { user_name: UserNameOrEmail }, 
-                        { email: UserNameOrEmail }
-                    ]
+        
+
+        socket.on("getChats", async ({ userId, page = 1, limit = 10 }) => {
+            try {
+                if (!userId) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "User ID is required",
+                        details: "No user ID provided to fetch chats"
+                    });
+                }
+        
+                // Validate limit
+                if (limit <= 0 || limit > 100) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "Invalid limit",
+                        details: "Limit must be between 1 and 100"
+                    });
+                }
+        
+                // Validate page
+                if (page < 1) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "Invalid page number",
+                        details: "Page number must be greater than 0"
+                    });
+                }
+        
+                // Check if user exists
+                const userExists = await UserDetails.findById(userId);
+                if (!userExists) {
+                    return socket.emit("error", {
+                        type: "NOT_FOUND",
+                        message: "User not found",
+                        details: `No user found with ID: ${userId}`
+                    });
+                }
+        
+                // Fetch chats where the user is a participant
+                const chats = await DirectMessage.find({ participants: userId })
+                    .populate({
+                        path: "participants",
+                        select: "_id user_name email" // Fetch only necessary fields
+                    })
+                    .populate({
+                        path: "messages",
+                        options: { sort: { createdAt: -1 }, limit: 1 }, // Get the latest message
+                        populate: {
+                            path: "sender",
+                            select: "_id user_name" // Fetch sender details for last message
+                        }
+                    })
+                    .skip((page - 1) * limit)
+                    .limit(limit)
+                    .sort({ createdAt: -1 }); // Sort by the most recent chat
+        
+                if (!chats.length) {
+                    return socket.emit("error", {
+                        type: "CONVERSATION_NOT_YET",
+                        message: "No conversations found.",
+                        details: `No chat records found for user ID: ${userId}`
+                    });
+                }
+        
+                // Send response
+                socket.emit("chatsPaginated", {
+                    chats,
+                    page,
+                    limit,
+                    hasMore: chats.length === limit // Indicates if there are more results
                 });
-                
-                socket.emit("usersPaginated", {
-                    totalUsers: totalUsers,
-                    totalPages: Math.ceil(totalUsers/limit),
-                    users: users
-                });
+        
             } catch (error) {
-                console.error("Error while searching the users:", error);
-                socket.emit("error", { message: "Failed to search users", type: "SEARCH_FAILED", details: error.message });
+                console.error("Error fetching chats:", error);
+                socket.emit("error", {
+                    type: "SERVER_ERROR",
+                    message: "Internal server error",
+                    details: error.message
+                });
             }
         });
+        
+    
+
+        socket.on("onSearchUsers", async ({ UserNameOrEmail, page = 1, limit = 10 }) => {
+            try {
+                if (!UserNameOrEmail) {
+                    return socket.emit("error", {
+                        type: "VALIDATION_ERROR",
+                        message: "Search query is required",
+                        details: "No username or email provided for search"
+                    });
+                }
+        
+                const skip = (page - 1) * limit;
+                // console.log("onSearchUsers: ", UserNameOrEmail, page, limit);
+        
+                // Case-insensitive search using regex
+                const query = {
+                    $or: [
+                        { user_name: { $regex: new RegExp(UserNameOrEmail, "i") } }, 
+                        { email: { $regex: new RegExp(UserNameOrEmail, "i") } }
+                    ]
+                };
+        
+                // Fetch users with pagination
+                const users = await UserDetails.find(query)
+                    .select("_id user_name email role")
+                    .skip(skip)
+                    .limit(limit);
+        
+                // Count total matching users
+                const totalUsers = await UserDetails.countDocuments(query);
+        
+                socket.emit("usersPaginated", {
+                    totalUsers: totalUsers,
+                    totalPages: Math.ceil(totalUsers / limit),
+                    users: users
+                });
+        
+            } catch (error) {
+                console.error("Error while searching the users:", error);
+                socket.emit("error", { 
+                    type: "SEARCH_FAILED", 
+                    message: "Failed to search users", 
+                    details: error.message 
+                });
+            }
+        });
+        
 
         // **5. Create Thread**
         socket.on("createThread", async ({ creator, title, participants, file, mimetype }) => {

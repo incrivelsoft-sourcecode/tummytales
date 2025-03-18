@@ -32,10 +32,18 @@ const userSchema = new mongoose.Schema(
         ref: "UserDetails",
       },
     ],
+    referal_emails: [{
+      type: String,
+      default: [],
+    }],
     referal_code: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserDetails",
       default: null,
+    },
+    isActive: {
+      type: Boolean,
+      default: true
     },
     permissions: {
       type: [String],

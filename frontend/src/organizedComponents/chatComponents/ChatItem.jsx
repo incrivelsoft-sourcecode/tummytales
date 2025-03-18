@@ -3,6 +3,8 @@ import React from 'react';
 import { format } from 'date-fns';
 
 const ChatItem = ({ chat, currentUser, isActive, onClick }) => {
+
+  console.log("Chats: ", chat);
   // Find the other user in the chat (not the current user)
   const otherUser = chat.participants.find(
     participant => participant._id !== currentUser._id

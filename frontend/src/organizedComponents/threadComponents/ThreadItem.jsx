@@ -17,13 +17,12 @@ const ThreadItem = ({
     return format(date, 'PPp');
   };
 
-  // Display thread title with highlight or truncation
+  // Display thread title with at least 20 characters visible by default
   const displayTitle = () => {
-    const baseLength = 20;
+    const baseLength = 30;
     const widthFactor = sidebarWidth / 256;
-    const maxLength = Math.floor(baseLength * widthFactor);
-    
-    // If we have a highlighted title from search, use it
+    const maxLength = Math.max(baseLength, Math.floor(baseLength * widthFactor)); // Ensure at least 20 characters
+
     if (thread.highlightedTitle) {
       return isExpanded ? (
         <div dangerouslySetInnerHTML={{ __html: thread.highlightedTitle }} />
@@ -35,12 +34,12 @@ const ThreadItem = ({
         }} />
       );
     }
-    
-    // Otherwise use regular title with truncation
+
+    // Ensure at least 20 characters are visible before truncation
     if (isExpanded || thread.title.length <= maxLength) {
       return thread.title;
     }
-    
+
     return (
       <>
         {thread.title.substring(0, maxLength)}
@@ -48,7 +47,7 @@ const ThreadItem = ({
           className="text-purple-600 cursor-pointer ml-1"
           onClick={(e) => onToggleExpansion(thread._id, e)}
         >
-          ....
+          ...
         </span>
       </>
     );

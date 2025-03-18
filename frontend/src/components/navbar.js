@@ -135,9 +135,9 @@ const Navbar = () => {
               </li>
               {isLoggedIn ? (
                 <li
-                  className="px-4 py-2 hover:bg-red-500 text-white cursor-pointer"
+                  className="px-4 py-2 hover:bg-red-500 text-black cursor-pointer"
                   onClick={() => {
-                    localStorage.removeItem("token");
+                    localStorage.clear();
                     setIsLoggedIn(false);
                     setShowDropdown(false);
                     navigate("/home");

@@ -20,7 +20,7 @@ import Navbar from "../src/components/navbar"
 import ChatBox from '../src/pages/auth/ChatBox';
 import PregnancyTracker from "../src/pages/auth/PregnancyTracker";
 import DailyJournal from "../src/pages/auth/DailyJournal";
-import SupportersPage from "../src/pages/auth/SupporterRegister"
+import SupportersPage from "../src/components/SupportersPage"
 
 
 function App() {
@@ -30,10 +30,12 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get("token");
     const userName = urlParams.get("userName");
+    const userId = urlParams.get("userId");
     const role = urlParams.get("role");
 
     if (token && userName) {
       localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
       localStorage.setItem("userName", userName);
       localStorage.setItem("role", role);
       window.history.replaceState({}, document.title, "/"); // Removes query params without reload

@@ -19,23 +19,39 @@ passport.use(
         const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
         console.log("State received in callback:", state);
 
-        const { user_name, role, referral_code, permissions = [] } = state;
+        let { user_name, role, referal_code, permissions } = state;
 
-        // Validate role
+        console.log("Email:", profile.emails[0].value);
         
-console.log("email", profile.emails[0].value)
-        let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.emails[0].value }] });
+        let user = await User.findOne({
+          $or: [{ googleId: profile.id }, { email: profile.emails[0].value }]
+        });
 
-        console.log("Existing user ", user);
+        console.log("Existing user:", user);
+
         if (!user) {
-          // Validate referral_code if role is "supporter"
-          if (!["mom", "supporter"].includes(role)) {
-            return done(new Error("Invalid role. Must be 'mom' or 'supporter'"), null);
-          }
+          let existingMom = null;
+          // Validate required fields
+        if (!user_name || !role) {
+          return done(new Error("user_name or role is missing."), null);
+        }
+        if (!["mom", "supporter"].includes(role)) {
+          return done(new Error("Invalid role. Must be 'mom' or 'supporter'."), null);
+        }
+
+        // Convert permissions to an array if it's a string
+        if (typeof permissions === "string") {
+          permissions = permissions.split(",").map((perm) => perm.trim());
+        }
+
           if (role === "supporter") {
-            const existingMom = await User.findById(referral_code);
+            if (!referal_code) {
+              return done(new Error("Referral code is required for supporters."), null);
+            }
+
+            existingMom = await User.findById(referal_code);
             if (!existingMom) {
-              return done(new Error(`Invalid referral code: ${referral_code}`), null);
+              return done(new Error(`Invalid referral code: ${referal_code}`), null);
             }
           }
 
@@ -45,10 +61,17 @@ console.log("email", profile.emails[0].value)
             email: profile.emails[0].value,
             googleId: profile.id,
             role,
-            ...(role === "supporter" && { referral_code, permissions }),
+            ...(role === "supporter" && { referal_code, permissions }),
           });
 
           await user.save();
+
+          // Add supporter to mom's referrals
+          if (role === "supporter" && existingMom) {
+            existingMom.mom_referals = existingMom.mom_referals || [];
+            existingMom.mom_referals.push(user._id);
+            await existingMom.save();
+          }
         }
 
         done(null, user);
@@ -58,7 +81,6 @@ console.log("email", profile.emails[0].value)
     }
   )
 );
-
 
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
