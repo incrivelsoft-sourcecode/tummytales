@@ -20,8 +20,8 @@ import Navbar from "../src/components/navbar"
 import ChatBox from '../src/pages/auth/ChatBox';
 import PregnancyTracker from "../src/pages/auth/PregnancyTracker";
 import DailyJournal from "../src/pages/auth/DailyJournal";
-import SupportersPage from "../src/components/SupportersPage"
-
+import SupportersPage from "../src/pages/auth/SupporterRegister"
+import AskAI from "./pages/auth/AskAI"
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -67,7 +67,7 @@ function App() {
           <Route path="/register" element={<Register />}></Route>
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
-
+          <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
