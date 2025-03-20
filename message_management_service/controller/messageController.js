@@ -6,7 +6,7 @@ const { io, getReceiverSocketId } = require("../socket/socket.js");
 const setupSocketEvents = () => {
     io.on("connection", (socket) => {
         // **1. Send Message (Text or Media)**
-        socket.on("sendMessage", async ({ sender, receiver, content, file }) => {
+        socket.on("sendMessage", async ({ sender, receiver, content, file, mimetype }) => {
             try {
                 // Validate input parameters
                 if (!sender || !receiver) {
@@ -43,18 +43,26 @@ const setupSocketEvents = () => {
 
                 // Handle media upload
                 let media = [];
-                if (file) {
+                // Handle file upload if a file is provided
+                if (file && mimetype) {
                     try {
-                        const mediaURL = await uploadMedia(file);
+                        // Convert the base64 file to a buffer
+                        const fileBuffer = Buffer.from(file, "base64");
+
+                        // Upload the file to Cloudinary
+                        const mediaURL = await uploadMedia(fileBuffer, mimetype);
+                        console.log("mediaURL-------------------------------------", mediaURL);
+
+                        // If the file was uploaded successfully, add it to the media array
                         if (mediaURL) {
-                            media.push({
+                            media = [{
                                 url: mediaURL,
-                                type: file.mimetype.split("/")[0],
-                                format: file.mimetype.split("/")[1]
-                            });
+                                type: mimetype.split("/")[0], // e.g., "image", "video", "application"
+                                format: mimetype.split("/")[1] // e.g., "png", "pdf", "mpeg"
+                            }];
                         }
                     } catch (uploadError) {
-                        console.log("Error in the sendMessage", uploadError);
+                        console.log("Error in the sendMessage: ", uploadError);
                         return socket.emit("error", {
                             type: "MEDIA_UPLOAD_ERROR",
                             message: "Failed to upload media",
@@ -391,11 +399,7 @@ const setupSocketEvents = () => {
                     })
                     .populate({
                         path: "messages",
-                        options: { sort: { createdAt: -1 }, limit: 1 }, // Get the latest message
-                        populate: {
-                            path: "sender",
-                            select: "_id user_name" // Fetch sender details for last message
-                        }
+                        options: { sort: { timestamp: -1 }, limit: 1 }, // Get the latest message
                     })
                     .skip((page - 1) * limit)
                     .limit(limit)
@@ -479,7 +483,7 @@ const setupSocketEvents = () => {
         // **5. Create Thread**
         socket.on("createThread", async ({ creator, title, participants, file, mimetype }) => {
             try {
-                console.log("createThread", creator, title, participants, mimetype);
+                console.log("createThread", mimetype);
 
                 // Validate that the thread has either a title or a file
                 if (!title && !file) {
@@ -500,8 +504,7 @@ const setupSocketEvents = () => {
 
                         // Upload the file to Cloudinary
                         const mediaURL = await uploadMedia(fileBuffer, mimetype);
-                        console.log("mediaURL-------------------------------------", mediaURL);
-
+                       
                         // If the file was uploaded successfully, add it to the media array
                         if (mediaURL) {
                             fieldToSave.media = [{

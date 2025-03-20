@@ -1,5 +1,3 @@
-
-// Updated ChatsSection.jsx with ChatItem integration
 import React, { forwardRef } from 'react';
 import ChatItem from './ChatItem';
 
@@ -9,8 +7,18 @@ const ChatsSection = forwardRef(({
   isExpanded,
   onToggleSection,
   activeChatId,
-  onChatSelect
+  onChatSelect,
+  isLoading,
+  onlineUsers = [] // Add this prop to receive online users
 }, ref) => {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
+  
   return (
     <div className="mb-4 flex-shrink-0">
       <button
@@ -29,7 +37,7 @@ const ChatsSection = forwardRef(({
           <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
         </svg>
       </button>
-      
+     
       {/* Chats Content */}
       <div
         ref={ref}
@@ -40,12 +48,13 @@ const ChatsSection = forwardRef(({
         ) : (
           <ul>
             {chats.map((chat) => (
-              <ChatItem 
-                key={chat._id} 
-                chat={chat} 
+              <ChatItem
+                key={chat._id}
+                chat={chat}
                 currentUser={currentUser}
                 isActive={chat._id === activeChatId}
                 onClick={(chat, otherUser) => onChatSelect(chat, otherUser)}
+                onlineUsers={onlineUsers} // Pass online users to ChatItem
               />
             ))}
           </ul>

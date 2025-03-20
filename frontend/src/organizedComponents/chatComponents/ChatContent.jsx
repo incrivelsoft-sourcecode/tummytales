@@ -1,7 +1,6 @@
-// ChatContent.jsx
 import React from 'react';
 import { BiEdit, BiTrash } from 'react-icons/bi';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 
 const ChatContent = ({ 
   messages, 
@@ -14,6 +13,19 @@ const ChatContent = ({
   // Format timestamp for messages
   const formatTime = (timestamp) => {
     return format(new Date(timestamp), 'h:mm a');
+  };
+
+  // Format date for headers
+  const formatDateHeader = (timestamp) => {
+    const date = new Date(timestamp);
+    
+    if (isToday(date)) {
+      return 'Today';
+    } else if (isYesterday(date)) {
+      return 'Yesterday';
+    } else {
+      return format(date, 'EEEE, MMMM d, yyyy'); // "Monday, January 1, 2025"
+    }
   };
 
   if (!selectedUser) {
@@ -46,9 +58,49 @@ const ChatContent = ({
     );
   }
 
+  // Group messages by date
+  const groupedMessages = [];
+  let currentDateString = null;
+
+  messages.forEach((message, index) => {
+    const messageDate = new Date(message.timestamp);
+    const messageDateString = format(messageDate, 'yyyy-MM-dd');
+    
+    // If this is a new date or the first message, add a date header
+    if (messageDateString !== currentDateString) {
+      currentDateString = messageDateString;
+      
+      // Add the date header
+      groupedMessages.push({
+        type: 'date-header',
+        date: messageDate,
+        id: `date-${messageDateString}`
+      });
+    }
+    
+    // Add the message
+    groupedMessages.push({
+      type: 'message',
+      data: message
+    });
+  });
+
   return (
     <div className="flex flex-col space-y-4">
-      {messages.map(message => {
+      {groupedMessages.map(item => {
+        // Render date header
+        if (item.type === 'date-header') {
+          return (
+            <div key={item.id} className="flex justify-center my-4">
+              <div className="bg-gray-200 px-4 py-1 rounded-full text-sm text-gray-600 font-medium">
+                {formatDateHeader(item.date)}
+              </div>
+            </div>
+          );
+        }
+        
+        // Render message
+        const message = item.data;
         const isCurrentUser = message.sender._id === currentUser._id || message.sender === currentUser._id;
         
         return (

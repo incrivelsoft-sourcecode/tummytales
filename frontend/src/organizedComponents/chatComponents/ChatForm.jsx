@@ -1,4 +1,3 @@
-// ChatForm.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { BiSend, BiPaperclip, BiX } from 'react-icons/bi';
 
@@ -6,6 +5,8 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
   const [messageContent, setMessageContent] = useState('');
   const [mediaFile, setMediaFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [fileData, setFileData] = useState(null);
+  const [mimetype, setMimetype] = useState("");
   const fileInputRef = useRef(null);
   
   // Update content if we're editing a message
@@ -14,7 +15,9 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
       setMessageContent(editingMessage.content || '');
       // Clear any file selection when editing
       setMediaFile(null);
+      setMimetype(null);
       setPreviewUrl(null);
+      setFileData(null);
     }
   }, [editingMessage]);
 
@@ -38,20 +41,21 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if ((!messageContent.trim() && !mediaFile)) return;
+    if ((!messageContent.trim() && !fileData)) return;
     
     if (editingMessage) {
       // Editing doesn't support file uploads
       onUpdateMessage(editingMessage._id, messageContent.trim());
       setEditingMessage(null);
     } else {
-      onSendMessage(messageContent.trim(), mediaFile);
+      onSendMessage(messageContent.trim(), fileData, mimetype);
     }
     
     // Reset form
     setMessageContent('');
     setMediaFile(null);
     setPreviewUrl(null);
+    setFileData(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -59,7 +63,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
-      const file = e.target.files[0];
+      const file = e.target.files[0]; // Get first file
       
       // Check file size (limit to 5MB for example)
       if (file.size > 5 * 1024 * 1024) {
@@ -68,6 +72,19 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
       }
       
       setMediaFile(file);
+      
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setFileData({     
+          base64: reader.result.split(",")[1],
+        });
+        setMimetype(file.type);
+      };
+      reader.onerror = (error) => {
+        console.error("File conversion error:", error);
+      };
     }
   };
 
@@ -86,6 +103,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
             onClick={() => {
               setMediaFile(null);
               setPreviewUrl(null);
+              setFileData(null);
               if (fileInputRef.current) {
                 fileInputRef.current.value = '';
               }
@@ -112,6 +130,7 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
             type="button"
             onClick={() => {
               setMediaFile(null);
+              setFileData(null);
               if (fileInputRef.current) {
                 fileInputRef.current.value = '';
               }
@@ -149,9 +168,9 @@ const ChatForm = ({ onSendMessage, onUpdateMessage, editingMessage, setEditingMe
         />
         <button 
           type="submit"
-          disabled={(!messageContent.trim() && !mediaFile)}
+          disabled={(!messageContent.trim() && !fileData)}
           className={`p-2 rounded-full ${
-            (!messageContent.trim() && !mediaFile) 
+            (!messageContent.trim() && !fileData) 
               ? 'bg-gray-200 text-gray-400' 
               : 'bg-purple-500 text-white hover:bg-purple-600'
           }`}

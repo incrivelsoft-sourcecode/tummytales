@@ -13,6 +13,7 @@ const ChatPage = ({ userId, userName }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [chats, setChats] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [chatExpanded, setChatExpanded] = useState(true);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -21,6 +22,7 @@ const ChatPage = ({ userId, userName }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
   const socketRef = useRef(null);
   const sidebarRef = useRef(null);
   const messageContainerRef = useRef(null);
@@ -74,6 +76,14 @@ const ChatPage = ({ userId, userName }) => {
       // Refresh chat list to show new chat
       socketRef.current.emit('getChats', { userId: currentUser._id });
     });
+
+    socketRef.current.on("getOnlineUsers", (userIds) => {
+      console.log("Online users:", userIds);
+      setOnlineUsers(userIds);
+    });
+
+    // Request online users when component mounts
+    socketRef.current.emit("requestOnlineUsers");
     
     // Message updated event
     socketRef.current.on('messageUpdated', (updatedMessage) => {
@@ -90,6 +100,7 @@ const ChatPage = ({ userId, userName }) => {
     socketRef.current.on('chatsPaginated', (data) => {
       console.log("chatsPaginated", data);
       setChats(data.chats || []);
+      setIsLoading(false);
     });
 
     // User search results
@@ -106,12 +117,14 @@ const ChatPage = ({ userId, userName }) => {
       socketRef.current.off('messageDeleted');
       socketRef.current.off('chatsPaginated');
       socketRef.current.off('usersPaginated');
+      socketRef.current.off("getOnlineUsers");
     };
   }, [currentUser, selectedUser]);
 
   // Fetch chats when user is set
   useEffect(() => {
     if (currentUser && socketRef.current) {
+      setIsLoading(true);
       socketRef.current.emit('getChats', { userId: currentUser._id });
     }
   }, [currentUser]);
@@ -209,14 +222,15 @@ const ChatPage = ({ userId, userName }) => {
   };
 
   // Send a chat message
-  const handleSendMessage = (content, file) => {
-    if ((!content && !file) || !currentUser || !selectedUser) return;
+  const handleSendMessage = (content, file, mimetype) => {
+    if ((!content && !file && !mimetype) || !currentUser || !selectedUser) return;
     
     const messageData = {
       sender: currentUser._id,
       receiver: selectedUser._id,
       content: content,
-      file: file
+      file: file?.base64,
+      mimetype: mimetype
     };
 
     socketRef.current.emit('sendMessage', messageData);
@@ -265,6 +279,8 @@ const ChatPage = ({ userId, userName }) => {
               onToggleSection={() => setChatExpanded(!chatExpanded)}
               activeChatId={currentChatId}
               onChatSelect={handleChatSelect}
+              isLoading={isLoading}
+              onlineUsers={onlineUsers}
             />
           </div>
         </div>
