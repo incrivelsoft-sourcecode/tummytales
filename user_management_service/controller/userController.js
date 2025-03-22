@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require("axios");
 const User = require('../model/User.js');
+const UserDetails = require('../model/User.js');
 //const redisClient = require("../config/redisClient");
 
 
@@ -188,37 +190,135 @@ const googleCallback = async (req, res) => {
 	}
 };
 
+const referSupporter = async (req, res) => {
+	try {
+		const supporters = req.body.supporters;
+
+		// Validate request body
+		if (!Array.isArray(supporters) || supporters.length === 0) {
+			return res.status(400).send({ error: "An array of supporters (email, permissions, role) is required." });
+		}
+
+		// Validate each supporter
+		for (const supporter of supporters) {
+			const { email, permissions, role } = supporter;
+			if (!email || !permissions || !role) {
+				return res.status(400).send({ error: "Each supporter must have email, permissions, and role." });
+			}
+		}
+
+		await Promise.all(supporters.map(supporter => 
+			UserDetails.findByIdAndUpdate(
+				req.user._id,
+				{ $push: { referal_emails: supporter.email } }, 
+				{ new: true, runValidators: true }
+			)
+		));
+
+		const referralName = req.user.user_name;
+		const referal_code = req.user.userId;
+
+		// Prepare request payload
+		const requestData = {
+			supporters,
+			referralName,
+			referal_code
+		};
+
+		// Send referral request
+		const response = await axios.post(`${process.env.MAIL_SERVICE_URL}/mail/send-referal`, requestData);
+
+		return res.status(200).send(response.data);
+	} catch (error) {
+		console.error("Error in referSupporter:", error);
+		res.status(500).send({ error: "Internal server error." });
+	}
+};
+
+
+const getReferedSupporters = async (req, res) => {
+	try {
+		const referal_code = req.user.userId;
+		const referedSupporters = await UserDetails.find({ referal_code }).select("_id user_name email permissions referal_code");
+		res.status(200).send({ referedSupporters });
+	} catch (error) {
+		console.error("Error in getReferedSupporters:", error);
+		res.status(500).send({ error: "Internal server error." });
+	}
+}
+
+const editPermissionOfSuppoter = async(req, res) => {
+    try {
+        const { permissions } = req.body;
+        const {id} = req.params;
+        
+        // Fixed validation - should check if permissions exists AND has length > 0
+        if(!permissions || !(permissions.length > 0))
+        {
+            return res.status(400).send({error: "permission is required..."});
+        }
+        
+        const updateSupporter = await UserDetails.findByIdAndUpdate(id, {permissions}, {new: true, runValidators: true});
+        if(!updateSupporter)
+        {
+            return res.status(404).send({error: `Supporter not found with id: ${id}`});
+        }
+        res.status(200).send({message: "Supporter permissions have updated...", updatedSupporter: updateSupporter});
+    } catch (error) {
+        console.error("Error in editPermissionOfSuppoter:", error);
+        res.status(500).send({ error: "Internal server error." });
+    }
+}
+
+const deleteSupporter = async(req, res) => {
+	try {
+		const {id} = req.params;
+		const deleteSuppoter = await UserDetails.findOneAndDelete(id);
+		if(!deleteSuppoter)
+		{
+			return res.status(404).send({error: `Supporter not found with id: ${id}`});
+		}
+		res.status(200).send({message: "Requested, supporter have deleted.."})
+	} catch (error) {
+		console.error("Error in deleteSupporter:", error);
+		res.status(500).send({ error: "Internal server error." });
+	}
+}
+
+
+
+
 // const checkUsernameAvailability = async (req, res) => {
 // 	const { user_name } = req.query;
-  
+
 // 	if (!user_name || user_name.length < 3) {
 // 	  return res.status(400).json({ message: "Invalid username" });
 // 	}
-  
+
 // 	try {
 // 	  // ✅ Use `await` instead of callback-based `get`
 // 	  const cachedUsername = await redisClient.get(`username:${user_name}`);
-  
+
 // 	  if (cachedUsername !== null) {
 // 		return res.status(200).json({ available: false, message: "Username already taken" });
 // 	  }
-  
+
 // 	  // If not in Redis, check MongoDB
 // 	  const existingUser = await User.findOne({ user_name });
-  
+
 // 	  if (existingUser) {
 // 		await redisClient.set(`username:${user_name}`, "true", { EX: 3600 }); // Store in Redis for 1 hour
 // 		return res.status(200).json({ available: false, message: "Username already taken" });
 // 	  }
-  
+
 // 	  res.status(200).json({ available: true, message: "Username available" });
 // 	} catch (err) {
 // 	  console.log("❌ Error in checkUsernameAvailability:", err);
 // 	  res.status(500).json({ message: "Server error" });
 // 	}
 //   };
-  
 
 
 
-module.exports = { googleCallback, deleteUser, updatePassword, getUser, getAllUsers, loginUser, createUser }
+
+module.exports = { googleCallback, deleteUser, updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }

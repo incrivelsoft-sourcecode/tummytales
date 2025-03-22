@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5002;
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "https://tummytales.vercel.app/" }));
 
 // Setup routes (if any)
 app.get('/', (req, res) => {

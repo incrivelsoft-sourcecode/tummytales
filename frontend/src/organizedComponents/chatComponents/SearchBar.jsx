@@ -1,35 +1,64 @@
 // SearchBar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BiSearch, BiX } from 'react-icons/bi';
+import { io } from 'socket.io-client';
 
 const SearchBar = ({ onUserSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [socket, setSocket] = useState(null);
 
+  // Initialize socket on component mount
   useEffect(() => {
-    if (searchTerm.length < 2) {
+    // Get the user ID from localStorage or context
+    // For simplicity, we'll assume it's in localStorage
+    const userId = localStorage.getItem('userId') || "";
+    if (!userId) return;
+
+    // Connect to socket
+    const socketInstance = io(`${process.env.REACT_APP_CHAT_BACKEND_URL}?userId=${userId}`);
+    setSocket(socketInstance);
+
+    // Setup listener for user search results
+    socketInstance.on('usersPaginated', (data) => {
+      setSearchResults(data.users || []);
+      console.log("usersPaginated", data);
+      setIsLoading(false);
+    });
+
+    socketInstance.on('error', (error) => {
+      console.error('Search error:', error);
+      setIsLoading(false);
+    });
+
+    return () => {
+      socketInstance.off('usersPaginated');
+      socketInstance.off('error');
+      socketInstance.disconnect();
+    };
+  }, []);
+
+  // Handle search
+  useEffect(() => {
+    if (!socket || searchTerm.length < 2) {
       setSearchResults([]);
       return;
     }
 
-    const searchUsers = async () => {
-      setIsLoading(true);
-      try {
-        // Replace with your API endpoint
-        const response = await fetch(`/api/users/search?term=${searchTerm}`);
-        const data = await response.json();
-        setSearchResults(data);
-      } catch (error) {
-        console.error('Error searching users:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    setIsLoading(true);
+    
+    // Use debounce to avoid frequent searches
+    const debounceTimer = setTimeout(() => {
+      socket.emit('onSearchUsers', {
+        UserNameOrEmail: searchTerm,
+        page: 1,
+        limit: 10
+      });
+    }, 400);
 
-    const debounceTimer = setTimeout(searchUsers, 300);
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+  }, [searchTerm, socket]);
 
   const clearSearch = () => {
     setSearchTerm('');

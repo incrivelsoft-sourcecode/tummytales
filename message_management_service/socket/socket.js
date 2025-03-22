@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const http = require("http");
 const express = require("express");
+const User = require("../model/User.js");
 
 // Initialize Express and HTTP server
 const app = express();
@@ -27,60 +28,46 @@ const getReceiverSocketId = (receiverId) => {
 
 // Socket connection setup
 const setupSocketConnection = () => {
-    // Add more detailed logging
-    io.engine.on("connection", (socket) => {
-        console.log("Raw Socket.io engine connection established");
-    });
-
-    io.engine.on("error", (err) => {
-        console.error("Socket.io engine error:", err);
-    });
-
-    // Handle socket connections
-    io.on("connection", (socket) => {
+    io.on("connection", async (socket) => {
         try {
-            console.log("Socket.io connection established. Socket ID:", socket.id);
-            // console.log("Handshake details:", socket.handshake);
+            console.log("Socket.io connection attempt. Socket ID:", socket.id);
             
             const userId = socket.handshake.query.userId;
             console.log("User ID from query:", userId);
             
-            if (userId && userId !== "undefined") {
-                userSocketMap[userId] = socket.id;
-                console.log("Added user to socket map:", userId, "->", socket.id);
-                console.log("Current user socket map:", userSocketMap);
+            if (!userId || userId === "undefined") {
+                console.log("Invalid user ID. Disconnecting socket.");
+                socket.disconnect(true);
+                return;
             }
-            
-            // Set up a ping interval to keep the connection alive
-            const pingInterval = setInterval(() => {
-                socket.emit("ping");
-            }, 20000);
-            
+
+            const existingUser = await User.findById(userId);
+            if (!existingUser) {
+                console.log("User not found. Disconnecting socket.");
+                socket.emit("error", {
+                    type: "NOT_FOUND",
+                    message: "User not found",
+                    details: `No User found with ID: ${userId}`
+                });
+                socket.disconnect(true);
+                return;
+            }
+
+            userSocketMap[userId] = socket.id;
+            console.log("Added user to socket map:", userId, "->", socket.id);
+
             // Emit online users
             io.emit("getOnlineUsers", Object.keys(userSocketMap));
-            
-            // Add test event for debugging
-            socket.on("test", (data) => {
-                console.log("Test event received:", data);
-                socket.emit("testResponse", { message: "Test received!" });
-            });
-            
+
             // Handle disconnection
             socket.on("disconnect", () => {
                 console.log("User disconnected", socket.id);
-                clearInterval(pingInterval); // Clear the ping interval
-                if (userId) {
-                    delete userSocketMap[userId];
-                }
+                delete userSocketMap[userId];
                 io.emit("getOnlineUsers", Object.keys(userSocketMap));
-            });
-            
-            // Handle pong response
-            socket.on("pong", () => {
-                console.log("Received pong from client:", socket.id);
             });
         } catch (error) {
             console.error("Error in connection handler:", error);
+            socket.disconnect(true);
         }
     });
 };
