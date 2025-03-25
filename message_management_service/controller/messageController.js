@@ -3,11 +3,26 @@ const UserDetails = require("../model/User.js")
 const uploadMedia = require("../utils/uploadMedia.js");
 const { io, getReceiverSocketId } = require("../socket/socket.js");
 
+function getFileFormat(mimetype) {
+    const formatMap = {
+        "application/vnd.google-apps.spreadsheet": "gsheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+        "application/vnd.ms-excel": "csv",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "csv",
+    };
+
+    const format = mimetype.split("/")[1];
+
+    return formatMap[mimetype] || (['jpeg', 'png', 'svg', 'svg+xml', 'mp3', 'mpeg', 'mp4', 'csv', 'pdf', 'docx'].includes(format) ? format : null);
+}
+
+
 const setupSocketEvents = () => {
     io.on("connection", (socket) => {
         // **1. Send Message (Text or Media)**
-        socket.on("sendMessage", async ({ sender, receiver, content, file, mimetype }) => {
+        socket.on("sendMessage", async ({ sender, receiver, content, file, mimetype, filename, replyTo }) => {
             try {
+                console.log(mimetype);
                 // Validate input parameters
                 if (!sender || !receiver) {
                     return socket.emit("error", {
@@ -44,13 +59,13 @@ const setupSocketEvents = () => {
                 // Handle media upload
                 let media = [];
                 // Handle file upload if a file is provided
-                if (file && mimetype) {
+                if (file && mimetype && filename) {
                     try {
                         // Convert the base64 file to a buffer
                         const fileBuffer = Buffer.from(file, "base64");
 
                         // Upload the file to Cloudinary
-                        const mediaURL = await uploadMedia(fileBuffer, mimetype);
+                        const mediaURL = await uploadMedia(fileBuffer, mimetype, filename);
                         console.log("mediaURL-------------------------------------", mediaURL);
 
                         // If the file was uploaded successfully, add it to the media array
@@ -58,7 +73,7 @@ const setupSocketEvents = () => {
                             media = [{
                                 url: mediaURL,
                                 type: mimetype.split("/")[0], // e.g., "image", "video", "application"
-                                format: mimetype.split("/")[1] // e.g., "png", "pdf", "mpeg"
+                                format: getFileFormat(mimetype) // e.g., "png", "pdf", "mpeg"
                             }];
                         }
                     } catch (uploadError) {
@@ -70,13 +85,27 @@ const setupSocketEvents = () => {
                         });
                     }
                 }
+                if(replyTo){
+                    const isMessageExisting = await Message.findById(replyTo);
+                    if(!isMessageExisting){
+                        return socket.emit("error", {
+                            type: "MESSAGE_NOT_FOUND",
+                            message: "Failed to reply for specific message.",
+                            details: chatError.message
+                        });
+                    }
+                }
+                else{
+                    replyTo = null;
+                }
 
                 // Create message
                 const message = new Message({
                     sender,
                     receiver,
                     content,
-                    media
+                    media,
+                    replyTo
                 });
 
                 // Check for existing chat or create new one
@@ -399,7 +428,7 @@ const setupSocketEvents = () => {
                     })
                     .populate({
                         path: "messages",
-                        options: { sort: { timestamp: -1 }, limit: 1 }, // Get the latest message
+                        options: { sort: { createdAt: -1 }, limit: 1 }, // Get the latest message
                     })
                     .skip((page - 1) * limit)
                     .limit(limit)

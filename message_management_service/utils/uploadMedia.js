@@ -1,30 +1,40 @@
 const cloudinary = require("../cloudinary/config.js");
 
-const uploadMedia = async (fileBuffer, mimetype) => {
+const uploadMedia = async (fileBuffer, mimetype, originalFilename) => {
     try {
-        if (!fileBuffer || !mimetype) {
+        if (!fileBuffer || !mimetype || !originalFilename) {
             throw new Error("No file data received");
         }
 
-        // Use "auto" to let Cloudinary detect the file type
-        const resourceType = "auto";
+        // Determine the resource type
+        let resourceType = "auto";
+        if (mimetype.includes("image")) {
+            resourceType = "image";
+        } else if (mimetype.includes("video")) {
+            resourceType = "video";
+        } else if (mimetype.includes("audio")) {
+            resourceType = "video"; // Audio files use 'video' resource type
+        } else {
+            resourceType = "raw"; // For other files (PDF, DOCX, etc.)
+        }
 
         return new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                { resource_type: resourceType },
+            cloudinary.uploader.upload_stream(
+                {
+                    resource_type: resourceType,
+                    public_id: originalFilename,
+                    use_filename: true,
+                    unique_filename: false,
+                },
                 (error, result) => {
                     if (error) {
                         console.error("Cloudinary Upload Error:", error.message);
                         reject(new Error("Failed to upload media"));
                     } else {
-                        // Append `fl_attachment=false` to the URL to force inline display
-                        const url = `${result.secure_url}?fl_attachment=false`;
-                        resolve(url);
+                        resolve(result.secure_url);
                     }
                 }
-            );
-
-            uploadStream.end(fileBuffer);
+            ).end(fileBuffer);
         });
 
     } catch (error) {

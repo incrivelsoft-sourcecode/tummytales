@@ -1,3 +1,4 @@
+// ChatsSection.jsx
 import React, { forwardRef } from 'react';
 import ChatItem from './ChatItem';
 
@@ -9,7 +10,7 @@ const ChatsSection = forwardRef(({
   activeChatId,
   onChatSelect,
   isLoading,
-  onlineUsers = [] // Add this prop to receive online users
+  onlineUsers = []
 }, ref) => {
   if (isLoading) {
     return (
@@ -18,7 +19,33 @@ const ChatsSection = forwardRef(({
       </div>
     );
   }
+
+  // Process chats to ensure messages are in reverse order (newest first)
+  const processedChats = chats.map(chat => {
+    if (chat.messages && chat.messages.length > 0) {
+      // Create a new chat object with reversed messages array
+      return {
+        ...chat,
+        messages: [...chat.messages].reverse() // Create a new array and reverse it
+      };
+    }
+    return chat;
+  });
   
+  // Sort chats by the timestamp of their newest message
+  const sortedChats = [...processedChats].sort((a, b) => {
+    const aLastMessage = a.messages && a.messages.length > 0 ? a.messages[0] : null;
+    const bLastMessage = b.messages && b.messages.length > 0 ? b.messages[0] : null;
+    
+    if (!aLastMessage) return 1; // No messages, put at the end
+    if (!bLastMessage) return -1; // Other has no messages
+    
+    const aTime = aLastMessage.updatedAt || aLastMessage.createdAt;
+    const bTime = bLastMessage.updatedAt || bLastMessage.createdAt;
+    
+    return new Date(bTime) - new Date(aTime); // Newest first
+  });
+ 
   return (
     <div className="mb-4 flex-shrink-0">
       <button
@@ -47,14 +74,14 @@ const ChatsSection = forwardRef(({
           <p className="text-gray-500 text-sm px-3 py-2">No direct messages yet.</p>
         ) : (
           <ul>
-            {chats.map((chat) => (
+            {sortedChats.map((chat) => (
               <ChatItem
                 key={chat._id}
                 chat={chat}
                 currentUser={currentUser}
                 isActive={chat._id === activeChatId}
                 onClick={(chat, otherUser) => onChatSelect(chat, otherUser)}
-                onlineUsers={onlineUsers} // Pass online users to ChatItem
+                onlineUsers={onlineUsers}
               />
             ))}
           </ul>

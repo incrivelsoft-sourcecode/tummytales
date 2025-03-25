@@ -1,3 +1,4 @@
+// ChatItem.jsx
 import React from 'react';
 import { format } from 'date-fns';
 
@@ -11,9 +12,9 @@ const ChatItem = ({ chat, currentUser, isActive, onClick, onlineUsers = [] }) =>
   // Check if the other user is online
   const isOnline = onlineUsers.includes(otherUser._id);
   
-  // Get last message if any
+  // Get last message if any - now we get the first message in the array since it's the newest
   const lastMessage = chat.messages && chat.messages.length > 0
-    ? chat.messages[chat.messages.length - 1]
+    ? chat.messages[0] // Get the first message (newest) instead of the last
     : null;
     
   // Format the timestamp
@@ -75,7 +76,7 @@ const ChatItem = ({ chat, currentUser, isActive, onClick, onlineUsers = [] }) =>
         {lastMessage && (
           <div className="flex flex-col items-end ml-2">
             <span className="text-xs text-gray-500">
-              {formatTime(lastMessage.timestamp)}
+            {(lastMessage.updatedAt && lastMessage.updatedAt !== lastMessage.createdAt) ? formatTime(lastMessage.updatedAt) : formatTime(lastMessage.createdAt)}
             </span>
             {/* Unread indicator would go here */}
           </div>
