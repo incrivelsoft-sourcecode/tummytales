@@ -20,8 +20,12 @@ import Navbar from "../src/components/navbar"
 import ChatBox from '../src/pages/auth/ChatBox';
 import PregnancyTracker from "../src/pages/auth/PregnancyTracker";
 import DailyJournal from "../src/pages/auth/DailyJournal";
-import SupportersPage from "../src/pages/auth/SupporterRegister"
-import AskAI from "./pages/auth/AskAI"
+import SupportersPage from "../src/pages/auth/SupporterRegister";
+import AskAI from "./pages/auth/AskAI";
+import Thali from "./pages/auth/Thali";
+import Footer from "../src/components/Footer";
+import MomNetworkPage from "./pages/auth/MomNetwork";
+import AskAmmaPage from "./pages/auth/AskAmma";
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -68,6 +72,10 @@ function App() {
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
           <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
+          <Route path="thali" element={<Thali/>}/>
+          <Route path="mom-network" element={<MomNetworkPage/>}/>
+          <Route path="ask-amma" element={<AskAmmaPage/>}/>
+
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -75,6 +83,7 @@ function App() {
 
       {/* Toast Notifications */}
       <ToastContainer />
+      <Footer/>
     </Router>
   );
 }
