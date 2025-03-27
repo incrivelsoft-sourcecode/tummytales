@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "https://tummytales-g87f.vercel.app" }));
+app.use(cors({ origin: ["https://tummytales-g87f.vercel.app", "http://localhost:3000"] }));
 
 
 app.use(express.json({ limit: '6mb' }));
