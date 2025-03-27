@@ -13,7 +13,11 @@ const AskAI = () => {
   const [editChatName, setEditChatName] = useState("");
   const [menuOpen, setMenuOpen] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
- 
+  const user_name = localStorage.getItem("userName") || ""; // Retrieve stored username
+
+console.log("Retrieved user_name:", user_name); 
+
+
   useEffect(() => {
     fetchChats();
   }, []);
@@ -21,7 +25,7 @@ const AskAI = () => {
   const fetchChats = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chats`
+        `${process.env.REACT_APP_BACKEND_URL}/ai/chats?user_name=${user_name}`
       );
       setChats(res.data.Aichats || []);
     } catch (error) {
@@ -33,7 +37,8 @@ const AskAI = () => {
   const handleNewChat = async () => {
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`
+        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+        { user_name }
       );
       const newChat = res.data;
       setChats((prevChats) => [
@@ -53,7 +58,7 @@ const AskAI = () => {
     if (!chatData[chatId]) {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${chatId}`
+          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${chatId}?user_name=${user_name}`
         );
         setChatData((prevChatData) => ({
           ...prevChatData,
@@ -81,7 +86,8 @@ const AskAI = () => {
       // ✅ If no chat is selected, create a new one
       if (!chatId) {
         const newChatRes = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`
+          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+          { user_name }
         );
         chatId = newChatRes.data.chatId; // Get new chat ID from response
         setCurrentChatId(chatId);
@@ -101,6 +107,7 @@ const AskAI = () => {
         {
           message: userMessage,
           chatId,
+          user_name 
         }
       );
  
@@ -138,7 +145,9 @@ const AskAI = () => {
     try {
       await axios.put(
         `${process.env.REACT_APP_BACKEND_URL}/ai/ai/chat/${chatId}`,
-        { name: editChatName }
+        { name: editChatName,
+          user_name
+         }
       );
  
       setChats((prevChats) =>
@@ -162,7 +171,7 @@ const AskAI = () => {
  
     try {
       await axios.delete(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${confirmDelete}`
+        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${confirmDelete}?user_name=${user_name}`
       );
       setChats((prevChats) =>
         prevChats.filter((chat) => chat._id !== confirmDelete)

@@ -7,10 +7,10 @@ const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
 
 const askAI = async (req, res) => {
     try {
-        const { message, chatId } = req.body;
+        const { message, chatId,user_name } = req.body;
 
-        if (!chatId) {
-            return res.status(400).json({ error: "Chat ID is required" });
+        if (!chatId || !user_name) {
+            return res.status(400).json({ error: "Chat ID and User name are required" });
         }
 
         const response = await together.chat.completions.create({
@@ -20,11 +20,15 @@ const askAI = async (req, res) => {
 
         const aiResponse = response.choices[0].message.content;
 
-        // Find chat and update it
-        const chat = await AIChat.findById(chatId);
-        if (!chat) return res.status(404).json({ error: "Chat not found" });
+        // Find chat that belongs to this user
+        const chat = await AIChat.findOne({ _id: chatId, user_name });
+        if (!chat) return res.status(404).json({ error: "Chat not found or access denied" });
 
-        // ✅ If this is the first message, update chat name
+        // // Find chat and update it
+        // const chat = await AIChat.findById(chatId);
+        // if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        //  If this is the first message, update chat name
         if (!chat.name || chat.name === "New Chat") {
             chat.name = message.length > 30 ? message.substring(0, 30) + "..." : message;
         }
@@ -87,7 +91,13 @@ const askAI = async (req, res) => {
 
 const createNewAIChat = async (req, res) => {
     try {
-        const newChat = new AIChat({ name: "", messages: [] }); // Start with an empty name
+
+        const { user_name } = req.body; 
+
+        if (!user_name) {
+            return res.status(400).json({ error: "User name is required" });
+        }
+        const newChat = new AIChat({ user_name, name: "", messages: [] }); // Start with an empty name
         await newChat.save();
         res.json({ chatId: newChat._id, name: "New Chat" }); // Return "New Chat" as default
     } catch (error) {
@@ -99,7 +109,12 @@ const createNewAIChat = async (req, res) => {
 
 const getAllchats = async (req, res) => {
     try {
-        const chats = await AIChat.find({}, "_id name createdAt")
+        const { user_name } = req.query;
+        if (!user_name) {
+            return res.status(400).json({ error: "User name is required" });
+        }
+
+        const chats = await AIChat.find({user_name}, "_id name createdAt")
                                   .sort({ createdAt: -1 }); //Sort by newest first
         res.json({ Aichats: chats });
     } catch (error) {
@@ -111,9 +126,17 @@ const getAllchats = async (req, res) => {
 const getAichatbyid= async(req,res)=>{
     try{
         const { chatId } = req.params;
-        const chat = await AIChat.findById(chatId);
+        const { user_name } = req.query;
+        if (!user_name) {
+            return res.status(400).json({ error: "User name is required" });
+        }
+        // const chat = await AIChat.findById(chatId);
 
-        if (!chat) return res.status(404).json({ error: "Chat not found" });
+        // if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        const chat = await AIChat.findOne({ _id: chatId, user_name });
+
+        if (!chat) return res.status(404).json({ error: "Chat not found or access denied" });
 
         res.json({ messages: chat.messages });
     }catch(error){
@@ -125,19 +148,20 @@ const getAichatbyid= async(req,res)=>{
 const editAIchat = async(req,res)=>{
     try {
         const { chatId } = req.params;
-        const { name } = req.body;
+        const { name,user_name } = req.body;
 
-        if (!name) {
-            return res.status(400).json({ error: "Chat name is required" });
+        if (!name||!user_name) {
+            return res.status(400).json({ error: "Chat name and User name are required" });
         }
 
-        const chat = await AIChat.findByIdAndUpdate(
-            chatId,
+       
+         const chat = await AIChat.findOneAndUpdate(
+            { _id: chatId, user_name },
             { name },
             { new: true }
         );
 
-        if (!chat) return res.status(404).json({ error: "Chat not found" });
+        if (!chat) return res.status(404).json({ error: "Chat not found or access denied" });
 
         res.json({ message: "Chat name updated successfully", chat });
     } catch (error) {
@@ -150,9 +174,16 @@ const deleteAichat = async (req, res) => {
     try {
         const { chatId } = req.params;
 
-        // Check if the chat exists
-        const chat = await AIChat.findById(chatId);
-        if (!chat) return res.status(404).json({ error: "Chat not found" });
+        const { user_name } = req.body; 
+
+        if (!user_name) {
+            return res.status(400).json({ error: "User name is required" });
+        }
+
+        // Find chat belonging to the user
+        const chat = await AIChat.findOne({ _id: chatId, user_name });
+
+        if (!chat) return res.status(404).json({ error: "Chat not found or access denied" });
 
         // Delete the chat
         await AIChat.findByIdAndDelete(chatId);
