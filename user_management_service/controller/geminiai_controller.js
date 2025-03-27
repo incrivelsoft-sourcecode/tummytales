@@ -1,4 +1,189 @@
-const AIChat=require('../model/AskAImodel')
+
+require("dotenv").config();
+const Together = require("together-ai");
+const AIChat = require("../model/AskAImodel");
+
+const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
+
+const askAI = async (req, res) => {
+    try {
+        const { message, chatId } = req.body;
+
+        if (!chatId) {
+            return res.status(400).json({ error: "Chat ID is required" });
+        }
+
+        const response = await together.chat.completions.create({
+            messages: [{ role: "user", content: message }],
+            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+        });
+
+        const aiResponse = response.choices[0].message.content;
+
+        // Find chat and update it
+        const chat = await AIChat.findById(chatId);
+        if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        // ✅ If this is the first message, update chat name
+        if (!chat.name || chat.name === "New Chat") {
+            chat.name = message.length > 30 ? message.substring(0, 30) + "..." : message;
+        }
+
+        chat.messages.push({ question: message, answer: aiResponse });
+        await chat.save();
+
+        res.json({ reply: aiResponse, chatName: chat.name });
+    } catch (error) {
+        console.error("Llama API Error:", error);
+        res.status(500).json({ error: "AI request failed" });
+    }
+};
+
+
+
+
+// const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+
+// const askAI = async (req, res) => {
+//     try {
+//         const { message,chatId } = req.body;
+
+//         if (!chatId) {
+//             return res.status(400).json({ error: "Chat ID is required" });
+//         }
+
+//         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+
+//         const result = await model.generateContent({
+//             contents: [{ parts: [{ text: message }] }],
+//         });
+
+//         const response = result.response.candidates[0].content.parts[0].text; // Extract AI response
+
+//         // Find chat and update it
+//         const chat = await AIChat.findById(chatId);
+//         if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+//          // ✅ If this is the first message, update chat name
+//          if (!chat.name || chat.name === "New Chat") {
+//             chat.name = message.length > 30 ? message.substring(0, 30) + "..." : message; // Trim long names
+//         }
+
+//         chat.messages.push({ question: message, answer: response });
+//         await chat.save();
+
+//        // res.json({ reply: response });
+//        res.json({ reply: response, chatName: chat.name });
+//     } catch (error) {
+//         console.error("Gemini API Error:", error);
+//         res.status(500).json({ error: "AI request failed" });
+//     }
+// }
+
+
+
+const createNewAIChat = async (req, res) => {
+    try {
+        const newChat = new AIChat({ name: "", messages: [] }); // Start with an empty name
+        await newChat.save();
+        res.json({ chatId: newChat._id, name: "New Chat" }); // Return "New Chat" as default
+    } catch (error) {
+        console.error("Error in creating new AI chat", error);
+        return res.status(500).json({ error: "Failed to create new AI Chat" });
+    }
+};
+
+
+const getAllchats = async (req, res) => {
+    try {
+        const chats = await AIChat.find({}, "_id name createdAt")
+                                  .sort({ createdAt: -1 }); //Sort by newest first
+        res.json({ Aichats: chats });
+    } catch (error) {
+        console.error("Error fetching chats:", error);
+        res.status(500).json({ error: "Failed to retrieve chats" });
+    }
+};
+
+const getAichatbyid= async(req,res)=>{
+    try{
+        const { chatId } = req.params;
+        const chat = await AIChat.findById(chatId);
+
+        if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        res.json({ messages: chat.messages });
+    }catch(error){
+        console.error("Error fetching chat:", error);
+        res.status(500).json({ error: "Failed to retrieve chat" });
+    }
+}
+
+const editAIchat = async(req,res)=>{
+    try {
+        const { chatId } = req.params;
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ error: "Chat name is required" });
+        }
+
+        const chat = await AIChat.findByIdAndUpdate(
+            chatId,
+            { name },
+            { new: true }
+        );
+
+        if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        res.json({ message: "Chat name updated successfully", chat });
+    } catch (error) {
+        console.error("Error updating chat name:", error);
+        res.status(500).json({ error: "Failed to update chat name" });
+    }
+}
+
+const deleteAichat = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+
+        // Check if the chat exists
+        const chat = await AIChat.findById(chatId);
+        if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        // Delete the chat
+        await AIChat.findByIdAndDelete(chatId);
+
+        res.json({ message: "Chat deleted successfully" });
+    } catch (error) {
+        console.error("Error deleting chat:", error);
+        res.status(500).json({ error: "Failed to delete chat" });
+    }
+};
+
+
+
+module.exports = { askAI,createNewAIChat,getAllchats,getAichatbyid,deleteAichat,editAIchat };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*const AIChat=require('../model/AskAImodel')
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -77,6 +262,30 @@ const getAichatbyid= async(req,res)=>{
     }
 }
 
+const editAIchat = async(req,res)=>{
+    try {
+        const { chatId } = req.params;
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ error: "Chat name is required" });
+        }
+
+        const chat = await AIChat.findByIdAndUpdate(
+            chatId,
+            { name },
+            { new: true }
+        );
+
+        if (!chat) return res.status(404).json({ error: "Chat not found" });
+
+        res.json({ message: "Chat name updated successfully", chat });
+    } catch (error) {
+        console.error("Error updating chat name:", error);
+        res.status(500).json({ error: "Failed to update chat name" });
+    }
+}
+
 const deleteAichat = async (req, res) => {
     try {
         const { chatId } = req.params;
@@ -97,12 +306,12 @@ const deleteAichat = async (req, res) => {
 
 
 
-module.exports = { askAI,createNewAIChat,getAllchats,getAichatbyid,deleteAichat };
+module.exports = { askAI,createNewAIChat,getAllchats,getAichatbyid,deleteAichat,editAIchat };
 
 
 
 
-
+*/
 
 
 
