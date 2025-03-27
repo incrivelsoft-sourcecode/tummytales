@@ -25,6 +25,7 @@
     "openai": "^4.87.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "redis": "^4.7.0"
+    "redis": "^4.7.0",
+    "together-ai": "^0.13.0"
   }
 }
