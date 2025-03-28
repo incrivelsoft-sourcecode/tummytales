@@ -174,7 +174,7 @@ const deleteAichat = async (req, res) => {
     try {
         const { chatId } = req.params;
 
-        const { user_name } = req.body; 
+        const { user_name } = req.query; 
 
         if (!user_name) {
             return res.status(400).json({ error: "User name is required" });

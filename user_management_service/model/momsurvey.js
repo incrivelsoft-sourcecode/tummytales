@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 const UserDetails= require('./User')
 const surveySchema = new mongoose.Schema(
   {
+    user_name: { 
+      type: String,
+      ref: "UserDetails",
+      required: true }, 
     generalDetails: {
       full_name: String,
       age: Number,

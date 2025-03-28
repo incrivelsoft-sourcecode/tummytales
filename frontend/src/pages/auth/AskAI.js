@@ -185,7 +185,7 @@ console.log("Retrieved user_name:", user_name);
       toast.error("Failed to delete chat.");
     }
  
-    setConfirmDelete(null); // Close modal after deletion
+    setConfirmDelete(null); 
   };
  
   return (
