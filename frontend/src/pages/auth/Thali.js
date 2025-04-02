@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ThaliPage = () => {
   const [openSection, setOpenSection] = useState(null);
+  const navigate = useNavigate(); // Hook for navigation
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -130,9 +132,12 @@ const ThaliPage = () => {
             <br />
             Discover delicious, fresh recipes tailored to your dietary needs and nutritional goals. Enjoy meals that satisfy your cravings while keeping you healthy—one thoughtfully curated dish at a time.
           </p>
-          <button className="mt-6 bg-[#d7d8a7] text-black px-6 py-2 rounded-md shadow-md border border-black hover:bg-[#bfc07d] transition text-lg">
-            Join here!
-          </button>
+          <button
+          className="mt-6 bg-[#d7d8a7] text-black px-6 py-2 rounded-md shadow-md border border-black hover:bg-[#bfc07d] transition text-lg"
+          onClick={() => navigate("/daily-meal-plan")}
+        >
+          Join here!
+        </button>
         </div>
 
         {/* Nutritional Values Section - Reduced side spacing */}

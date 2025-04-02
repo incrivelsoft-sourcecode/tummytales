@@ -173,7 +173,7 @@ const Navbar = () => {
               <li
                 className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                 onClick={() => {
-                  navigate("/profile");
+                  navigate("/profile-display");
                   setShowDropdown(false);
                 }}
               >

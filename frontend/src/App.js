@@ -26,6 +26,13 @@ import Thali from "./pages/auth/Thali";
 import Footer from "../src/components/Footer";
 import MomNetworkPage from "./pages/auth/MomNetwork";
 import AskAmmaPage from "./pages/auth/AskAmma";
+import DailyMealPlan from "./pages/auth/DailyMealPlan";
+import EssentialTests from "./pages/auth/EssentialTests";
+import BloodTest from "./pages/auth/BloodTest";
+import UrineTest from "./pages/auth/UrineTest";
+import DatingViability from "./pages/auth/DatingViability";
+import GeneticScreening from "./pages/auth/GeneticScreening";
+import NuchalTranslucency from "./pages/auth/NuchalTranslucency";
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -72,9 +79,16 @@ function App() {
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
           <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
-          <Route path="thali" element={<Thali/>}/>
-          <Route path="mom-network" element={<MomNetworkPage/>}/>
-          <Route path="ask-amma" element={<AskAmmaPage/>}/>
+          <Route path="/thali" element={<Thali/>}/>
+          <Route path="/mom-network" element={<MomNetworkPage/>}/>
+          <Route path="/ask-amma" element={<AskAmmaPage/>}/>
+          <Route path="/daily-meal-plan" element={<DailyMealPlan/>}/>
+          <Route path="/essential-tests" element={<EssentialTests/>}/>
+          <Route path="/blood-test" element={<BloodTest/>}/>
+          <Route path="/urine-test" element={<UrineTest/>}/>
+          <Route path="/dating-viability" element={<DatingViability/>}/>
+          <Route path="/genetic-screening" element={<GeneticScreening/>}/>
+          <Route path="/nuchal-translucency" element={<NuchalTranslucency/>}/>
 
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />
