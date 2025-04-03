@@ -9,17 +9,12 @@ import SelectRole from "./pages/auth/SelectRole";
 import Register from "./pages/auth/Register";
 import SupporterRegister from "./pages/auth/SupporterRegister";
 import SignIn from "./pages/auth/SignIn";
-import PregnancyMap from "./pages/auth/PregnancyMap";
-import FirstTrimester from "./pages/auth/FirstTrimester";
-import SecondTrimester from "./pages/auth/SecondTrimester";
-import ThirdTrimester from "./pages/auth/ThirdTrimester";
 import ProfileSetup from "./pages/auth/ProfileSetup";
 import ProfileDisplay from "./pages/auth/ProfileDisplay";
 import ThreadAndChatDiscussionPage from "./pages/ThreadAndChatDiscussionPage";
 import Navbar from "../src/components/navbar"
 import ChatBox from '../src/pages/auth/ChatBox';
 import PregnancyTracker from "../src/pages/auth/PregnancyTracker";
-import DailyJournal from "../src/pages/auth/DailyJournal";
 import SupportersPage from "../src/pages/auth/SupporterRegister";
 import AskAI from "./pages/auth/AskAI";
 import Thali from "./pages/auth/Thali";
@@ -65,15 +60,10 @@ function App() {
           <Route path="/select-role" element={<SelectRole />} />
           <Route path="/signup" element={<Register />} />
           <Route path="/supporter-register" element={<SupporterRegister />} />
-          <Route path="/first-trimester" element={<FirstTrimester />} />
-          <Route path="/second-trimester" element={<SecondTrimester />} />
           <Route path="/chatbox" element={<ChatBox />} /> {/* ✅ Corrected */}
-          <Route path="/third-trimester" element={<ThirdTrimester />} />
           <Route path="/profile-display" element={<ProfileDisplay />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/pregnancy-map" element={<PregnancyMap />} />
           <Route path="/pregnancy-tracker" element={<PregnancyTracker />} />
-          <Route path="/daily-journal" element={<DailyJournal />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />}></Route>
           <Route path="/supporters" element={<SupportersPage />} />

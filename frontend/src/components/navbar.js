@@ -80,7 +80,7 @@ const Navbar = () => {
           onMouseLeave={() => setShowPregnancyDropdown(false)}
         >
           <a
-            href="/pregnancy-map"
+            
             className={`px-3 py-1 ${isPregnancyMapActive ? "underline" : ""}`}
           >
             Pregnancy Map
