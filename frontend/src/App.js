@@ -61,7 +61,7 @@ function App() {
           <Route path="/signup" element={<Register />} />
           <Route path="/supporter-register" element={<SupporterRegister />} />
           <Route path="/chatbox" element={<ChatBox />} /> {/* ✅ Corrected */}
-          <Route path="/profile-display" element={<ProfileDisplay />} />
+          <Route path="/profile-display/:id" element={<ProfileDisplay />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/pregnancy-tracker" element={<PregnancyTracker />} />
           <Route path="/signin" element={<SignIn />} />

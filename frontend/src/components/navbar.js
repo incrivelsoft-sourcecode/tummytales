@@ -68,7 +68,12 @@ const Navbar = () => {
       {/* Navigation Links */}
       <ul className="flex gap-10 text-lg font-medium">
         <li>
-          <a href="/" className={`px-3 py-1 ${location.pathname === "/" ? "underline" : ""}`}>
+          <a
+            href="/"
+            className={`px-3 py-1 ${
+              location.pathname === "/" ? "underline" : ""
+            }`}
+          >
             Home
           </a>
         </li>
@@ -79,10 +84,7 @@ const Navbar = () => {
           onMouseEnter={() => setShowPregnancyDropdown(true)}
           onMouseLeave={() => setShowPregnancyDropdown(false)}
         >
-          <a
-            
-            className={`px-3 py-1 ${isPregnancyMapActive ? "underline" : ""}`}
-          >
+          <a className={`px-3 py-1 ${isPregnancyMapActive ? "underline" : ""}`}>
             Pregnancy Map
           </a>
           {showPregnancyDropdown && (
@@ -124,18 +126,30 @@ const Navbar = () => {
         <li>
           <a
             href="/mom-network"
-            className={`px-3 py-1 ${location.pathname === "/mom-network" ? "underline" : ""}`}
+            className={`px-3 py-1 ${
+              location.pathname === "/mom-network" ? "underline" : ""
+            }`}
           >
             Mom-to-Mom Network
           </a>
         </li>
         <li>
-          <a href="/ask-amma" className={`px-3 py-1 ${location.pathname === "/ask-amma" ? "underline" : ""}`}>
+          <a
+            href="/ask-amma"
+            className={`px-3 py-1 ${
+              location.pathname === "/ask-amma" ? "underline" : ""
+            }`}
+          >
             Ask Amma
           </a>
         </li>
         <li>
-          <a href="/resources" className={`px-3 py-1 ${location.pathname === "/resources" ? "underline" : ""}`}>
+          <a
+            href="/resources"
+            className={`px-3 py-1 ${
+              location.pathname === "/resources" ? "underline" : ""
+            }`}
+          >
             Resources
           </a>
         </li>
@@ -173,7 +187,8 @@ const Navbar = () => {
               <li
                 className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                 onClick={() => {
-                  navigate("/profile-display");
+                  const id = localStorage.getItem("profileId");
+                  navigate(`/profile-display/${id}`);
                   setShowDropdown(false);
                 }}
               >
