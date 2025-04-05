@@ -24,6 +24,7 @@ const MessageSchema = new Schema({
 const ThreadSchema = new Schema({
   creator: { type: Schema.Types.ObjectId, ref: 'UserDetails', required: true },
   title: { type: String, required: true },
+  content: { type: String, required: true },
   media: {
     type: [{
       url: { type: String, required: true },

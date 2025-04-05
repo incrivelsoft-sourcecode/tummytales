@@ -70,7 +70,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />}></Route>
           <Route path="/supporters" element={<SupportersPage />} />
-          <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
+          <Route path="mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
           <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
           <Route path="thali" element={<Thali/>}/>
           <Route path="mom-network" element={<MomNetworkPage/>}/>

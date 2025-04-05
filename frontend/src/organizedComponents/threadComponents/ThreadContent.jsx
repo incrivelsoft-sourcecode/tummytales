@@ -89,7 +89,7 @@ const ThreadContent = ({
 
   // Use highlightedTitle from thread if available, or highlight it if needed
   const displayTitle = selectedThread.highlightedTitle || 
-    (searchTerm ? highlightText(selectedThread.title, searchTerm) : selectedThread.title);
+    (searchTerm ? highlightText(selectedThread.content, searchTerm) : selectedThread.content);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -99,7 +99,7 @@ const ThreadContent = ({
             {displayTitle && typeof displayTitle === 'string' && displayTitle.includes('<mark') ? (
               <h3 className="font-bold text-lg" dangerouslySetInnerHTML={{ __html: displayTitle }} />
             ) : (
-              <h3 className="font-bold text-lg">{displayTitle || selectedThread.title}</h3>
+              <h3 className="font-bold text-lg">{displayTitle || selectedThread.content}</h3>
             )}
             <p className="text-sm text-gray-500">
               {selectedThread.creator?.user_name === userName ? "Me" : selectedThread.creator?.user_name || 'Anonymous'} - {formatTimestamp(selectedThread.createdAt)}

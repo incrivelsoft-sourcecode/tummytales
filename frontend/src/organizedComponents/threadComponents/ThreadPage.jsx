@@ -221,10 +221,11 @@ const ThreadPage = ({ userId, userName, token }) => {
   }, [threadSocket, searchTerm, processSearchResults, selectedThread, searchResults]);
 
   // Handle thread creation
-  const handleCreateThread = (title, file, mimetype) => {
+  const handleCreateThread = (title, content, file, mimetype) => {
     const threadData = {
       creator: userId,
       title: title,
+      content: content,
       participants: [userId],
       file: file,
       mimetype: mimetype 

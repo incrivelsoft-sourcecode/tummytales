@@ -2,18 +2,25 @@ import React, { useState, useRef } from "react";
 
 const ThreadForm = ({ onCreateThread }) => {
   const [newThreadTitle, setNewThreadTitle] = useState("");
+  const [newThreadContent, setNewThreadContent] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [mimetype, setMimetype] = useState("");
   const fileInputRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!newThreadTitle.trim()) return;
+    if (!newThreadTitle.trim() || !newThreadContent.trim()) return;
 
-    onCreateThread(newThreadTitle, selectedFile?.base64, mimetype);
+    onCreateThread(
+      newThreadTitle, 
+      newThreadContent, 
+      selectedFile?.base64, 
+      mimetype
+    );
 
     // Reset form
     setNewThreadTitle("");
+    setNewThreadContent("");
     setSelectedFile(null);
     setMimetype("");
     if (fileInputRef.current) {
@@ -40,13 +47,21 @@ const ThreadForm = ({ onCreateThread }) => {
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-      <h2 className="text-xl font-semibold mb-2">Your Thoughts...</h2>
+      <h2 className="text-xl font-semibold mb-2">Create a New Thread</h2>
       <form onSubmit={handleSubmit}>
-        <textarea
-          placeholder="Write down any questions or concerns to start a thread."
-          className="w-full p-3 border border-gray-300 rounded mb-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-purple-600"
+        <input
+          type="text"
+          placeholder="Thread Title"
+          className="w-full p-3 border border-gray-300 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
           value={newThreadTitle}
           onChange={(e) => setNewThreadTitle(e.target.value)}
+        />
+
+        <textarea
+          placeholder="Detailed description of your thread..."
+          className="w-full p-3 border border-gray-300 rounded mb-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-600"
+          value={newThreadContent}
+          onChange={(e) => setNewThreadContent(e.target.value)}
         ></textarea>
 
         <div className="flex flex-col sm:flex-row justify-between gap-2">

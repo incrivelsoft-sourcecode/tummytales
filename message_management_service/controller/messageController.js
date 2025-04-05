@@ -510,7 +510,7 @@ const setupSocketEvents = () => {
         
 
         // **5. Create Thread**
-        socket.on("createThread", async ({ creator, title, participants, file, mimetype }) => {
+        socket.on("createThread", async ({ creator, title, content, participants, file, mimetype }) => {
             try {
                 console.log("createThread", mimetype);
 
@@ -523,7 +523,7 @@ const setupSocketEvents = () => {
                 }
 
                 // Initialize the object to save in the database
-                const fieldToSave = { creator, title, participants };
+                const fieldToSave = { creator, title, content, participants };
 
                 // Handle file upload if a file is provided
                 if (file && mimetype) {
