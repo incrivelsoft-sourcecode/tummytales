@@ -22,12 +22,12 @@ const Footer = () => {
       {/* Right Section */}
       <div className="flex space-x-16 text-[#e0e3a0] text-sm">
         <div className="space-y-2">
-          <a href="#" className="block hover:underline">Pregnancy Map</a>
-          <a href="#" className="block hover:underline">Mom-to-Mom Network</a>
+          <a href="/pregnancy-map" className="block hover:underline">Pregnancy Map</a>
+          <a href="/mom-network" className="block hover:underline">Mom-to-Mom Network</a>
         </div>
         <div className="space-y-2">
-          <a href="#" className="block hover:underline">Ask Amma</a>
-          <a href="#" className="block hover:underline">Resources</a>
+          <a href="ask-amma" className="block hover:underline">Ask Amma</a>
+          <a href="/" className="block hover:underline">Resources</a>
         </div>
       </div>
     </footer>

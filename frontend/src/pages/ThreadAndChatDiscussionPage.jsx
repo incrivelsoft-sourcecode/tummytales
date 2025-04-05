@@ -13,11 +13,11 @@ const IntegratedCommunicationPage = () => {
   const navigate = useNavigate();
 
   // Check for authentication
-  useEffect(() => {
-    if(!token || !userName || !userId) {
-      navigate("/");
-    }
-  }, [token, userName, userId, navigate]);
+  // useEffect(() => {
+  //   if(!token || !userName || !userId) {
+  //     navigate("/");
+  //   }
+  // }, [token, userName, userId, navigate]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">

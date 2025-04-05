@@ -1,6 +1,8 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const MomNetworkPage = () => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col md:flex-row items-center min-h-screen bg-[#FEFDE5] p-6 md:p-12">
       {/* Left Section */}
@@ -14,7 +16,9 @@ const MomNetworkPage = () => {
           afraid, ask away. You’re never alone—let’s navigate this journey together!
         </p>
         <div className="flex justify-center md:justify-start">
-          <button className="px-4 py-2 border border-gray-800 rounded-md text-gray-800 font-medium text-sm hover:bg-gray-200 transition">
+          <button onClick={() => {
+            navigate("/mom-supporter-network")
+          }} className="px-4 py-2 border border-gray-800 rounded-md text-gray-800 font-medium text-sm hover:bg-gray-200 transition">
             Join the Network!
           </button>
         </div>

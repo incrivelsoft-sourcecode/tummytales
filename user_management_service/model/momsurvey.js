@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 const UserDetails= require('./User')
 const surveySchema = new mongoose.Schema(
   {
+    user_name: { 
+      type: String,
+      ref: "UserDetails",
+      required: true }, 
     generalDetails: {
       full_name: String,
       age: Number,
@@ -10,28 +14,28 @@ const surveySchema = new mongoose.Schema(
       generation: String,
     },
     pregnancyStatus: {
-      currentlyPregnant: Boolean,
+      currentlyPregnant: { type: Boolean, default: false },
       pregnancyWeeks: Number,
       estimatedDueDate: Date,
-      firstPregnancy: Boolean,
+      firstPregnancy: { type: Boolean, default: false },
     },
     healthCare: {
-      hasProvider: Boolean,
+      hasProvider: { type: Boolean, default: false },
       prenatalServices: String,
       healthcareSystem: String,
       navigationExperience: String,
-      culturalChallenges: Boolean,
+      culturalChallenges: { type: Boolean, default: false },
     },
     lifestylePreferences: {
       preferredLanguage: String,
       dietaryPreferences: String,
-      physicalActivity: Boolean,
+      physicalActivity: { type: Boolean, default: false },
       primaryInfoSource: String,
     },
     experienceAndExpectations: {
       expectations: String,
       challenges: String,
-      wantsPersonalizedResources: Boolean,
+      wantsPersonalizedResources: { type: Boolean, default: false },
       additionalComments: String,
     },
   },

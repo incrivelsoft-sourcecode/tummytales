@@ -1,6 +1,15 @@
 const mongoose = require("mongoose");
 
 const chatSchema = new mongoose.Schema({
+    user_name: { 
+    type: String,
+    ref: "UserDetails",
+    required: true 
+     }, 
+    name:{
+      type:String,
+      required:true,
+    },
     name: { type: String, default: "" }, // ✅ Default name to avoid undefined issues
     messages: [
         {

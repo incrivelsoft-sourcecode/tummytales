@@ -25,6 +25,7 @@ const createsurvey = async (req, res) => {
           challenges,
           wantsPersonalizedResources,
           additionalComments,
+          user_name
       } = req.body;
 
       // 🔍 Define all required fields
@@ -43,6 +44,7 @@ const createsurvey = async (req, res) => {
 
       // ✅ Creating a new survey response object
       const newSurvey = new Survey({
+        user_name,
           generalDetails: { full_name,age, gender,nationality, generation },
           pregnancyStatus: { currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy },
           healthCare: { hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges },
@@ -92,6 +94,7 @@ const update_momsurvey = async (req,res)=>{
     try{ 
         const{id}= req.params;
        const updates = req.body;
+       
  
        const existingsurvey = await Survey.findById(id);
        if(!existingsurvey){

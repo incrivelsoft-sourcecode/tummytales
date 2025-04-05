@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 
 const ProfileSetup = () => {
+  const user_name = localStorage.getItem("userName") || ""; // Retrieve stored username
+console.log("Retrieved user_name:", user_name); 
   const navigate = useNavigate();
 const [formData, setFormData] = useState({
   full_name:"",
@@ -32,40 +34,61 @@ const [formData, setFormData] = useState({
   wantsPersonalizedResources: false,
   additionalComments: "",
 });
+
 const handleSubmit = async (e) => {
   e.preventDefault();
-  try {
-    const filteredData = { ...formData };
-    delete filteredData.identity;
 
-    const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/mom/survey`, filteredData);
+  // List of required fields
+  const requiredFields = ["full_name", "age", "gender", "nationality", "generation"];
+  const missingFields = requiredFields.filter(field => !formData[field]);
+
+  if (missingFields.length > 0) {
+    toast.error(`Missing fields: ${missingFields.join(", ")}`, { position: "top-center" });
+    return; // Stop execution if fields are missing
+  }
+
+  try {
+    // Filter out empty strings from formData
+    const filteredData = Object.fromEntries(
+      Object.entries(formData).filter(([_, value]) => value !== "")
+    );
+
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
+      { user_name, ...filteredData }
+    );
 
     if (res.status === 200) {
       console.log(res.data);
-      
-      // Save form data to localStorage (or state)
+      const { survey } = res.data;
+const { _id } = survey; // Now this will correctly extract the _id
+
+
       localStorage.setItem("profileData", JSON.stringify(filteredData));
+      localStorage.setItem("profileId", _id);
+      //localStorage.setItem("profileId", _id);
+console.log("Saved profileId to localStorage:", localStorage.getItem("profileId"));
 
       toast.success("Profile submitted successfully!", { position: "top-center" });
 
       setTimeout(() => {
-        navigate("/supporters"); // Navigate to profile display page
+        navigate("/supporters");
       }, 3000);
     }
   } catch (error) {
-    console.log(error);
-    toast.error(error.response?.data?.message || "Internal server error", { position: "top-center" });
+    console.error("Error Response:", error.response?.data);
+    
+    const errorMessage = error.response?.data?.error || "Internal server error";
+    toast.error(errorMessage, { position: "top-center", autoClose: 5000 });
   }
 };
-
-
-
 
 const handleChange = (e) => {
   const { name, value, type, checked } = e.target;
   setFormData((prevData) => ({
     ...prevData,
-    [name]: type === "checkbox" ? checked : value,
+    // [name]: type === "checkbox" ? checked : value,
+    [name]: type === "checkbox" ? checked : value || undefined,
   }));
 };
 

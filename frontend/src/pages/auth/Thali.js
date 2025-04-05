@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaArrowRight } from "react-icons/fa";
 
 const ThaliPage = () => {
   const [openSection, setOpenSection] = useState(null);
+  const navigate = useNavigate();
 
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
@@ -48,18 +51,20 @@ const ThaliPage = () => {
   ];
 
   return (
-    <div className="bg-[#c2c38b] min-h-screen p-4 md:px-4 text-center">
-      {/* Header - Reduced side padding */}
+    <div className="bg-[#c2c38b] min-h-screen p-4 md:px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl md:text-5xl font-bold text-black mb-4 md:mb-6">Thali Tales</h1>
-        <p className="text-lg md:text-xl text-white">
-          How you treat your diet changes everything during your pregnancy! South
-          Asian diets are naturally rich in essential nutrients, but we should be
-          aware regarding the quality and quantity of food. While many of these
-          practices are rooted in Ayurvedic and traditional medicine, it is
-          important to balance them with modern nutritional science to ensure a
-          healthy pregnancy.
-        </p>
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-3xl md:text-5xl font-bold text-black mb-4 md:mb-6">Thali Tales</h1>
+          <p className="text-lg md:text-xl text-white mb-8">
+            How you treat your diet changes everything during your pregnancy! South
+            Asian diets are naturally rich in essential nutrients, but we should be
+            aware regarding the quality and quantity of food. While many of these
+            practices are rooted in Ayurvedic and traditional medicine, it is
+            important to balance them with modern nutritional science to ensure a
+            healthy pregnancy.
+          </p>
+        </div>
 
         {/* Thali Image */}
         <div className="flex justify-center my-8 md:my-10">
@@ -70,74 +75,88 @@ const ThaliPage = () => {
           />
         </div>
 
-        {/* Nutrient Sections - Reduced side spacing */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+        {/* Nutrient Sections with Arrows */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-10">
           {/* Folate & Fiber */}
-          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md">
-            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3">
+          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md text-left relative">
+            <div className="absolute -left-3 top-1/2 transform -translate-y-1/2">
+              <FaArrowRight className="text-[#a7a86e] text-3xl" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3 uppercase">
               Folate and Fiber
             </h2>
-            <p className="text-base md:text-lg text-white">
-              <strong>Whole Grains:</strong> Brown rice, whole wheat roti, jowar, and bajra provide fiber and essential vitamins.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Beets, Oranges & Citrus Fruits:</strong> Rich in folate, Vitamin C, and antioxidants.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Figs&Dates:</strong> Help with digestion and boost iron levels.
-            </p>
-          </div>
-
-          {/* Calcium & Iron */}
-          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md">
-            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3">
-              Calcium and Iron
-            </h2>
-            <p className="text-base md:text-lg text-white">
-              <strong>Leafy Greens:</strong> Spinach (Palak), Fenugreek (Methi), and Drumstick Leaves (Moringa) are loaded with iron and folic acid.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Dairy Products:</strong> Yogurt (Dahi), Milk, and Buttermilk (Chaas) are excellent sources of calcium.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Sesame Seeds(Till) &Almonds:</strong> Provide iron, calcium, and healthy fats.
-            </p>
+            <ul className="space-y-3">
+              <li className="text-base md:text-lg text-white">
+                <strong>Whole Grains:</strong> Brown rice, whole wheat roti, jowar, and bajra provide fiber and essential vitamins.
+              </li>
+              <li className="text-base md:text-lg text-white">
+                <strong>Beets, Oranges & Citrus Fruits:</strong> Rich in folate, Vitamin C, and antioxidants.
+              </li>
+              <li className="text-base md:text-lg text-white">
+                <strong>Figs & Dates:</strong> Help with digestion and boost iron levels.
+              </li>
+            </ul>
           </div>
 
           {/* Protein */}
-          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md">
-            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3">Protein</h2>
-            <p className="text-base md:text-lg text-white">
-              <strong>Lentils (Dal):</strong> Packed with protein, fiber, and iron, lentils help prevent constipation and anemia.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Chickpeas(Chana)&Kidney Beans(Rajma):</strong> Excellent plant-based protein sources that support muscle and tissue development.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Paneer & Tofu:</strong> Great sources of protein and calcium for vegetarians.
-            </p>
-            <p className="text-base md:text-lg text-white mt-3">
-              <strong>Eggs&Lean Meats:</strong> Provide high-quality protein, essential vitamins, and omega-3 fatty acids.
-            </p>
+          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md text-left relative">
+            <div className="absolute -left-3 top-1/2 transform -translate-y-1/2">
+              <FaArrowRight className="text-[#a7a86e] text-3xl" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3 uppercase">
+              Protein
+            </h2>
+            <ul className="space-y-3">
+              <li className="text-base md:text-lg text-white">
+                <strong>Lentils (Dal):</strong> Packed with protein, fiber, and iron, lentils help prevent constipation and anemia.
+              </li>
+              <li className="text-base md:text-lg text-white">
+                <strong>Chickpeas (Chana) & Kidney Beans (Rajma):</strong> Excellent plant-based protein sources that support muscle and tissue development.
+              </li>
+            </ul>
+          </div>
+
+          {/* Calcium & Iron */}
+          <div className="bg-[#a7a86e] p-4 rounded-lg shadow-md text-left relative">
+            <div className="absolute -left-3 top-1/2 transform -translate-y-1/2">
+              <FaArrowRight className="text-[#a7a86e] text-3xl" />
+            </div>
+            <h2 className="text-xl md:text-2xl font-semibold text-black mb-3 uppercase">
+              Calcium and Iron
+            </h2>
+            <ul className="space-y-3">
+              <li className="text-base md:text-lg text-white">
+                <strong>Leafy Greens:</strong> Spinach (Palak), Fenugreek (Methi), and Drumstick Leaves (Moringa) are loaded with iron and folic acid.
+              </li>
+              <li className="text-base md:text-lg text-white">
+                <strong>Dairy Products:</strong> Yogurt (Dahi), Milk, and Buttermilk (Chaas) are excellent sources of calcium and probiotics.
+              </li>
+              <li className="text-base md:text-lg text-white">
+                <strong>Sesame Seeds (Til) & Almonds:</strong> Provide iron, calcium, and healthy fats.
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Daily Meal Plan Section - Reduced side spacing */}
-        <div className="bg-[#a7a86e] mt-10 p-6 md:p-8 text-center rounded-lg shadow-md">
+        {/* Daily Meal Plan Section */}
+        <div className="bg-[#a7a86e] p-6 md:p-8 text-center rounded-lg shadow-md mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-black mb-4">Daily Meal Plan</h2>
-          <p className="text-lg md:text-xl text-white">
+          <p className="text-lg md:text-xl text-white mb-6">
             <strong>Kitchen to Table: Nourish, Savor, Thrive!</strong>
             <br />
             Discover delicious, fresh recipes tailored to your dietary needs and nutritional goals. Enjoy meals that satisfy your cravings while keeping you healthy—one thoughtfully curated dish at a time.
           </p>
-          <button className="mt-6 bg-[#d7d8a7] text-black px-6 py-2 rounded-md shadow-md border border-black hover:bg-[#bfc07d] transition text-lg">
+          <button
+            className="mt-4 bg-[#d7d8a7] text-black px-6 py-2 rounded-md shadow-md border border-black hover:bg-[#bfc07d] transition text-lg"
+            onClick={() => navigate("/daily-meal-plan")}
+          >
             Join here!
           </button>
         </div>
 
-        {/* Nutritional Values Section - Reduced side spacing */}
-        <div className="mt-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-6">Nutritional Values</h2>
+        {/* Nutritional Values Section */}
+        <div className="mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-black mb-6 text-center">Nutritional Values</h2>
           <div className="space-y-3">
             {/* Protein */}
             <div
@@ -228,9 +247,9 @@ const ThaliPage = () => {
           </div>
         </div>
 
-        {/* Foods to Avoid Section - Increased width and font size */}
-        <div className="bg-[#a7a86e] mt-10 p-6 md:p-8 text-center rounded-lg shadow-md">
-          <h2 className="text-2xl md:text-3xl font-bold text-black mb-8">Foods To Avoid</h2>
+        {/* Foods to Avoid Section */}
+        <div className="bg-[#a7a86e] p-6 md:p-8 rounded-lg shadow-md">
+          <h2 className="text-2xl md:text-3xl font-bold text-black mb-8 text-center">Foods To Avoid</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {foodsToAvoid.map((food, index) => (
               <div key={index} className="bg-[#c2c38b] p-5 rounded-lg shadow-md h-full">
