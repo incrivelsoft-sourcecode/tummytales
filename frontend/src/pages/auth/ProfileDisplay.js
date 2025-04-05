@@ -3,8 +3,9 @@ import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+
 const ProfileDisplay = () => {
-  const { id: profileId } = useParams(); // Get profileId from URL
+  const { id: profileId } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [editableProfile, setEditableProfile] = useState(null);
@@ -34,18 +35,14 @@ const ProfileDisplay = () => {
       const res = await axios.get(
         `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?user_name=${user_name}`
       );
-  
-      console.log("API Response:", res.data); // Debugging
-  
+
       if (res.status === 200) {
         const profileData = res.data.survey;
         if (!profileData) {
-          console.warn("Profile data is empty or undefined");
           toast.error("No profile data found.");
           return;
         }
-  
-        // Flatten the nested structure
+
         const formattedProfile = {
           ...profileData.generalDetails,
           ...profileData.pregnancyStatus,
@@ -53,7 +50,7 @@ const ProfileDisplay = () => {
           ...profileData.lifestylePreferences,
           ...profileData.experienceAndExpectations,
         };
-  
+
         setProfile(formattedProfile);
         setEditableProfile(formattedProfile);
       }
@@ -62,7 +59,6 @@ const ProfileDisplay = () => {
       toast.error("Failed to load profile data.");
     }
   };
-  
 
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
@@ -96,15 +92,30 @@ const ProfileDisplay = () => {
         pregnancyStatus: {
           currentlyPregnant: editableProfile.currentlyPregnant,
           firstPregnancy: editableProfile.firstPregnancy,
+          pregnancyWeeks: editableProfile.pregnancyWeeks,
+          estimatedDueDate: editableProfile.estimatedDueDate,
         },
         healthCare: {
           hasProvider: editableProfile.hasProvider,
+          prenatalServices: editableProfile.prenatalServices,
+          healthcareSystem: editableProfile.healthcareSystem,
+          navigationExperience: editableProfile.navigationExperience,
+          culturalChallenges: editableProfile.culturalChallenges,
         },
         lifestylePreferences: {
+          preferredLanguage: editableProfile.preferredLanguage,
+          dietaryPreferences: editableProfile.dietaryPreferences,
+          physicalActivity: editableProfile.physicalActivity,
+          primaryInfoSource: editableProfile.primaryInfoSource,
           wantsPersonalizedResources: editableProfile.wantsPersonalizedResources,
         },
+        experienceAndExpectations: {
+          expectations: editableProfile.expectations,
+          challenges: editableProfile.challenges,
+          additionalComments: editableProfile.additionalComments,
+        },
       };
-
+ 
       const res = await axios.put(
         `${process.env.REACT_APP_BACKEND_URL}/mom/update/${profileId}`,
         {
@@ -112,7 +123,7 @@ const ProfileDisplay = () => {
           ...updatedProfile,
         }
       );
-
+ 
       if (res.status === 200) {
         setProfile(editableProfile);
         setIsEditing(false);
@@ -126,7 +137,16 @@ const ProfileDisplay = () => {
       toast.error("Error updating profile");
     }
   };
-  
+ 
+
+  const fields = {
+    general: ["full_name", "age", "gender", "nationality", "generation"],
+    pregnancy: ["currentlyPregnant", "pregnancyWeeks", "estimatedDueDate", "firstPregnancy"],
+    health: ["hasProvider", "prenatalServices", "healthcareSystem", "navigationExperience", "culturalChallenges"],
+    lifestyle: ["preferredLanguage", "dietaryPreferences", "physicalActivity", "primaryInfoSource"],
+    support: ["expectations", "challenges", "wantsPersonalizedResources", "additionalComments"],
+  };
+
   const calculateCompletion = (sectionFields) => {
     if (!editableProfile) return 0;
 
@@ -138,16 +158,7 @@ const ProfileDisplay = () => {
     return Math.round((filledFields / sectionFields.length) * 100);
   };
 
-  const fields = {
-    general: ["full_name", "age", "gender", "nationality", "generation"],
-    pregnancy: ["currentlyPregnant", "pregnancyWeeks", "estimatedDueDate", "firstPregnancy"],
-    health: ["hasProvider", "prenatalServices", "healthcareSystem", "navigationExperience", "culturalChallenges"],
-    lifestyle: ["preferredLanguage", "dietaryPreferences", "physicalActivity", "primaryInfoSource"],
-    support: ["expectations", "challenges", "wantsPersonalizedResources", "additionalComments"],
-  };
-
   const completions = {
-    general: calculateCompletion(fields.general),
     pregnancy: calculateCompletion(fields.pregnancy),
     health: calculateCompletion(fields.health),
     lifestyle: calculateCompletion(fields.lifestyle),
@@ -156,7 +167,7 @@ const ProfileDisplay = () => {
 
   if (!profile) return <p className="text-center text-gray-600">Loading...</p>;
 
-  const renderField = (fieldName, value, label) => {
+  const renderField = (fieldName, value) => {
     if (isEditing && editingField === fieldName) {
       return (
         <input
@@ -177,20 +188,35 @@ const ProfileDisplay = () => {
   };
 
   const renderSectionHeader = (title, subtitle, completion, sectionKey) => (
-    <div className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg" onClick={() => toggleSection(sectionKey)}>
+    <div
+      className="flex justify-between items-center cursor-pointer p-4 bg-gray-50 rounded-lg"
+      onClick={() => toggleSection(sectionKey)}
+    >
       <div>
         <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
         <p className="text-gray-500 mt-1">{subtitle}</p>
       </div>
-      <div className="flex items-center">
-        <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-4">
-          <div className="bg-purple-600 h-2.5 rounded-full" style={{ width: `${completion}%` }}></div>
+      {sectionKey !== "general" && (
+        <div className="flex items-center">
+          <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-4">
+            <div
+              className="bg-purple-600 h-2.5 rounded-full"
+              style={{ width: `${completion}%` }}
+            ></div>
+          </div>
+          <span className="text-sm font-medium text-gray-700">{completion}% complete</span>
         </div>
-        <span className="text-sm font-medium text-gray-700">{completion}% complete</span>
-        <svg className={`w-5 h-5 ml-4 text-gray-500 transition-transform ${expandedSections[sectionKey] ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
+      )}
+      <svg
+        className={`w-5 h-5 ml-4 text-gray-500 transition-transform ${
+          expandedSections[sectionKey] ? "rotate-180" : ""
+        }`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
     </div>
   );
 
@@ -212,9 +238,13 @@ const ProfileDisplay = () => {
                 <div className="grid grid-cols-1">
                   {fields[sectionKey].map((field) => (
                     <div key={field} className="py-2">
-                      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">{field.replace(/([A-Z])/g, " $1")}</h3>
+                      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                        {field.replace(/([A-Z])/g, " $1")}
+                      </h3>
                       <div className="mt-1 p-2 bg-gray-50 rounded">
-                        <p className="text-sm text-gray-900">{renderField(field, editableProfile?.[field])}</p>
+                        <p className="text-sm text-gray-900">
+                          {renderField(field, editableProfile?.[field])}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -223,9 +253,19 @@ const ProfileDisplay = () => {
             )}
           </section>
         ))}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-purple-600 text-white font-semibold rounded hover:bg-purple-700 transition"
+          >
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
 export default ProfileDisplay;
+
