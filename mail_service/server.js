@@ -129,6 +129,12 @@ app.post("/mail/send-referal", async (req, res) => {
 	}
 });
 
+// Health check or default route
+app.get("/", (req, res) => {
+	res.send("✅ Mail Service is up and running!");
+});
+
+
 // Start Server
 app.listen(PORT, () => {
 	console.log(`\n🚀 Server running on port ${PORT}`);
