@@ -1,0 +1,83 @@
+name: Tummytales Mailservice CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mailservice/**'
+      - '.github/workflows/tummytales-mailservice.yml'
+
+env:
+  IMAGE: mail-service
+  REGISTRY_HOSTNAME: incrivel
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mailservice
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}
+          tags: |
+            type=sha
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./mailservice
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Test EC2 SSM Ping
+        run: |
+          aws ssm describe-instance-information \
+            --query "InstanceInformationList[?InstanceId=='${{ secrets.EC2_INSTANCE_ID }}'].PingStatus" \
+            --output text
+
+      - name: Extract Docker Tag
+        run: echo "TAG=${{ steps.meta.outputs.version }}" >> $GITHUB_ENV
+
+      - name: Deploy mail-service to EC2 via AWS SSM
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --parameters 'commands=[
+              "export ACR_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
+              "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
+              "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
+              "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "docker stop mail-service-container || true",
+              "docker rm mail-service-container || true",
+              "docker run -d --pull=always --name mail-service-container -p 5003:5003 --env-file /home/ec2-user/env/mailservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+            ]' \
+            --comment "Deploying Tummytales Mail Service via GitHub Actions"
