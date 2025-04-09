@@ -19,6 +19,9 @@ jobs:
       run:
         working-directory: ./mail_service
 
+    outputs:
+      docker_tag: ${{ steps.meta.outputs.version }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -59,14 +62,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Test EC2 SSM Ping
-        run: |
-          aws ssm describe-instance-information \
-            --query "InstanceInformationList[?InstanceId=='${{ secrets.EC2_INSTANCE_ID }}'].PingStatus" \
-            --output text
-
       - name: Extract Docker Tag
-        run: echo "TAG=${{ steps.meta.outputs.version }}" >> $GITHUB_ENV
+        run: echo "TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
 
       - name: Deploy mail-service to EC2 via AWS SSM
         run: |
@@ -80,6 +77,6 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop mail-service-container || true",
               "docker rm mail-service-container || true",
-              "docker run -d --pull=always --name mail-service-container -p 5003:5003 --env-file /home/ec2-user/env/mailservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name mail-service-container -p 5003:5003 --env-file /home/ubuntu/env/mailservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
             ]' \
             --comment "Deploying Tummytales Mail Service via GitHub Actions"
