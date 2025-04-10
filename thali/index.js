@@ -23,5 +23,5 @@ app.use('/ai',AImeal_router)
 app.listen(port, async () => {
   console.log(`Server Started on port ${port}`);
   await connectDB();
-  require('../../user_management_service/thali/controller/mealscheduel.js')
+  require('./controller/mealscheduel.js')
 });

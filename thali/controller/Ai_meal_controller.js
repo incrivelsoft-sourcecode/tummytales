@@ -35,22 +35,42 @@ const generateMealAI = async (req, res) => {
     res.status(500).json({ error: "Failed to schedule AI Meal" });
   }
 };
- 
-// GET API: Get AI Meal by ID
-const getMealById = async (req, res) => {
+
+const getLatestMealByMealType = async (req, res) => {
   try {
-    const meal = await AIMeal.findById(req.params.id);
-    if (!meal) return res.status(404).json({ error: "Meal not found" });
-    res.status(200).json(meal);
+    const { mealType } = req.query;
+    const user_name = req.user_name; // ✅ use the value set by middleware
+
+    if (!mealType) {
+      return res.status(400).json({ error: "mealType is required" });
+    }
+
+    const query = {
+      mealType: { $regex: new RegExp(`^${mealType}$`, 'i') }, // case-insensitive match
+    };
+
+    if (user_name) {
+      query.user_name = user_name;
+    }
+
+    const latestMeal = await AIMeal.findOne(query).sort({ createdAt: -1 });
+
+    if (!latestMeal) {
+      return res.status(404).json({ error: `No ${mealType} meals found` });
+    }
+
+    res.status(200).json(latestMeal);
   } catch (err) {
-    console.error(" Error in getMealById:", err);
+    console.error("Error in getLatestMealByMealType:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
+
+
  
 module.exports = {
   generateMealAI,
-  getMealById
+  getLatestMealByMealType
 }
 
 

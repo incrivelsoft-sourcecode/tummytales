@@ -11,6 +11,8 @@
   "author": "Prabhalika",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
+    "cros": "^1.1.0",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "moment-timezone": "^0.5.48",
