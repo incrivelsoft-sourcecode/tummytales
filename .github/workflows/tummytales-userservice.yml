@@ -77,6 +77,6 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop user-service-container || true",
               "docker rm user-service-container || true",
-              "docker run -d --pull=always --name user-service-container -p 5001:5001 --env-file /home/ubuntu/env/userservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name user-service-container -p 3000:3000 --env-file /home/ubuntu/env/userservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
             ]' \
             --comment "Deploying Tummytales User Service via GitHub Actions"
