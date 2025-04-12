@@ -4,7 +4,7 @@ const moment = require("moment-timezone");
  
 const generateMealAI = async (req, res) => {
   try {
-    const { mealType, preferences, user_name, age, reminderTime, timezone } = req.body;
+    const { mealType, preferences, user_name, age, reminderTime, timezone,repeatDaily } = req.body;
  
     if (!user_name || !mealType || !age || !reminderTime || !timezone) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -19,7 +19,8 @@ const generateMealAI = async (req, res) => {
       preferences,
       reminderTime: utcReminderTime,       // Used for cron logic
       userLocalTime: new Date(reminderTime), // Store original user input time (local)
-      timezone,                              // Store user's timezone
+      timezone,
+      repeatDaily,                             
       age,
       aiGeneratedMeal: null
     });
@@ -36,10 +37,11 @@ const generateMealAI = async (req, res) => {
   }
 };
 
+
 const getLatestMealByMealType = async (req, res) => {
   try {
     const { mealType } = req.query;
-    const user_name = req.user_name; // ✅ use the value set by middleware
+    const user_name = req.user_name; // use the value set by middleware
 
     if (!mealType) {
       return res.status(400).json({ error: "mealType is required" });
@@ -67,7 +69,6 @@ const getLatestMealByMealType = async (req, res) => {
 };
 
 
- 
 module.exports = {
   generateMealAI,
   getLatestMealByMealType

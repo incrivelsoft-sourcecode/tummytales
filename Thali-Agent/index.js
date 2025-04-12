@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require('cors');
 const dotenv  = require('dotenv');
-const AImeal_router = require('../thali/router/ai_meal_router.js')
+const AImeal_router = require('./router/ai_meal_router.js')
 
 const connectDB = require('./config/db.js');
 

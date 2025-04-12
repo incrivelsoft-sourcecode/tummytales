@@ -25,6 +25,10 @@ const aiMealSchema = new mongoose.Schema({
   type: Date,
   required: true
 },
+repeatDaily: {
+  type: Boolean,
+  default: false
+},
 userLocalTime: Date,
 
   aiGeneratedMeal: {
