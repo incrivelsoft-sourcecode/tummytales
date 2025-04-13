@@ -2,25 +2,24 @@ name: Deploy Frontend Service
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'frontend/**'
-      - '.github/workflows/frontend_deploy.yml'
+      - '.github/workflows/frontend.yml'
+    branches:
+      - main
+
+env:
+  IMAGE: frontend-service
+  TAG: sha-${{ github.sha }}
+  REGISTRY_HOSTNAME: docker.io
+  CONTAINER_NAME: frontend-service-container
 
 jobs:
-  deploy:
-    name: Deploy Frontend
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      IMAGE: frontend-service
-      TAG: sha-${{ github.sha }}
-      REGISTRY_HOSTNAME: docker.io
-      CONTAINER_NAME: frontend-service-container
-
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
@@ -29,22 +28,25 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build and Push Docker Image
-        run: |
-          docker build -t ${{ env.REGISTRY_HOSTNAME }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE }}:${{ env.TAG }} ./frontend
-          docker push ${{ env.REGISTRY_HOSTNAME }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
 
-      - name: Deploy on EC2
-        uses: appleboy/ssh-action@master
+      - name: SSH into EC2 and deploy container
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo docker stop ${{ env.CONTAINER_NAME }} || true
-            sudo docker rm ${{ env.CONTAINER_NAME }} || true
-            sudo docker pull ${{ env.REGISTRY_HOSTNAME }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
-            sudo docker run -d --pull=always --name ${{ env.CONTAINER_NAME }} -p 80:80 ${{ env.REGISTRY_HOSTNAME }}/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+            docker pull ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
+            docker run -d --name ${{ env.CONTAINER_NAME }} -p 3000:3000 ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}
