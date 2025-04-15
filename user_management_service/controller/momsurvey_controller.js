@@ -1,65 +1,115 @@
 const express = require ('express');
 const {Survey,SupporterSurvey} = require('../model/momsurvey');
+
 const createsurvey = async (req, res) => {
-  try {
+    try {
       const {
-        full_name,
-          age,
-          gender,
-          nationality,
-          generation,
-          currentlyPregnant,
-          pregnancyWeeks,
-          estimatedDueDate,
-          firstPregnancy,
-          hasProvider,
-          prenatalServices,
-          healthcareSystem,
-          navigationExperience,
-          culturalChallenges,
-          preferredLanguage,
-          dietaryPreferences,
-          physicalActivity,
-          primaryInfoSource,
-          expectations,
-          challenges,
-          wantsPersonalizedResources,
-          additionalComments,
-          user_name
+        user_name,
+  
+        // generalDetails
+        first_name,
+        last_name,
+       // age,
+        dob,
+        gender,
+        nationality,
+        Phonenumber,
+        email,
+        country,
+        Addressline1,
+        Addressline2,
+        city,
+        State,
+        Zip_code,
+  
+        // pregnancyStatus
+        currentlyPregnant,
+        Last_menstrualperiod,
+        estimatedDueDate,
+        PregnancyLoss,
+        firstChild,
+  
+        // healthCare
+        hasPrimaryCarePhysician,
+        hasOBGYN,
+        insuranceProvider,
+        medications,
+        consumesAlcoholOrSmokes
       } = req.body;
-
-      // 🔍 Define all required fields
+  
+      // 🔍 Required fields check
       const requiredFields = {
-         full_name,age, gender,nationality, generation
+        user_name,
+        first_name,
+        last_name,
+       // age,
+        dob,
+        gender,
+        nationality,
+        Phonenumber,
+        email,
+        country,
+        Addressline1,
+       // Addressline2,
+        city,
+        State,
+        Zip_code
       };
-
-      // 🚨 Check for missing fields
+  
       const missingFields = Object.entries(requiredFields)
-          .filter(([key, value]) => value === undefined || value === null || value === "")
-          .map(([key]) => key);
-
+        .filter(([_, value]) => value === undefined || value === null || value === "")
+        .map(([key]) => key);
+  
       if (missingFields.length > 0) {
-          return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
+        return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
       }
-
-      // ✅ Creating a new survey response object
+  
+      // ✅ Create new Survey
       const newSurvey = new Survey({
         user_name,
-          generalDetails: { full_name,age, gender,nationality, generation },
-          pregnancyStatus: { currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy },
-          healthCare: { hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges },
-          lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
-          experienceAndExpectations: { expectations, challenges, wantsPersonalizedResources, additionalComments }
+        generalDetails: {
+          first_name,
+          last_name,
+          age,
+          dob,
+          gender,
+          nationality,
+          Phonenumber,
+          email,
+          country,
+          Addressline1,
+          Addressline2,
+          city,
+          State,
+          Zip_code
+        },
+        pregnancyStatus: {
+          currentlyPregnant,
+          Last_menstrualperiod,
+          estimatedDueDate,
+          PregnancyLoss,
+          firstChild
+        },
+        healthCare: {
+          hasPrimaryCarePhysician,
+          hasOBGYN,
+          insuranceProvider,
+          medications,
+          consumesAlcoholOrSmokes
+        }
       });
-
+  
       await newSurvey.save();
       res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
-
-  } catch (error) {
+  
+    } catch (error) {
       console.error("Survey submission failed:", error);
       res.status(500).json({ error: "Failed to save survey data" });
-  }
-};
+    }
+  };
+  
+
+
 
 const getbyid_momsurvey = async(req,res)=>{
     try{
@@ -280,3 +330,68 @@ const deletesupporter = async(req,res)=>{
 
 module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,
     generateReferralPin,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
+
+
+
+
+
+    // const createsurvey = async (req, res) => {
+    //     try {
+    //         const {
+    //           full_name,
+    //             age,
+    //             gender,
+    //             nationality,
+    //             generation,
+    //             currentlyPregnant,
+    //             pregnancyWeeks,
+    //             estimatedDueDate,
+    //             firstPregnancy,
+    //             hasProvider,
+    //             prenatalServices,
+    //             healthcareSystem,
+    //             navigationExperience,
+    //             culturalChallenges,
+    //             preferredLanguage,
+    //             dietaryPreferences,
+    //             physicalActivity,
+    //             primaryInfoSource,
+    //             expectations,
+    //             challenges,
+    //             wantsPersonalizedResources,
+    //             additionalComments,
+    //             user_name
+    //         } = req.body;
+      
+    //         // 🔍 Define all required fields
+    //         const requiredFields = {
+    //            full_name,age, gender,nationality, generation
+    //         };
+      
+    //         // 🚨 Check for missing fields
+    //         const missingFields = Object.entries(requiredFields)
+    //             .filter(([key, value]) => value === undefined || value === null || value === "")
+    //             .map(([key]) => key);
+      
+    //         if (missingFields.length > 0) {
+    //             return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
+    //         }
+      
+    //         // ✅ Creating a new survey response object
+    //         const newSurvey = new Survey({
+    //           user_name,
+    //             generalDetails: { full_name,age, gender,nationality, generation },
+    //             pregnancyStatus: { currentlyPregnant, pregnancyWeeks, estimatedDueDate, firstPregnancy },
+    //             healthCare: { hasProvider, prenatalServices, healthcareSystem, navigationExperience, culturalChallenges },
+    //             lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
+    //             experienceAndExpectations: { expectations, challenges, wantsPersonalizedResources, additionalComments }
+    //         });
+      
+    //         await newSurvey.save();
+    //         res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
+      
+    //     } catch (error) {
+    //         console.error("Survey submission failed:", error);
+    //         res.status(500).json({ error: "Failed to save survey data" });
+    //     }
+    //   };

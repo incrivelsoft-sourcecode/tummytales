@@ -6,38 +6,44 @@ const surveySchema = new mongoose.Schema(
       type: String,
       ref: "UserDetails",
       required: true }, 
-    generalDetails: {
-      full_name: String,
-      age: Number,
+   generalDetails: {
+      first_name: String,
+      last_name:String,
+     // age: Number,
+      dob:Date,
       gender: String,
       nationality: String,
-      generation: String,
+      Phonenumber:String,
+      email:String,
+      country:String,
+      Addressline1:String,
+      Addressline2:String,
+      city:String,
+      State:String,
+      Zip_code:String,
     },
     pregnancyStatus: {
       currentlyPregnant: { type: Boolean, default: false },
-      pregnancyWeeks: Number,
+      //pregnancyWeeks: Number,
+      Last_menstrualperiod: Date,
       estimatedDueDate: Date,
-      firstPregnancy: { type: Boolean, default: false },
+      PregnancyLoss: { type: Boolean, default: false },
+      firstChild: { type: Boolean, default: false },
     },
-    healthCare: {
-      hasProvider: { type: Boolean, default: false },
-      prenatalServices: String,
-      healthcareSystem: String,
-      navigationExperience: String,
-      culturalChallenges: { type: Boolean, default: false },
-    },
-    lifestylePreferences: {
-      preferredLanguage: String,
-      dietaryPreferences: String,
-      physicalActivity: { type: Boolean, default: false },
-      primaryInfoSource: String,
-    },
-    experienceAndExpectations: {
-      expectations: String,
-      challenges: String,
-      wantsPersonalizedResources: { type: Boolean, default: false },
-      additionalComments: String,
-    },
+ healthCare: {
+  hasPrimaryCarePhysician: { type: String, enum: ['Yes', 'No', 'Not Sure'], default: '' },
+  hasOBGYN: { type: String, enum: ['Yes', 'No', 'Not Sure'], default: '' },
+  insuranceProvider: { type: String, default: '' },
+  medications: [
+    {
+      name: { type: String, required: true },
+      dosage: { type: String },
+      frequency: { type: String }
+    }
+  ],
+  consumesAlcoholOrSmokes: { type: String, enum: ['Yes', 'No', 'Occasionally'], default: '' }
+},
+
   },
   { timestamps: true }
 );
@@ -99,3 +105,28 @@ const Survey = mongoose.model("Survey", surveySchema);
 
 const SupporterSurvey =mongoose.model("SupporterSurvey",supporterSchema)
 module.exports = {Survey,SupporterSurvey};
+
+
+
+
+
+
+   /* healthCare: {
+      hasProvider: { type: Boolean, default: false },
+      prenatalServices: String,
+      healthcareSystem: String,
+      navigationExperience: String,
+      culturalChallenges: { type: Boolean, default: false },
+    },
+    lifestylePreferences: {
+      preferredLanguage: String,
+      dietaryPreferences: String,
+      physicalActivity: { type: Boolean, default: false },
+      primaryInfoSource: String,
+    },
+    experienceAndExpectations: {
+      expectations: String,
+      challenges: String,
+      wantsPersonalizedResources: { type: Boolean, default: false },
+      additionalComments: String,
+    },*/

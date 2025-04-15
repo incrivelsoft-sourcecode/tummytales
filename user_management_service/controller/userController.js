@@ -106,6 +106,7 @@ const getAllUsers = async (req, res) => {
 	}
 };
 
+
 // Get a user by ID
 const getUser = async (req, res) => {
 	try {
@@ -164,7 +165,7 @@ const deleteUser = async (req, res) => {
 		if (!deletedUser) {
 			return res.status(404).json({ message: 'User not found' });
 		}
-		await Analytics.findOneAndDelete({ user: req.params.id });
+		
 		res.json({ message: 'User deleted successfully' });
 	} catch (err) {
 		res.status(500).json({ message: err.message });
@@ -189,6 +190,10 @@ const googleCallback = async (req, res) => {
 		res.status(500).send({ error: "Internal server error..." });
 	}
 };
+
+
+
+
 
 const referSupporter = async (req, res) => {
 	try {
@@ -319,6 +324,28 @@ const deleteSupporter = async(req, res) => {
 //   };
 
 
+const getallusers = async (req,res)=>{
+	try{
+		const users = await User.find();
+
+		return res.status(200).json({ success:true,users})
+
+	}catch(error){
+		console.error('Failed to get allusers',error);
+		return res.status(505).json({error:"Failed to retrive users"})
+	}
+}
+
+// Delete all users
+const deleteAllUsers = async (req, res) => {
+	try {
+		const result = await User.deleteMany({});
+		res.json({ message: 'All users deleted successfully', deletedCount: result.deletedCount });
+	} catch (err) {
+		res.status(500).json({ message: err.message });
+	}
+};
 
 
-module.exports = { googleCallback, deleteUser, updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+
+module.exports = { googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
