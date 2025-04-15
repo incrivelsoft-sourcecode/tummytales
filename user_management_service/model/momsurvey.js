@@ -33,7 +33,7 @@ const surveySchema = new mongoose.Schema(
  healthCare: {
   hasPrimaryCarePhysician: { type: Boolean, default: false },
   hasOBGYN: { type: Boolean, default: false  },
-  insuranceProvider: { type: Boolean, default: false },
+  insuranceProvider: String,
   medications: [
     {
       name: { type: String, required: true },
