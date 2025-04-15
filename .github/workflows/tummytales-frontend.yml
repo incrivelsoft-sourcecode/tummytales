@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/tummytales-frontend.yml'
 
 env:
   IMAGE: frontend-service
@@ -74,6 +77,6 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop frontend-service-container || true",
               "docker rm frontend-service-container || true",
-              "docker run -d --pull=always --name frontend-service-container -p 3000:3000 docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
             ]' \
             --comment "Deploying Tummytales Frontend Service via GitHub Actions"
