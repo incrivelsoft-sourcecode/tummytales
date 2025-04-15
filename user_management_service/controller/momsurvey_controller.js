@@ -9,7 +9,6 @@ const createsurvey = async (req, res) => {
         // generalDetails
         first_name,
         last_name,
-       // age,
         dob,
         gender,
         nationality,
@@ -26,23 +25,51 @@ const createsurvey = async (req, res) => {
         currentlyPregnant,
         Last_menstrualperiod,
         estimatedDueDate,
-        PregnancyLoss,
-        firstChild,
+        hasPregnancyLoss,
+        dateOfLoss,
+        reason,
+        gestationWeeks,
+        treatmentLocation,
+  
+        isFirstChild,
+        firstChildDob,
+        complications,
+        deliverymethod,
+        childbornlocation,
+        gestationalAgeAtBirth,
   
         // healthCare
         hasPrimaryCarePhysician,
+        primaryFirst_name,
+        primaryLast_name,
+        primaryCountry,
+        primaryAddressline1,
+        primaryAddressline2,
+        primaryCity,
+        primaryState,
+        primaryZip_code,
+        primaryPhonenumber,
+  
         hasOBGYN,
+        obgynFirst_name,
+        obgynLast_name,
+        obgynCountry,
+        obgynAddressline1,
+        obgynAddressline2,
+        obgynCity,
+        obgynState,
+        obgynZip_code,
+        obgynPhonenumber,
+  
         insuranceProvider,
         medications,
         consumesAlcoholOrSmokes
       } = req.body;
   
-      // 🔍 Required fields check
       const requiredFields = {
         user_name,
         first_name,
         last_name,
-       // age,
         dob,
         gender,
         nationality,
@@ -50,7 +77,6 @@ const createsurvey = async (req, res) => {
         email,
         country,
         Addressline1,
-       // Addressline2,
         city,
         State,
         Zip_code
@@ -64,13 +90,11 @@ const createsurvey = async (req, res) => {
         return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
       }
   
-      // ✅ Create new Survey
       const newSurvey = new Survey({
         user_name,
         generalDetails: {
           first_name,
           last_name,
-         // age,
           dob,
           gender,
           nationality,
@@ -87,12 +111,55 @@ const createsurvey = async (req, res) => {
           currentlyPregnant,
           Last_menstrualperiod,
           estimatedDueDate,
-          PregnancyLoss,
-          firstChild
+          PregnancyLossInfo: {
+            hasPregnancyLoss,
+            details: hasPregnancyLoss ? {
+              dateOfLoss,
+              reason,
+              gestationWeeks,
+              treatmentLocation
+            } : undefined
+          },
+          firstChildInfo: {
+            isFirstChild,
+            details: isFirstChild ? {
+              dob: firstChildDob,
+              complications,
+              deliverymethod,
+              childbornlocation,
+              gestationalAgeAtBirth
+            } : undefined
+          }
         },
         healthCare: {
-          hasPrimaryCarePhysician,
-          hasOBGYN,
+          primaryCare: {
+            hasPrimaryCarePhysician,
+            details: hasPrimaryCarePhysician ? {
+              first_name: primaryFirst_name,
+              last_name: primaryLast_name,
+              country: primaryCountry,
+              Addressline1: primaryAddressline1,
+              Addressline2: primaryAddressline2,
+              city: primaryCity,
+              State: primaryState,
+              Zip_code: primaryZip_code,
+              Phonenumber: primaryPhonenumber
+            } : undefined
+          },
+          obgyn: {
+            hasOBGYN,
+            details: hasOBGYN ? {
+              first_name: obgynFirst_name,
+              last_name: obgynLast_name,
+              country: obgynCountry,
+              Addressline1: obgynAddressline1,
+              Addressline2: obgynAddressline2,
+              city: obgynCity,
+              State: obgynState,
+              Zip_code: obgynZip_code,
+              Phonenumber: obgynPhonenumber
+            } : undefined
+          },
           insuranceProvider,
           medications,
           consumesAlcoholOrSmokes
@@ -107,6 +174,7 @@ const createsurvey = async (req, res) => {
       res.status(500).json({ error: "Failed to save survey data" });
     }
   };
+  
   
 
 
@@ -330,6 +398,124 @@ const deletesupporter = async(req,res)=>{
 
 module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,
     generateReferralPin,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
+
+
+
+    // const createsurvey = async (req, res) => {
+    //     try {
+    //       const {
+    //         user_name,
+      
+    //         // generalDetails
+    //         first_name,
+    //         last_name,
+    //         dob,
+    //         gender,
+    //         nationality,
+    //         Phonenumber,
+    //         email,
+    //         country,
+    //         Addressline1,
+    //         Addressline2,
+    //         city,
+    //         State,
+    //         Zip_code,
+      
+    //         // pregnancyStatus
+    //         currentlyPregnant,
+    //         Last_menstrualperiod,
+    //         estimatedDueDate,
+    //         PregnancyLoss,
+    //         firstChild,
+      
+    //         // healthCare
+    //         hasPrimaryCarePhysician,
+    //         hasOBGYN,
+    //         insuranceProvider,
+    //         medications,
+    //         consumesAlcoholOrSmokes
+    //       } = req.body;
+      
+    //       // 🔍 Required fields check
+    //       const requiredFields = {
+    //         user_name,
+    //         first_name,
+    //         last_name,
+    //        // age,
+    //         dob,
+    //         gender,
+    //         nationality,
+    //         Phonenumber,
+    //         email,
+    //         country,
+    //         Addressline1,
+    //        // Addressline2,
+    //         city,
+    //         State,
+    //         Zip_code
+    //       };
+      
+    //       const missingFields = Object.entries(requiredFields)
+    //         .filter(([_, value]) => value === undefined || value === null || value === "")
+    //         .map(([key]) => key);
+      
+    //       if (missingFields.length > 0) {
+    //         return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
+    //       }
+      
+    //       // ✅ Create new Survey
+    //       const newSurvey = new Survey({
+    //         user_name,
+    //         generalDetails: {
+    //           first_name,
+    //           last_name,
+    //          // age,
+    //           dob,
+    //           gender,
+    //           nationality,
+    //           Phonenumber,
+    //           email,
+    //           country,
+    //           Addressline1,
+    //           Addressline2,
+    //           city,
+    //           State,
+    //           Zip_code
+    //         },
+    //         pregnancyStatus: {
+    //           currentlyPregnant,
+    //           Last_menstrualperiod,
+    //           estimatedDueDate,
+    //           PregnancyLoss,
+    //           firstChild
+    //         },
+    //         healthCare: {
+    //           hasPrimaryCarePhysician,
+    //           hasOBGYN,
+    //           insuranceProvider,
+    //           medications,
+    //           consumesAlcoholOrSmokes
+    //         }
+    //       });
+      
+    //       await newSurvey.save();
+    //       res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
+      
+    //     } catch (error) {
+    //       console.error("Survey submission failed:", error);
+    //       res.status(500).json({ error: "Failed to save survey data" });
+    //     }
+    //   };
+
+
+
+
+
+
+
+
+
+
 
 
 

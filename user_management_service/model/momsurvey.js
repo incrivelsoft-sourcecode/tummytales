@@ -6,10 +6,9 @@ const surveySchema = new mongoose.Schema(
       type: String,
       ref: "UserDetails",
       required: true }, 
-   generalDetails: {
+generalDetails: {
       first_name: String,
       last_name:String,
-     // age: Number,
       dob:Date,
       gender: String,
       nationality: String,
@@ -22,27 +21,76 @@ const surveySchema = new mongoose.Schema(
       State:String,
       Zip_code:String,
     },
-    pregnancyStatus: {
-      currentlyPregnant: { type: Boolean, default: false },
-      //pregnancyWeeks: Number,
-      Last_menstrualperiod: Date,
-      estimatedDueDate: Date,
-      PregnancyLoss: { type: Boolean, default: false },
-      firstChild: { type: Boolean, default: false },
-    },
- healthCare: {
-  hasPrimaryCarePhysician: { type: Boolean, default: false },
-  hasOBGYN: { type: Boolean, default: false  },
+pregnancyStatus: {
+  currentlyPregnant: { type: Boolean, default: false },
+  Last_menstrualperiod: Date,
+  estimatedDueDate: Date,
+
+  PregnancyLossInfo: {
+    hasPregnancyLoss: { type: Boolean, default: false },
+    details: {
+      dateOfLoss: Date,
+      reason: String,
+      gestationWeeks: Number,
+      treatmentLocation: String, // City, State, Country
+    }
+  },
+
+  firstChildInfo: {
+    isFirstChild: { type: Boolean, default: false },
+    details: {
+      dob: Date,
+      complications: String,
+      deliverymethod: String,
+      childbornlocation: String,
+      gestationalAgeAtBirth: String // or nested { weeks, days }
+    }
+  }
+ },
+
+healthCare: {
+  primaryCare: {
+    hasPrimaryCarePhysician: { type: Boolean, default: false },
+    details: {
+      first_name: String,
+      last_name: String,
+      country: String,
+      Addressline1: String,
+      Addressline2: String,
+      city: String,
+      State: String,
+      Zip_code: String,
+      Phonenumber: String
+    }
+  },
+  obgyn: {
+    hasOBGYN: { type: Boolean, default: false },
+    details: {
+      first_name: String,
+      last_name: String,
+      country: String,
+      Addressline1: String,
+      Addressline2: String,
+      city: String,
+      State: String,
+      Zip_code: String,
+      Phonenumber: String
+    }
+  },
+
   insuranceProvider: String,
+
   medications: [
     {
       name: { type: String, required: true },
-      dosage: { type: String },
-      frequency: { type: String }
+      dosage: String,
+      frequency: String
     }
   ],
-  consumesAlcoholOrSmokes: {  type: Boolean, default: false  }
+
+  consumesAlcoholOrSmokes: { type: Boolean, default: false }
 },
+
 
   },
   { timestamps: true }
