@@ -13,8 +13,14 @@ RUN npm install
 # Copy entire project
 COPY . .
 
-# Expose the port your dev server runs on (usually 3000)
+# Build the production app
+RUN npm run build
+
+# Install `serve` to serve the production build
+RUN npm install -g serve
+
+# Expose the port your app will run on
 EXPOSE 3000
 
-# Start the app
-CMD ["npm", "start"]
+# Start the production server
+CMD ["serve", "-s", "build", "-l", "3000"]
