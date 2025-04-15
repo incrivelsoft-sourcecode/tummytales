@@ -70,7 +70,7 @@ const createsurvey = async (req, res) => {
         generalDetails: {
           first_name,
           last_name,
-          age,
+         // age,
           dob,
           gender,
           nationality,

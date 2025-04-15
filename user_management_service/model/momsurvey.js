@@ -31,9 +31,9 @@ const surveySchema = new mongoose.Schema(
       firstChild: { type: Boolean, default: false },
     },
  healthCare: {
-  hasPrimaryCarePhysician: { type: String, enum: ['Yes', 'No', 'Not Sure'], default: '' },
-  hasOBGYN: { type: String, enum: ['Yes', 'No', 'Not Sure'], default: '' },
-  insuranceProvider: { type: String, default: '' },
+  hasPrimaryCarePhysician: { type: Boolean, default: false },
+  hasOBGYN: { type: Boolean, default: false  },
+  insuranceProvider: { type: Boolean, default: false },
   medications: [
     {
       name: { type: String, required: true },
@@ -41,7 +41,7 @@ const surveySchema = new mongoose.Schema(
       frequency: { type: String }
     }
   ],
-  consumesAlcoholOrSmokes: { type: String, enum: ['Yes', 'No', 'Occasionally'], default: '' }
+  consumesAlcoholOrSmokes: {  type: Boolean, default: false  }
 },
 
   },
