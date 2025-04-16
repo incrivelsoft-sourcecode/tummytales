@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5002;
 
 // Middleware
 app.use(express.json());
-app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000"] }));
+app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000","https://tummytales.info"] }));
 
 // Setup routes (if any)
 app.get('/', (req, res) => {
