@@ -39,10 +39,10 @@ app.use((err, req, res, next) => {
 
 
 
-app.use('user/users', userRouter);
-app.use('user/mom',momsurvey_router)
-app.use('user/ai',geminiai_router)
-app.use('user/ai',AImeal_router)
+app.use('/user/users', userRouter);
+app.use('/user/mom',momsurvey_router)
+app.use('/user/ai',geminiai_router)
+app.use('/user/ai',AImeal_router)
 
 app.get("/", (req, res) => {
   res.status(200).send(`Server running upon the port : ${port}`);

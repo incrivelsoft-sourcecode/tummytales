@@ -59,7 +59,7 @@ const generateEmailTemplate = (referralName, referal_code, permissions, role) =>
 `;
 
 // API Endpoint to Send Referral Emails
-app.post("mail/mail/send-referal", async (req, res) => {
+app.post("/mail/mail/send-referal", async (req, res) => {
 	try {
 		console.log("\n--- Incoming Request ---");
 		console.log("Request Body:", req.body);
