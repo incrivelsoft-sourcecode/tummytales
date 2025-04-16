@@ -174,9 +174,6 @@ const createsurvey = async (req, res) => {
       res.status(500).json({ error: "Failed to save survey data" });
     }
   };
-  
-  
-
 
 
 const getbyid_momsurvey = async(req,res)=>{

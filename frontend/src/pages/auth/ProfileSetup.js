@@ -9,34 +9,69 @@ const ProfileSetup = () => {
   const user_name = localStorage.getItem("userName") || ""; // Retrieve stored username
 console.log("Retrieved user_name:", user_name);
   const navigate = useNavigate();
+ 
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
-    dob: "",
-    gender: "",
-    nationality: "",
-    Phonenumber: "",
-    email: "",
-    country: "",
-    Addressline1: "",
-    Addressline2: "",
-    city: "",
-    State: "",
-    Zip_code: "",
- 
-    currentlyPregnant: false,
-    Last_menstrualperiod: "",
-    estimatedDueDate: "",
-    PregnancyLoss: false,
-    firstChild: false,
- 
-    hasPrimaryCarePhysician: false,
-    hasOBGYN: false,
-    insuranceProvider: "",
-    medications: [], // For now, assume this is empty
-    consumesAlcoholOrSmokes: false
-  });
- 
+    // Required general fields
+  first_name: "",
+  last_name: "",
+  dob: "",
+  gender: "",
+  nationality: "",
+  Phonenumber: "",
+  email: "",
+  country: "",
+  Addressline1: "",
+  Addressline2: "",
+  city: "",
+  State: "",
+  Zip_code: "",
+
+  // Pregnancy Status
+  currentlyPregnant: false,
+  Last_menstrualperiod: "",
+  estimatedDueDate: "",
+
+  PregnancyLoss: false, // maps to hasPregnancyLoss
+  dateOfLoss: "",
+  reason: "",
+  gestationWeeks: "",
+  treatmentLocation: "",
+
+  firstChild: false, // maps to isFirstChild
+  firstChildDob: "",
+  complications: "",
+  deliverymethod: "",
+  childbornlocation: "",
+  gestationalAgeAtBirth: "",
+
+  // HealthCare Info
+  hasPrimaryCarePhysician: false,
+  primaryFirst_name: "",
+  primaryLast_name: "",
+  primaryCountry: "",
+  primaryAddressline1: "",
+  primaryAddressline2: "",
+  primaryCity: "",
+  primaryState: "",
+  primaryZip_code: "",
+  primaryPhonenumber: "",
+
+  hasOBGYN: false,
+  obgynFirst_name: "",
+  obgynLast_name: "",
+  obgynCountry: "",
+  obgynAddressline1: "",
+  obgynAddressline2: "",
+  obgynCity: "",
+  obgynState: "",
+  obgynZip_code: "",
+  obgynPhonenumber: "",
+
+  // Other
+  insuranceProvider: "",
+  medications: [],
+  consumesAlcoholOrSmokes: false
+});
 const handleSubmit = async (e) => {
   e.preventDefault();
  
@@ -311,7 +346,7 @@ const handleChange = (e) => {
            
           </section>
  
-          {/* Section 2: Pregnancy Status */}
+         {/* Section 2: Pregnancy Status */}
 <section
   className="mt-6"
   style={{ backgroundColor: "#c0c386", padding: "2rem", borderRadius: "0.5rem" }}
@@ -322,14 +357,14 @@ const handleChange = (e) => {
       Let’s know about your pregnancy journey.
     </p>
   </div>
- 
+
   <div className="mt-4 space-y-4">
     <label className="block">
       Are you currently pregnant or planning on becoming pregnant?
     </label>
     <select
       name="currentlyPregnant"
-      value={formData.currentlyPregnant}
+      value={formData.currentlyPregnant ? "Yes" : "No"}
       onChange={(e) =>
         setFormData({
           ...formData,
@@ -341,7 +376,7 @@ const handleChange = (e) => {
       <option value="Yes">Yes</option>
       <option value="No">No</option>
     </select>
- 
+
     <label className="block">
       When was the first day of your last menstrual period?
     </label>
@@ -352,7 +387,7 @@ const handleChange = (e) => {
       onChange={handleChange}
       className="input-field"
     />
- 
+
     <label className="block">
       If established, what is your estimated due date?
     </label>
@@ -363,92 +398,397 @@ const handleChange = (e) => {
       onChange={handleChange}
       className="input-field"
     />
- 
-    <label className="block">
-      Have you ever experienced any pregnancy loss?
-    </label>
-    <select
-      name="PregnancyLoss"
-      value={formData.PregnancyLoss}
+
+    {/* Pregnancy Loss Section */}
+    <div>
+      <label className="block">Have you ever experienced any pregnancy loss?</label>
+      <select
+        name="PregnancyLoss"
+        value={formData.PregnancyLoss ? "Yes" : "No"}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            PregnancyLoss: e.target.value === "Yes",
+          })
+        }
+        className="input-field"
+      >
+        <option value="">Select an option</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+
+      {formData.PregnancyLoss && (
+        <>
+          <label className="block mt-4">When was your last pregnancy loss?</label>
+          <input
+            type="date"
+            name="dateOfLoss"
+            value={formData.dateOfLoss}
+            onChange={handleChange}
+            className="input-field"
+          />
+
+          <label className="block mt-4">What was the reason given for the loss?</label>
+          <select
+            name="reason"
+            value={formData.reason}
+            onChange={handleChange}
+            className="input-field"
+          >
+            <option value="">Select an option</option>
+            <option value="Medical Issue">Medical Issue</option>
+            <option value="Accident">Accident</option>
+            <option value="Unknown">Unknown</option>
+          </select>
+
+          <label className="block mt-4">How many weeks was the fetus at the time of the loss?</label>
+          <input
+            type="number"
+            name="gestationWeeks"
+            value={formData.gestationWeeks}
+            onChange={handleChange}
+            className="input-field"
+          />
+
+          <label className="block mt-4">Where did you get treated?</label>
+          <input
+            type="text"
+            name="treatmentLocation"
+            placeholder="City, State, Country"
+            value={formData.treatmentLocation}
+            onChange={handleChange}
+            className="input-field"
+          />
+        </>
+      )}
+    </div>
+
+    {/* First Child Section */}
+    <div>
+      <label className="block">Would this be your first child?</label>
+      <select
+        name="firstChild"
+        value={formData.firstChild ? "No" : "Yes"}
+        onChange={(e) =>
+          setFormData({
+            ...formData,
+            firstChild: e.target.value === "No",
+          })
+        }
+        className="input-field"
+      >
+        <option value="">Select an option</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+
+      {formData.firstChild && (
+        <>
+          <label className="block mt-4">What is the date of birth of your first child?</label>
+          <input
+            type="date"
+            name="firstChildDob"
+            value={formData.firstChildDob}
+            onChange={handleChange}
+            className="input-field"
+          />
+
+          <label className="block mt-4">Were there any complications?</label>
+          <textarea
+            name="complications"
+            value={formData.complications}
+            onChange={handleChange}
+            className="input-field"
+          />
+
+          <label className="block mt-4">What kind of delivery method was used?</label>
+          <select
+            name="deliverymethod"
+            value={formData.deliverymethod}
+            onChange={handleChange}
+            className="input-field"
+          >
+            <option value="">Select an option</option>
+            <option value="Normal">Normal</option>
+            <option value="C-section">C-section</option>
+            <option value="Forceps/Vacuum">Forceps/Vacuum</option>
+          </select>
+
+          <label className="block mt-4">Where was your child born?</label>
+          <input
+            type="text"
+            name="childbornlocation"
+            placeholder="City, State, Country"
+            value={formData.childbornlocation}
+            onChange={handleChange}
+            className="input-field"
+          />
+
+          <label className="block mt-4">What was the baby's gestational age at birth?</label>
+          <input
+            type="text"
+            name="gestationalAgeAtBirth"
+            placeholder="Weeks and Days"
+            value={formData.gestationalAgeAtBirth}
+            onChange={handleChange}
+            className="input-field"
+          />
+        </>
+      )}
+    </div>
+  </div>
+</section>
+{/* Section 3: Health & Healthcare */}
+<section className="mt-6">
+  <div className="bg-gray-200 p-3 rounded-md font-semibold">
+    Section 3: Health & Healthcare
+    <p className="text-gray-400 mt-1">
+      Any relevant health conditions.
+    </p>
+  </div>
+
+  <div className="mt-4 space-y-4">
+    {/* Primary Care Physician */}
+    <div>
+      <label className="block mb-1">Do you have a primary care physician?</label>
+      <select
+        name="hasPrimaryCarePhysician"
+        value={formData.hasPrimaryCarePhysician}
+        onChange={handleChange}
+        className="input-field border p-2 rounded w-full mb-4"
+      >
+        <option value="">Select an option</option>
+        <option value={true}>Yes</option>
+        <option value={false}>No</option>
+      </select>
+
+      {formData.hasPrimaryCarePhysician === "true" && (
+        <>
+          <div className="mb-2 font-semibold">Name of Doctor</div>
+          <div className="flex gap-4 mb-4">
+            <input
+              type="text"
+              name="primaryFirst_name"
+              placeholder="First Name"
+              value={formData.primaryFirst_name}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="primaryLast_name"
+              placeholder="Last Name"
+              value={formData.primaryLast_name}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+          </div>
+
+          <div className="mb-2 font-semibold">Address of Doctor</div>
+          <label className="block mb-1">Country</label>
+          <select
+            name="primaryCountry"
+            value={formData.primaryCountry}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-4"
+          >
+            <option value="United States">United States</option>
+          </select>
+
+          <input
+            type="text"
+            name="primaryAddressline1"
+            placeholder="Address Line 1 (required)"
+            value={formData.primaryAddressline1}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-2"
+          />
+          <input
+            type="text"
+            name="primaryAddressline2"
+            placeholder="Address Line 2"
+            value={formData.primaryAddressline2}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-2"
+          />
+
+          <div className="flex gap-4 mb-2">
+            <input
+              type="text"
+              name="primaryCity"
+              placeholder="City (required)"
+              value={formData.primaryCity}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="primaryState"
+              placeholder="State (required)"
+              value={formData.primaryState}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="primaryZip_code"
+              placeholder="ZIP Code (required)"
+              value={formData.primaryZip_code}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+          </div>
+
+          <input
+            type="text"
+            name="primaryPhonenumber"
+            placeholder="Phone Number of Doctor"
+            value={formData.primaryPhonenumber}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full"
+          />
+        </>
+      )}
+    </div>
+
+    {/* OB/GYN Section */}
+    <div>
+      <label className="block mb-1">Do you have an OB/GYN?</label>
+      <select
+        name="hasOBGYN"
+        value={formData.hasOBGYN}
+        onChange={handleChange}
+        className="input-field border p-2 rounded w-full mb-4"
+      >
+        <option value="">Select an option</option>
+        <option value={true}>Yes</option>
+        <option value={false}>No</option>
+      </select>
+
+      {formData.hasOBGYN === "true" && (
+        <>
+          <div className="mb-2 font-semibold">Name of Doctor</div>
+          <div className="flex gap-4 mb-4">
+            <input
+              type="text"
+              name="obgynFirst_name"
+              placeholder="First Name"
+              value={formData.obgynFirst_name}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="obgynLast_name"
+              placeholder="Last Name"
+              value={formData.obgynLast_name}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+          </div>
+
+          <div className="mb-2">Address of Doctor</div>
+          <label className="block mb-1">Country</label>
+          <select
+            name="obgynCountry"
+            value={formData.obgynCountry}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-4"
+          >
+            <option value="United States">United States</option>
+          </select>
+
+          <input
+            type="text"
+            name="obgynAddressline1"
+            placeholder="Address Line 1 (required)"
+            value={formData.obgynAddressline1}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-2"
+          />
+          <input
+            type="text"
+            name="obgynAddressline2"
+            placeholder="Address Line 2"
+            value={formData.obgynAddressline2}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full mb-2"
+          />
+
+          <div className="flex gap-4 mb-2">
+            <input
+              type="text"
+              name="obgynCity"
+              placeholder="City (required)"
+              value={formData.obgynCity}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="obgynState"
+              placeholder="State (required)"
+              value={formData.obgynState}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              name="obgynZip_code"
+              placeholder="ZIP Code (required)"
+              value={formData.obgynZip_code}
+              onChange={handleChange}
+              className="input-field border p-2 rounded w-full"
+            />
+          </div>
+
+          <input
+            type="text"
+            name="obgynPhonenumber"
+            placeholder="Phone Number of Doctor"
+            value={formData.obgynPhonenumber}
+            onChange={handleChange}
+            className="input-field border p-2 rounded w-full"
+          />
+        </>
+      )}
+    </div>
+
+    {/* Insurance */}
+    <label className="block">Who is your Insurance Provider?</label>
+    <input
+      type="text"
+      name="insuranceProvider"
+      value={formData.insuranceProvider}
       onChange={handleChange}
       className="input-field"
-    >
-      <option value="">Select an option</option>
-      <option>Yes</option>
-      <option>No</option>
-    </select>
- 
-    <label className="block">Would this be your first child?</label>
+    />
+
+    {/* Medications */}
+    <div className="">
+      <label className="block mb-3 text-black">Are you currently on any medications?</label>
+      <div className="flex flex-col gap-3">
+        {/* Dynamically add from formData.medications if needed */}
+        <button className="bg-black text-white py-2 px-4 w-fit">Add Medication</button>
+      </div>
+    </div>
+
+    {/* Alcohol or Smoke */}
+    <label className="block">Do you consume alcohol or smoke?</label>
     <select
-      name="firstChild"
-      value={formData.firstChild}
+      name="consumesAlcoholOrSmokes"
+      value={formData.consumesAlcoholOrSmokes}
       onChange={handleChange}
-      className="input-field"
+      className="input-field border p-2 rounded w-full"
     >
       <option value="">Select an option</option>
-      <option>Yes</option>
-      <option>No</option>
+      <option value={true}>Yes</option>
+      <option value={false}>No</option>
     </select>
   </div>
 </section>
- 
- 
-          {/* Section 3: Health & Healthcare */}
-          <section className="mt-6">
-            <div className="bg-gray-200 p-3 rounded-md font-semibold">
-              Section 3: Health & Healthcare
-              <p className="text-gray-400 mt-1">
-                Any relevant health conditions.
-              </p>
-            </div>
- 
-            <div className="mt-4 space-y-4">
-              <label className="block">
-                Do you have a primary care physician?
-              </label>
-              <select
-                name="hasPrimaryCarePhysician"
-                value={formData.hasPrimaryCarePhysician}
-                onChange={handleChange}
-                className="input-field"
-              >
-                 <option value="">Select an option</option>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
- 
-              <label className="block">Who is your Insurance Provider?</label>
-              <input
-                type="text"
-                name="insuranceProvider"
-                value={formData.insuranceProvider}
-                onChange={handleChange}
-                className="input-field"
-              />
- 
-              <label className="block">Do you consume alcohol or smoke?</label>
-              <select
-                name="consumesAlcoholOrSmokes"
-                value={formData.consumesAlcoholOrSmokes}
-                onChange={handleChange}
-                className="input-field"
-              >
-                 <option value="">Select an option</option>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-              <label className="block">Do you consume alcohol or smoke?</label>
-              <input
-                type="text"
-                name="navigationExperience"
-                value={formData.navigationExperience}
-                onChange={handleChange}
-                className="input-field"
-              />
-            </div>
-           
-          </section>
- 
+
           {/* Submit Button */}
           <div className="mt-6 text-center">
             <button
@@ -488,8 +828,6 @@ export default () => (
     <ProfileSetup />
   </>
 );
-
-
 
 
 
