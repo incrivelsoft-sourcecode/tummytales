@@ -48,7 +48,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built files to NGINX web dir
-COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
 
 # Copy custom NGINX config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
