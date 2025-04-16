@@ -18,7 +18,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000"] }));
+app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000", "https://tummytales.info"] }));
 
 
 app.use(express.json({ limit: '6mb' }));
@@ -39,10 +39,10 @@ app.use((err, req, res, next) => {
 
 
 
-app.use('/users', userRouter);
-app.use('/mom',momsurvey_router)
-app.use('/ai',geminiai_router)
-app.use('/ai',AImeal_router)
+app.use('user/users', userRouter);
+app.use('user/mom',momsurvey_router)
+app.use('user/ai',geminiai_router)
+app.use('user/ai',AImeal_router)
 
 app.get("/", (req, res) => {
   res.status(200).send(`Server running upon the port : ${port}`);
