@@ -5,10 +5,10 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://54.163.147.226:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://54.163.147.226:3000" || "https://tummytales.info";
 
 // Middleware
-app.use(cors("http://54.163.147.226:5001"));
+app.use(cors("https://tummytales.info/user"));
 app.use(express.json());
 
 // Nodemailer transporter
@@ -59,7 +59,7 @@ const generateEmailTemplate = (referralName, referal_code, permissions, role) =>
 `;
 
 // API Endpoint to Send Referral Emails
-app.post("/mail/send-referal", async (req, res) => {
+app.post("mail/mail/send-referal", async (req, res) => {
 	try {
 		console.log("\n--- Incoming Request ---");
 		console.log("Request Body:", req.body);
