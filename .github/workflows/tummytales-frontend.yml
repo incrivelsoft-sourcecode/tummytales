@@ -74,7 +74,8 @@ jobs:
               "export ACR_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
               "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
               "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
-              "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }} --force",
+              "docker ps -a",
               "docker stop frontend-service-container || true",
               "docker rm frontend-service-container || true",
               "docker run -d --pull=always --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
