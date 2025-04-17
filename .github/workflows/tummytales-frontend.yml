@@ -65,18 +65,130 @@ jobs:
       - name: Extract Docker Tag
         run: echo "TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
 
-      - name: Deploy frontend-service to EC2 via AWS SSM
+      - name: Deploy frontend-service to EC2 with rollback strategy
         run: |
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
             --parameters 'commands=[
+              "set -e",
+
               "export ACR_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
               "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
               "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
+
+              "# Pull new image",
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
-              "docker stop frontend-service-container || true",
-              "docker rm frontend-service-container || true",
-              "docker run -d --pull=always --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+
+              "# Backup old container (if it exists)",
+              "if docker ps -a --format \"{{.Names}}\" | grep -q frontend-service-container; then",
+              "  docker rename frontend-service-container frontend-service-backup",
+              "fi",
+
+              "# Run new container",
+              "docker run -d --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+
+              "# Wait for new container to start",
+              "sleep 10",
+
+              "# Check if new container is running",
+              "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-container; then",
+              "  echo \"✅ New container is running. Cleaning up backup and old images...\"",
+              "  docker rm -f frontend-service-backup || true",
+
+              "  # Remove unused images except the running one",
+              "  current_image_id=$(docker inspect --format='{{.Image}}' frontend-service-container)",
+              "  docker images -q | grep -v $current_image_id | xargs -r docker rmi -f || true",
+
+              "else",
+              "  echo \"❌ New container failed to run. Rolling back...\"",
+              "  docker rm -f frontend-service-container || true",
+              "  docker rename frontend-service-backup frontend-service-container",
+              "  docker start frontend-service-container",
+              "  echo \"✅ Rollback complete: Previous container restored.\"",
+              "fi"
             ]' \
-            --comment "Deploying Tummytales Frontend Service via GitHub Actions"
+            --comment "Deploying Tummytales Frontend with rollback safety"
+
+# name: Tummytales Frontend Service CI/CD
+
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'frontend/**'
+#       - '.github/workflows/tummytales-frontend.yml'
+
+# env:
+#   IMAGE: frontend-service
+#   REGISTRY_HOSTNAME: incrivel
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+#     defaults:
+#       run:
+#         working-directory: ./frontend
+
+#     outputs:
+#       docker_tag: ${{ steps.meta.outputs.version }}
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v2
+
+#       - name: Docker Metadata
+#         id: meta
+#         uses: docker/metadata-action@v4
+#         with:
+#           images: ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}
+#           tags: |
+#             type=sha
+
+#       - name: Log in to Docker Hub
+#         uses: docker/login-action@v2
+#         with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+#       - name: Build and Push Docker Image
+#         uses: docker/build-push-action@v3
+#         with:
+#           context: ./frontend
+#           push: true
+#           tags: ${{ steps.meta.outputs.tags }}
+
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: build-and-push
+
+#     steps:
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v2
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: us-east-1
+
+#       - name: Extract Docker Tag
+#         run: echo "TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
+
+#       - name: Deploy frontend-service to EC2 via AWS SSM
+#         run: |
+#           aws ssm send-command \
+#             --document-name "AWS-RunShellScript" \
+#             --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+#             --parameters 'commands=[
+#               "export ACR_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
+#               "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
+#               "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
+#               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+#               "docker stop frontend-service-container || true",
+#               "docker rm frontend-service-container || true",
+#               "docker run -d --pull=always --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+#             ]' \
+#             --comment "Deploying Tummytales Frontend Service via GitHub Actions"
