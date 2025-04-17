@@ -80,34 +80,41 @@ jobs:
               "# Pull latest image",
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
 
-              "# Stop and backup old container if exists",
-              "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-container; then",
-              "  docker stop frontend-service-container",
+              "# Stop and rename old container if exists",
+              "if docker ps -a --format \"{{.Names}}\" | grep -q frontend-service-container; then",
+              "  docker stop frontend-service-container || true",
               "  docker rename frontend-service-container frontend-service-backup",
               "fi",
 
-              "# Run new container",
+              "# Stop backup to free port 3000",
+              "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-backup; then",
+              "  docker stop frontend-service-backup || true",
+              "fi",
+
+              "# Run new container on port 3000",
               "docker run -d --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
 
-              "# Wait and check if new container is running",
+              "# Wait and validate",
               "sleep 10",
+
+              "# Check if new container is up",
               "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-container; then",
-              "  echo \"✅ New container is running. Cleanup...\"",
+              "  echo \"✅ New container is running. Cleaning up...\"",
               "  docker rm -f frontend-service-backup || true",
 
-              "  # Remove old images except current",
+              "  # Remove all unused images except the running one",
               "  current_image_id=$(docker inspect --format='{{.Image}}' frontend-service-container)",
               "  docker images -q | grep -v $current_image_id | xargs -r docker rmi -f || true",
-
               "else",
-              "  echo \"❌ New container failed to start. Rolling back...\"",
+              "  echo \"❌ New container failed. Rolling back...\"",
               "  docker rm -f frontend-service-container || true",
               "  docker rename frontend-service-backup frontend-service-container",
               "  docker start frontend-service-container",
-              "  echo \"✅ Rollback completed: old container restarted.\"",
+              "  echo \"✅ Rollback complete. Old container restored.\"",
               "fi"
             ]' \
-            --comment "Safe deploy of Tummytales Frontend Service"
+            --comment "Safe deploy of Tummytales Frontend Service with rollback and port management"
+
 
 
 # name: Tummytales Frontend Service CI/CD
