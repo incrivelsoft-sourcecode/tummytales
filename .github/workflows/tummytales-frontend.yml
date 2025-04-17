@@ -65,7 +65,7 @@ jobs:
       - name: Extract Docker Tag
         run: echo "TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
 
-      - name: Deploy frontend-service to EC2 with rollback strategy
+      - name: Deploy frontend-service to EC2 with rollback
         run: |
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
@@ -77,38 +77,38 @@ jobs:
               "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
               "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
 
-              "# Pull new image",
+              "# Pull latest image",
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
 
-              "# Backup old container (if it exists)",
-              "if docker ps -a --format \"{{.Names}}\" | grep -q frontend-service-container; then",
+              "# Stop and backup old container if exists",
+              "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-container; then",
+              "  docker stop frontend-service-container",
               "  docker rename frontend-service-container frontend-service-backup",
               "fi",
 
               "# Run new container",
               "docker run -d --name frontend-service-container -p 3000:3000 --env-file /home/ubuntu/env/frontend.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
 
-              "# Wait for new container to start",
+              "# Wait and check if new container is running",
               "sleep 10",
-
-              "# Check if new container is running",
               "if docker ps --format \"{{.Names}}\" | grep -q frontend-service-container; then",
-              "  echo \"✅ New container is running. Cleaning up backup and old images...\"",
+              "  echo \"✅ New container is running. Cleanup...\"",
               "  docker rm -f frontend-service-backup || true",
 
-              "  # Remove unused images except the running one",
+              "  # Remove old images except current",
               "  current_image_id=$(docker inspect --format='{{.Image}}' frontend-service-container)",
               "  docker images -q | grep -v $current_image_id | xargs -r docker rmi -f || true",
 
               "else",
-              "  echo \"❌ New container failed to run. Rolling back...\"",
+              "  echo \"❌ New container failed to start. Rolling back...\"",
               "  docker rm -f frontend-service-container || true",
               "  docker rename frontend-service-backup frontend-service-container",
               "  docker start frontend-service-container",
-              "  echo \"✅ Rollback complete: Previous container restored.\"",
+              "  echo \"✅ Rollback completed: old container restarted.\"",
               "fi"
             ]' \
-            --comment "Deploying Tummytales Frontend with rollback safety"
+            --comment "Safe deploy of Tummytales Frontend Service"
+
 
 # name: Tummytales Frontend Service CI/CD
 
