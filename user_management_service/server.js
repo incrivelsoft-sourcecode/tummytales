@@ -39,7 +39,7 @@ app.use((err, req, res, next) => {
 
 
 
-app.use('user/users', userRouter);
+app.use('/user/users', userRouter);
 app.use('/user/mom',momsurvey_router)
 app.use('/user/ai',geminiai_router)
 app.use('/user/ai',AImeal_router)
