@@ -1,11 +1,12 @@
 const express = require ('express');
 const {Survey,SupporterSurvey} = require('../model/momsurvey');
+const mongoose= require('mongoose');
 
 const createsurvey = async (req, res) => {
     try {
       const {
         user_name,
-  
+        userId,
         // generalDetails
         first_name,
         last_name,
@@ -20,7 +21,7 @@ const createsurvey = async (req, res) => {
         city,
         State,
         Zip_code,
-  
+
         // pregnancyStatus
         currentlyPregnant,
         Last_menstrualperiod,
@@ -30,14 +31,14 @@ const createsurvey = async (req, res) => {
         reason,
         gestationWeeks,
         treatmentLocation,
-  
+
         isFirstChild,
         firstChildDob,
         complications,
         deliverymethod,
         childbornlocation,
         gestationalAgeAtBirth,
-  
+
         // healthCare
         hasPrimaryCarePhysician,
         primaryFirst_name,
@@ -49,7 +50,7 @@ const createsurvey = async (req, res) => {
         primaryState,
         primaryZip_code,
         primaryPhonenumber,
-  
+
         hasOBGYN,
         obgynFirst_name,
         obgynLast_name,
@@ -60,14 +61,23 @@ const createsurvey = async (req, res) => {
         obgynState,
         obgynZip_code,
         obgynPhonenumber,
-  
+
         insuranceProvider,
         medications,
-        consumesAlcoholOrSmokes
+        consumesAlcoholOrSmokes,
+
+        preferredLanguage,
+        dietaryPreferences,
+        physicalActivity,
+        primaryInfoSource,
+        expectations,
+        challenges,
+        wantsPersonalizedResources,
+        additionalComments,
       } = req.body;
   
       const requiredFields = {
-        user_name,
+       // user_name,
         first_name,
         last_name,
         dob,
@@ -92,6 +102,7 @@ const createsurvey = async (req, res) => {
   
       const newSurvey = new Survey({
         user_name,
+        userId,
         generalDetails: {
           first_name,
           last_name,
@@ -162,7 +173,10 @@ const createsurvey = async (req, res) => {
           },
           insuranceProvider,
           medications,
-          consumesAlcoholOrSmokes
+          consumesAlcoholOrSmokes,
+          lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
+          experienceAndExpectations: { expectations, challenges, wantsPersonalizedResources, additionalComments }
+
         }
       });
   
@@ -178,8 +192,8 @@ const createsurvey = async (req, res) => {
 
 const getbyid_momsurvey = async(req,res)=>{
     try{
-        const {id}=req.params;
-        const survey = await Survey.findById(id);
+        const {userId}=req.params;
+        const survey = await Survey.findOne({ userId } );
         if(!survey){
             return res.status(404).json({error:'survey not found'});
         }
@@ -191,52 +205,69 @@ const getbyid_momsurvey = async(req,res)=>{
     }
 }
 
-const getAllSurveys = async (req,res)=>{
-    try{
-        const surveys = await Survey.find();
+const getAllSurveys = async (req, res) => {
+  try {
+    const { userId } = req.query; // Accessing userId from the query string
 
-        return res.status(200).json({ success:true,surveys})
-
-    }catch(error){
-        console.error('Failed to get allsurveys',error);
-        return res.status(505).json({error:"Failed to retrive surveys"})
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
     }
-}
+
+    const surveys = await Survey.find({ userId });
+
+    if (!surveys || surveys.length === 0) {
+      return res.status(404).json({ message: "No surveys found for this user" });
+    }
+
+    return res.status(200).json({ success: true, surveys });
+  } catch (error) {
+    console.error("Failed to get all surveys", error);
+    return res.status(500).json({ error: "Failed to retrieve surveys" });
+  }
+};
 
 
 
-const update_momsurvey = async (req,res)=>{
-    try{ 
-        const{id}= req.params;
-       const updates = req.body;
-       
- 
-       const existingsurvey = await Survey.findById(id);
-       if(!existingsurvey){
-        return res.status(404).json({error: "Survey not found"});
-       }
-
-       const updatequery={};
-       for(const key in updates){
-        if(updates[key]!==undefined ){
-            updatequery[key]=updates[key];
-        }
-       }
 
 
-       const Updatedsurvey = await Survey.findByIdAndUpdate(
-        id,
-        {$set:updatequery},
-        {new:true,runValidators:true}
+const update_momsurvey = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const updates = req.body;
+    
+    // console.log("Incoming userId param:", userId);
+
+    // Find the existing survey using userId as a string
+    const existingsurvey = await Survey.findOne({ userId });
+    if (!existingsurvey) {
+      return res.status(404).json({ error: "Survey not found" });
+    }
+
+    // Build update query from non-undefined fields
+    const updateQuery = {};
+    for (const key in updates) {
+      if (updates[key] !== undefined) {
+        updateQuery[key] = updates[key];
+      }
+    }
+
+    // Update the survey
+    const Updatedsurvey = await Survey.findOneAndUpdate(
+      { userId },
+      { $set: updateQuery },
+      { new: true, runValidators: true }
     );
-        return res.status(200).json({message :'survey updated successfully',survey:Updatedsurvey})
 
-    }catch(error){
-       console.error('failed to update files',error);
-       return res.status(500).json({error:"Failed to update survey"})
+    return res.status(200).json({
+      message: 'Survey updated successfully',
+      survey: Updatedsurvey,
+    });
+  } catch (error) {
+    console.error('Failed to update survey', error);
+    return res.status(500).json({ error: "Failed to update survey" });
+  }
+};
 
-    }
-}
 
 const delete_momsurvey = async (req, res) => {
     try {
@@ -258,6 +289,14 @@ const delete_momsurvey = async (req, res) => {
     }
 };
 
+const deleteallsurveys = async(req,res)=>{
+  try{
+    const result =await Survey.deleteMany({});
+    res.json({message:'all surveys deleted successfully'});
+  }catch(err){
+    res.status(500).json({message:err.message});
+  }
+}
 
 const generateReferralPin = async (req, res) => {
     try {
@@ -394,7 +433,7 @@ const deletesupporter = async(req,res)=>{
 
 
 module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,
-    generateReferralPin,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
+    generateReferralPin,deleteallsurveys,addsupport,getSupporterbyid,getallSupporters,editsupporter,deletesupporter} 
 
 
 
