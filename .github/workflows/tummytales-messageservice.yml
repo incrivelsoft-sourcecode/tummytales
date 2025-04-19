@@ -7,7 +7,7 @@ on:
     paths:
       - 'message_management_service/**'
       - '.github/workflows/tummytales-messageservice.yml'
-  workflow_dispatch:  # Allows you to manually trigger the workflow from GitHub Actions UI
+  workflow_dispatch:
 
 env:
   IMAGE: message-service
@@ -77,6 +77,11 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop message-service-container || true",
               "docker rm message-service-container || true",
-              "docker run -d --pull=always --name message-service-container -p 5002:5002 --env-file /home/ubuntu/env/messageservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name message-service-container -p 5002:5002 --env-file /home/ubuntu/env/messageservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "echo Cleaning up old Docker images...",
+              "KEEP_TAG=${{ env.TAG }}",
+              "docker images --format '\''{{.Repository}}:{{.Tag}} {{.ID}}'\'' | grep $ACR_USERNAME/${{ env.IMAGE }} | grep -v :$KEEP_TAG | awk '\''{print $2}'\'' | xargs -r docker rmi -f || true",
+              "docker image prune -af || true",
+              "docker system prune -af --volumes || true"
             ]' \
             --comment "Deploying Tummytales Message Service via GitHub Actions"
