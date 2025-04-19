@@ -5,7 +5,7 @@ const mongoose= require('mongoose');
 const createsurvey = async (req, res) => {
     try {
       const {
-        user_name,
+       // user_name,
         userId,
         // generalDetails
         first_name,
@@ -101,7 +101,7 @@ const createsurvey = async (req, res) => {
       }
   
       const newSurvey = new Survey({
-        user_name,
+       // user_name,
         userId,
         generalDetails: {
           first_name,
@@ -174,10 +174,9 @@ const createsurvey = async (req, res) => {
           insuranceProvider,
           medications,
           consumesAlcoholOrSmokes,
-          lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
+        },
+        lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
           experienceAndExpectations: { expectations, challenges, wantsPersonalizedResources, additionalComments }
-
-        }
       });
   
       await newSurvey.save();
@@ -234,7 +233,7 @@ const update_momsurvey = async (req, res) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
-    
+     // First, log the input to see what's received
     // console.log("Incoming userId param:", userId);
 
     // Find the existing survey using userId as a string
@@ -313,7 +312,7 @@ const addsupport = async(req,res)=>{
 
     try{
         const {
-            user_name,
+            userId,
             name,
             relationship,
             hasAccess,
@@ -340,7 +339,7 @@ const addsupport = async(req,res)=>{
         }
 
         const newSupport = new SupporterSurvey({
-            user_name,
+            userId,
             name,
             relationship,
             hasAccess,

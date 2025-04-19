@@ -6,8 +6,11 @@ import { useNavigate } from "react-router-dom";
  
  
 const ProfileSetup = () => {
-  const user_name = localStorage.getItem("userName") || ""; // Retrieve stored username
-console.log("Retrieved user_name:", user_name);
+//   const user_name = localStorage.getItem("userName") || ""; // Retrieve stored username
+// console.log("Retrieved user_name:", user_name);
+const userId = localStorage.getItem("userId") || "";
+console.log("Retrieved userId:", userId); 
+
   const navigate = useNavigate();
  
   const [formData, setFormData] = useState({
@@ -70,7 +73,15 @@ console.log("Retrieved user_name:", user_name);
   // Other
   insuranceProvider: "",
   medications: [],
-  consumesAlcoholOrSmokes: false
+  consumesAlcoholOrSmokes: false,
+  preferredLanguage: "",
+  dietaryPreferences: "",
+  physicalActivity: "",
+  primaryInfoSource: "",
+  expectations: "",
+  challenges: "",
+  wantsPersonalizedResources: false,
+  additionalComments: "",
 });
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -106,7 +117,7 @@ const handleSubmit = async (e) => {
  
     const res = await axios.post(
       `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-      { user_name, ...filteredData }
+      { userId, ...filteredData }
     );
  
     if (res.status === 200) {
@@ -788,6 +799,86 @@ const handleChange = (e) => {
     </select>
   </div>
 </section>
+{/* Section 4: Lifestyle & Preferences */}
+         <section className="mt-6">
+           <div className="bg-gray-200 p-3 rounded-md font-semibold">
+             Section 4: Lifestyle & Preferences
+             <p className="text-gray-400 mt-1">Help us understand your personal preferences and Lifestyle</p>
+           </div>
+          
+          <div className="mt-4 space-y-4">
+            <label className="block">what is preferred language for medical advice and resources?</label>
+             <input 
+            type="text" 
+            name="preferredLanguage"
+            value={formData.preferredLanguage}
+            onChange={handleChange}
+            className="input-field" />
+
+            <label className="block">Do you follow any specific dietary preferences or restrictions?</label>
+            <input 
+            type="text" 
+            name="dietaryPreferences"
+            value={formData.dietaryPreferences}
+            onChange={handleChange}
+            className="input-field" />
+            <label className="block">Do you currently exercise or engage in physical activity during pregnancy?</label>
+            <input 
+            type="text" 
+            name="physicalActivity"
+            value={formData.physicalActivity}
+            onChange={handleChange}
+            className="input-field" />
+            <label className="block">What is your primary source of information during pregnancy?</label>
+            <input 
+            type="text" 
+            name="primaryInfoSource"
+            value={formData.primaryInfoSource}
+            onChange={handleChange}
+            className="input-field" />
+            
+          </div>
+        </section>
+
+ {/* Section 5: Support System */}
+        <section className="mt-6">
+          <div className="bg-gray-200 p-3 rounded-md font-semibold">
+            Section 5: Support System
+            <p className="text-gray-400 mt-1">We'd like to hear about your expectations and any concerns you may have.</p>
+          </div>
+          
+          <div className="mt-4 space-y-4">
+            <label className="block">What do you expect most from the Platform?</label>
+            <input 
+            type="text" 
+            name="expectations"
+            value={formData.expectations}
+            onChange={handleChange}
+            className="input-field" />
+
+            <label className="block">Are there any specific challanges or concerns you would like support with?</label>
+            <input 
+            type="text" 
+            name="challenges"
+            value={formData.challenges}
+            onChange={handleChange}
+            className="input-field" />
+            <label className="block">Would you like to receive personalized resources,tips,or reminders based on your profile?</label>
+            <input 
+            type="text" 
+            name="wantsPersonalizedResources"
+            value={formData.wantsPersonalizedResources}
+            onChange={handleChange}
+            className="input-field" />
+            <label className="block">Any additional comments feedback for us?</label>
+            <input 
+            type="text" 
+            name="additionalComments"
+            value={formData.additionalComments}
+            onChange={handleChange}
+            className="input-field" />
+          </div>
+        </section>
 
           {/* Submit Button */}
           <div className="mt-6 text-center">
@@ -828,6 +919,7 @@ export default () => (
     <ProfileSetup />
   </>
 );
+
 
 
 

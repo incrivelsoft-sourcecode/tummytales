@@ -13,11 +13,12 @@ momsurvey_router.get('/all/surveys',authorizeMommiddleware,getAllSurveys);
 momsurvey_router.get('/survey/:userId',authorizeMommiddleware,getbyid_momsurvey);
 momsurvey_router.delete('/delete/:userId',authorizeMommiddleware,delete_momsurvey);
 momsurvey_router.post('/generate-referral-pin',generateReferralPin)
-momsurvey_router.post('/supporter',addsupport);
-momsurvey_router.get('/supporter/:id',getSupporterbyid);
-momsurvey_router.get('/all/supporters',getallSupporters)
-momsurvey_router.put('/updatesupporter/:id',editsupporter)
-momsurvey_router.delete('/supporter/:id',deletesupporter)
+momsurvey_router.post('/supporter',authorizeMommiddleware,addsupport);
+momsurvey_router.get('/supporter/:id',authorizeMommiddleware,getSupporterbyid);
+momsurvey_router.get('/all/supporters',authorizeMommiddleware,getallSupporters)
+momsurvey_router.put('/updatesupporter/:id',authorizeMommiddleware,editsupporter)
+momsurvey_router.delete('/supporter/:id',authorizeMommiddleware,deletesupporter)
+
 momsurvey_router.delete('/alldel',deleteallsurveys)
 
 module.exports=momsurvey_router

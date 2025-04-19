@@ -9,8 +9,8 @@ const connectDB = require('./config/db.js');
 //require('../user_management_service/thali/controller/mealscheduel.js')
 const userRouter  = require('./route/userRoutes.js');
 const momsurvey_router=require('./route/momsurvey_router.js');
-const geminiai_router = require("./route/geminiai_router.js");
-const AImeal_router= require('./thali/router/ai_meal_router.js')
+const askai_router = require("./route/askai_router.js");
+
 
 const port = process.env.DB_PORT || 3000;  
 
@@ -41,8 +41,8 @@ app.use((err, req, res, next) => {
 
 app.use('/user/users', userRouter);
 app.use('/user/mom',momsurvey_router)
-app.use('/user/ai',geminiai_router)
-app.use('/user/ai',AImeal_router)
+app.use('/user/ai',askai_router)
+
 
 app.get("/", (req, res) => {
   res.status(200).send(`Server running upon the port : ${port}`);

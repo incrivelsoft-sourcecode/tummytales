@@ -2,14 +2,14 @@ const mongoose = require("mongoose");
 const UserDetails= require('./User')
 const surveySchema = new mongoose.Schema(
   {
-    user_name: {
-      type: String,
-     // required: true,
-    },
+    // user_name: {
+    //  type: String,
+    //  required: true,
+    // },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserDetails", 
-     // required: true,
+      required: true,
     },
 
     generalDetails: {
@@ -114,10 +114,15 @@ const surveySchema = new mongoose.Schema(
 
 const supporterSchema =new mongoose.Schema(
   {
-   user_name: { 
-    type: String,
-    ref: "UserDetails",
-    required: true }, 
+  //  user_name: { 
+  //   type: String,
+  //   ref: "UserDetails",
+  //   required: true }, 
+  userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserDetails", 
+      required: true,
+    },
     name:{
       type:String,
       required:true,

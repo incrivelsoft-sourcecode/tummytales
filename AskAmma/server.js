@@ -1,11 +1,11 @@
 const express = require("express");
 const cors = require('cors');
 const dotenv  = require('dotenv');
-const AImeal_router = require('../thali/router/ai_meal_router.js')
 
 const connectDB = require('./config/db.js');
 
-const port = process.env.DB_PORT || 4000;  
+const askai_router = require("./route/askai_router.js");
+const port = process.env.DB_PORT || 9000;  
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(cors({ origin: ["https://tummytales-alpha.vercel.app", "http://localhost:3000", "http://localhost:3001"] }));
 
 
-app.use('/ai',AImeal_router)
+app.use('/ai',askai_router)
 
 
 
@@ -23,5 +23,4 @@ app.use('/ai',AImeal_router)
 app.listen(port, async () => {
   console.log(`Server Started on port ${port}`);
   await connectDB();
-  require('../../user_management_service/thali/controller/mealscheduel.js')
 });
