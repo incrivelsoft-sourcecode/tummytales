@@ -7,7 +7,7 @@ on:
     paths:
       - 'mail_service/**'
       - '.github/workflows/tummytales-mailservice.yml'
-  workflow_dispatch:  # Allows you to manually trigger the workflow from GitHub Actions UI
+  workflow_dispatch:
 
 env:
   IMAGE: mail-service
@@ -77,6 +77,11 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop mail-service-container || true",
               "docker rm mail-service-container || true",
-              "docker run -d --pull=always --name mail-service-container -p 5003:5003 --env-file /home/ubuntu/env/mailservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name mail-service-container -p 5003:5003 --env-file /home/ubuntu/env/mailservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "echo Cleaning up old Docker images...",
+              "KEEP_TAG=${{ env.TAG }}",
+              "docker images --format '\''{{.Repository}}:{{.Tag}} {{.ID}}'\'' | grep $ACR_USERNAME/${{ env.IMAGE }} | grep -v :$KEEP_TAG | awk '\''{print $2}'\'' | xargs -r docker rmi -f || true",
+              "docker image prune -af || true",
+              "docker system prune -af --volumes || true"
             ]' \
             --comment "Deploying Tummytales Mail Service via GitHub Actions"
