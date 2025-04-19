@@ -77,6 +77,11 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker stop user-service-container || true",
               "docker rm user-service-container || true",
-              "docker run -d --pull=always --name user-service-container -p 5001:5001 --env-file /home/ubuntu/env/userservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}"
+              "docker run -d --pull=always --name user-service-container -p 5001:5001 --env-file /home/ubuntu/env/userservice.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "echo Cleaning up old Docker images...",
+              "KEEP_TAG=${{ env.TAG }}",
+              "docker images --format '\''{{.Repository}}:{{.Tag}} {{.ID}}'\'' | grep $ACR_USERNAME/${{ env.IMAGE }} | grep -v :$KEEP_TAG | awk '\''{print $2}'\'' | xargs -r docker rmi -f || true",
+              "docker image prune -af || true",
+              "docker system prune -af --volumes || true"
             ]' \
             --comment "Deploying Tummytales User Service via GitHub Actions"
