@@ -25,7 +25,8 @@ console.log("Retrieved userId:", userId);
   const fetchChats = async () => {
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chats?userId=${userId}`
+      //  `${process.env.REACT_APP_BACKEND_URL}/ai/chats?userId=${userId}`
+       `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chats?userId=${userId}`
       );
       setChats(res.data.Aichats || []);
     } catch (error) {
@@ -37,7 +38,8 @@ console.log("Retrieved userId:", userId);
   const handleNewChat = async () => {
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+       // `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+       `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chat/new`,
         { userId }
       );
       const newChat = res.data;
@@ -58,7 +60,8 @@ console.log("Retrieved userId:", userId);
     if (!chatData[chatId]) {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${chatId}?userId=${userId}`
+         // `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${chatId}?userId=${userId}`
+         `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chat/${chatId}?userId=${userId}`
         );
         setChatData((prevChatData) => ({
           ...prevChatData,
@@ -86,7 +89,8 @@ console.log("Retrieved userId:", userId);
       // ✅ If no chat is selected, create a new one
       if (!chatId) {
         const newChatRes = await axios.post(
-          `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+         // `${process.env.REACT_APP_BACKEND_URL}/ai/chat/new`,
+           `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chat/new`,
           {userId }
         );
         chatId = newChatRes.data.chatId; // Get new chat ID from response
@@ -103,7 +107,8 @@ console.log("Retrieved userId:", userId);
  
       // ✅ Send message using either existing or newly created chat
       const res = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chat`,
+        //`${process.env.REACT_APP_BACKEND_URL}/ai/chat`,
+        `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chat`,
         {
           message: userMessage,
           chatId,
@@ -144,7 +149,8 @@ console.log("Retrieved userId:", userId);
  
     try {
       await axios.put(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/ai/chat/${chatId}`,
+       // `${process.env.REACT_APP_BACKEND_URL}/ai/ai/chat/${chatId}`,
+       `${process.env.REACT_APP_AI_BACKEND_URL}/ai/ai/chat/${chatId}`,
         { name: editChatName,
           userId
          }
@@ -171,7 +177,8 @@ console.log("Retrieved userId:", userId);
  
     try {
       await axios.delete(
-        `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${confirmDelete}?userId=${userId}`
+       // `${process.env.REACT_APP_BACKEND_URL}/ai/chat/${confirmDelete}?userId=${userId}`
+       `${process.env.REACT_APP_AI_BACKEND_URL}/ai/chat/${confirmDelete}?userId=${userId}`
       );
       setChats((prevChats) =>
         prevChats.filter((chat) => chat._id !== confirmDelete)

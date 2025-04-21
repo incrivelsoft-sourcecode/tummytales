@@ -5,7 +5,7 @@ const dotenv  = require('dotenv');
 const connectDB = require('./config/db.js');
 
 const askai_router = require("./route/askai_router.js");
-const port = process.env.DB_PORT || 9000;  
+const port = process.env.DB_PORT || 7001;  
 
 dotenv.config();
 

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-
+const UserDetails=require('../model/User')
 const momMiddleware = (req, res, next) => {
 	const token = req.header('Authorization')?.split(' ')[1];
 
@@ -72,13 +72,16 @@ const authorizeMommiddleware = async (req, res, next) => {
 	  }
   
 	  let user = null;
-	 
-		  if (userId) {
-			  user = await UserDetails.findById(userId);
-			  if (!user) return res.status(404).json({ message: 'User with this userId not found' });
-			  req.body.userId = userId; // Inject for controller use
-			  console.log('User ID:', userId);
-		  }
+
+	  if (userId) {
+		  user = await UserDetails.findById(userId);
+		  if (!user) return res.status(404).json({ message: 'User with this userId not found' });
+		  
+    // ✅ Make sure req.body is defined before assigning userId
+    if (!req.body) req.body = {};
+		  req.body.userId = userId; // Inject for controller use
+		  console.log('User ID:', userId);
+	  }
 	  if (user_name) {
 		req.body.user_name = user_name;
 		console.log('User Name:', user_name);

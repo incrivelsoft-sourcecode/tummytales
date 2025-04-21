@@ -45,50 +45,6 @@ const askAI = async (req, res) => {
 
 
 
-
-// const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-
-// const askAI = async (req, res) => {
-//     try {
-//         const { message,chatId } = req.body;
-
-//         if (!chatId) {
-//             return res.status(400).json({ error: "Chat ID is required" });
-//         }
-
-//         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-
-//         const result = await model.generateContent({
-//             contents: [{ parts: [{ text: message }] }],
-//         });
-
-//         const response = result.response.candidates[0].content.parts[0].text; // Extract AI response
-
-//         // Find chat and update it
-//         const chat = await AIChat.findById(chatId);
-//         if (!chat) return res.status(404).json({ error: "Chat not found" });
-
-//          // ✅ If this is the first message, update chat name
-//          if (!chat.name || chat.name === "New Chat") {
-//             chat.name = message.length > 30 ? message.substring(0, 30) + "..." : message; // Trim long names
-//         }
-
-//         chat.messages.push({ question: message, answer: response });
-//         await chat.save();
-
-//        // res.json({ reply: response });
-//        res.json({ reply: response, chatName: chat.name });
-//     } catch (error) {
-//         console.error("Gemini API Error:", error);
-//         res.status(500).json({ error: "AI request failed" });
-//     }
-// }
-
-
-
 const createNewAIChat = async (req, res) => {
     try {
 
@@ -198,6 +154,11 @@ const deleteAichat = async (req, res) => {
 
 
 module.exports = { askAI,createNewAIChat,getAllchats,getAichatbyid,deleteAichat,editAIchat };
+
+
+
+
+
 
 
 
