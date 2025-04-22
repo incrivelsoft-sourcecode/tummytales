@@ -1,18 +1,20 @@
-# Use Node.js base image
+# Use the official Node.js image
 FROM node:18
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy dependency files and install
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies (including mongoose)
 RUN npm install
 
-# Copy the rest of the source
+# Copy the rest of the application files
 COPY . .
 
-# Expose app port
+# Expose the port the app runs on
 EXPOSE 7001
 
-# Run the server
+# Start the application
 CMD ["node", "server.js"]
