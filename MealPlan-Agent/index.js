@@ -5,7 +5,7 @@ const AImeal_router = require('./router/ai_meal_router.js')
 
 const connectDB = require('./config/db.js');
 
-const port = process.env.DB_PORT || 4000;  
+const port = process.env.DB_PORT || 6001;  
 
 dotenv.config();
 
