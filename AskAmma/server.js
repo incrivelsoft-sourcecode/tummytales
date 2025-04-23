@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(cors({ origin: ["https://tummytales-alpha.vercel.app", "http://localhost:3000", "http://localhost:3001"] }));
 
 
-app.use('/ai',askai_router)
+app.use('/askamma/ai',askai_router)
 
 
 app.get('/askamma', (req, res) => {
