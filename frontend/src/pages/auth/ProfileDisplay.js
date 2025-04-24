@@ -47,12 +47,13 @@ const ProfileDisplay = () => {
   };
 
   const [medications, setMedications] = useState([]);
+  const [medicationAdded, setMedicationAdded] = useState(false);
   
   const handleAddMedication = () => {
-    setMedications([...medications, { name: "", dosage: "", frequency: "" }]);
-  };
-  const handleAddMedications = () => {
-    setMedications([...medications, { name: "", dosage: "", frequency: "" }]);
+    if (!medicationAdded) {
+      setMedications([{ name: '', dosage: '', frequency: '' }]);
+      setMedicationAdded(true); // Prevent adding again
+    }
   };
 
   const handleInputChange = (index, field, value) => {
@@ -60,7 +61,6 @@ const ProfileDisplay = () => {
     updatedMedications[index][field] = value;
     setMedications(updatedMedications);
   };
-  
   
 
   return (
@@ -684,73 +684,39 @@ const ProfileDisplay = () => {
         <div className="">
           <label className="block mb-3 text-black">Are you currently on any medications?</label>
           <div className="flex flex-col gap-3">
-            {/* Dynamically add from formData.medications if needed */}
-            <button
-            className="bg-black text-white py-2 px-4 w-fit mb-4"
-            onClick={handleAddMedication}
-          >
-            Add Medication 1
-          </button>
-    
-          {medications.map((med, index) => (
-            <div key={index} className="mb-4 space-y-2">
-              <input
-                type="text"
-                placeholder="Name"
-                value={med.name}
-                onChange={(e) => handleInputChange(index, "name", e.target.value)}
-                className="border p-2 w-full"
-              />
-              <input
-                type="text"
-                placeholder="Dosage"
-                value={med.dosage}
-                onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
-                className="border p-2 w-full"
-              />
-              <input
-                type="text"
-                placeholder="Frequency"
-                value={med.frequency}
-                onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
-                className="border p-2 w-full"
-              />
-            </div>
-          ))}
-          
-          <button
-            className="bg-black text-white py-2 px-4 w-fit mb-4"
-            onClick={handleAddMedications}
-          >
-            Add Medication 2
-          </button>
-    
-          {medications.map((med, index) => (
-            <div key={index} className="mb-4 space-y-2">
-              <input
-                type="text"
-                placeholder="Name"
-                value={med.name}
-                onChange={(e) => handleInputChange(index, "name", e.target.value)}
-                className="border p-2 w-full"
-              />
-              <input
-                type="text"
-                placeholder="Dosage"
-                value={med.dosage}
-                onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
-                className="border p-2 w-full"
-              />
-              <input
-                type="text"
-                placeholder="Frequency"
-                value={med.frequency}
-                onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
-                className="border p-2 w-full"
-              />
-            </div>
-          ))}
-          </div>
+      <button
+        className="bg-black text-white py-2 px-4 w-fit mb-4"
+        onClick={handleAddMedication}
+      >
+        Add Medication
+      </button>
+
+      {medications.map((med, index) => (
+        <div key={index} className="mb-4 space-y-2">
+          <input
+            type="text"
+            placeholder="Name"
+            value={med.name}
+            onChange={(e) => handleInputChange(index, "name", e.target.value)}
+            className="border p-2 w-full"
+          />
+          <input
+            type="text"
+            placeholder="Dosage"
+            value={med.dosage}
+            onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
+            className="border p-2 w-full"
+          />
+          <input
+            type="text"
+            placeholder="Frequency"
+            value={med.frequency}
+            onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+      ))}
+    </div>
         </div>
      
         {/* Alcohol or Smoke */}
