@@ -11,7 +11,7 @@ const userRouter  = require('./route/userRoutes.js');
 const momsurvey_router=require('./route/momsurvey_router.js');
 
 
-const port = process.env.DB_PORT || 3000;  
+const port = process.env.DB_PORT || 5001;  
 
 dotenv.config();
 

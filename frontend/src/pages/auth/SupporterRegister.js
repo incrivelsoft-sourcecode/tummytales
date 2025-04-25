@@ -95,9 +95,10 @@ const SelectRole = () => {
       
       setError("");
       
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register`, {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
         email: registrationData.email,
         password: registrationData.password,
+        confirm_password: registrationData.confirmPassword,
         user_name: registrationData.username,
         role: queryParams.role,
         referal_code: queryParams.referal_code,
@@ -106,6 +107,9 @@ const SelectRole = () => {
       
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
+          localStorage.setItem("userName", response.data.userName);
+          localStorage.setItem("role", response.data.role);
+          localStorage.setItem("userId", response.data.userId);
         navigate("/dashboard");
       } else {
         setError("Registration successful. Please login.");
