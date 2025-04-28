@@ -86,13 +86,24 @@ const surveySchema = new mongoose.Schema(
 
       insuranceProvider: String,
 
-      medications: [
-        {
-          name: { type: String, required: true },
-          dosage: String,
-          frequency: String,
-        },
-      ],
+      // medications: [
+      //   {
+      //     name: { type: String, required: true },
+      //     dosage: String,
+      //     frequency: String,
+      //   },
+      // ],
+      
+  medication1: {
+    name: String,
+    dosage: String,
+    frequency: String,
+  },
+  medication2: {
+    name: String,
+    dosage: String,
+    frequency: String,
+  },
 
       consumesAlcoholOrSmokes: { type: Boolean, default: false },
     },

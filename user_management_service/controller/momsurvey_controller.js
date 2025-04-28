@@ -63,7 +63,14 @@ const createsurvey = async (req, res) => {
         obgynPhonenumber,
 
         insuranceProvider,
-        medications,
+        //medications,
+        medication1Name,
+        medication1Dosage,
+        medication1Frequency,
+      
+        medication2Name,
+        medication2Dosage,
+        medication2Frequency,
         consumesAlcoholOrSmokes,
 
         preferredLanguage,
@@ -89,7 +96,8 @@ const createsurvey = async (req, res) => {
         Addressline1,
         city,
         State,
-        Zip_code
+        Zip_code,
+       // medication2Name
       };
   
       const missingFields = Object.entries(requiredFields)
@@ -172,7 +180,17 @@ const createsurvey = async (req, res) => {
             } : undefined
           },
           insuranceProvider,
-          medications,
+          //medications,
+          medication1: {
+            name: medication1Name,
+            dosage: medication1Dosage,
+            frequency: medication1Frequency,
+          },
+          medication2: {
+            name: medication2Name,
+            dosage: medication2Dosage,
+            frequency: medication2Frequency,
+          },
           consumesAlcoholOrSmokes,
         },
         lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
