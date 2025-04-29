@@ -71,7 +71,7 @@ const createsurvey = async (req, res) => {
         medication2Name,
         medication2Dosage,
         medication2Frequency,
-        consumesAlcoholOrSmokes,
+         consumesAlcoholOrSmokes,
 
         preferredLanguage,
         dietaryPreferences,

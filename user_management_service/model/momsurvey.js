@@ -110,7 +110,7 @@ const surveySchema = new mongoose.Schema(
     lifestylePreferences: {
       preferredLanguage: String,
       dietaryPreferences: String,
-      physicalActivity: { type: Boolean, default: false },
+      physicalActivity: String,
       primaryInfoSource: String,
     },
     experienceAndExpectations: {

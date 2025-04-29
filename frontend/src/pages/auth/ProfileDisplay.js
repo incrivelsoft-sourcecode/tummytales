@@ -1,903 +1,810 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const ProfileDisplay = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isOpens, setIsOpens] = useState(false);
-  const [isopens, setIsopens] = useState(false);
-  const [isopen, setIsopen] = useState(false);
   const [formData, setFormData] = useState({
+    // General Details
+    first_name: '',
+    last_name: '',
+    dob: '',
+    gender: '',
+    nationality: '',
+    Phonenumber: '',
+    email: '',
+    country: '',
+    Addressline1: '',
+    Addressline2: '',
+    city: '',
+    State: '',
+    Zip_code: '',
+
+    // Pregnancy Status
     currentlyPregnant: '',
     Last_menstrualperiod: '',
     estimatedDueDate: '',
     PregnancyLoss: '',
+    dateOfLoss: '',
+    reason: '',
+    gestationWeeks: '',
+    treatmentLocation: '',
     firstChild: '',
+    firstChildDob: '',
+    complications: '',
+    deliverymethod: '',
+    childbornlocation: '',
+    gestationalAgeAtBirth: '',
+
+    // Healthcare
     hasPrimaryCarePhysician: '',
+    primaryFirst_name: '',
+    primaryLast_name: '',
+    primaryAddressline1: '',
+    primaryAddressline2: '',
+    primaryCity: '',
+    primaryState: '',
+    primaryZip_code: '',
     insuranceProvider: '',
     consumesAlcoholOrSmokes: '',
-    navigationExperience: '',
-  });
-  const [progress, setProgress] = useState(0);
-  const [value, setValue] = useState(0);
-  const [item, setItem] = useState(0);
-  const [type, setType] = useState(0);
-  const [use, setUse] = useState(0);
 
+    // Lifestyle
+    preferredLanguage: '',
+    dietaryPreferences: '',
+    exerciseDuringPregnancy: '',
+    infoSourceDuringPregnancy: '',
+
+    // Experience
+    platformExpectations: '',
+    challengesOrConcerns: '',
+    personalizedResources: '',
+    additionalFeedback: '',
+  });
+
+  const [sections, setSections] = useState({
+    general: false,
+    pregnancy: false,
+    healthcare: false,
+    lifestyle: false,
+    experience: false
+  });
+
+  const [medications, setMedications] = useState([
+    { name: "", dosage: "", frequency: "" }
+  ]);
+  
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value
     }));
   };
-
-  useEffect(() => {
-    const total = Object.values(formData).filter((val) => val !== '').length;
-    setProgress(Math.floor((total / 5) * 100));
-  }, [formData]);
-
-  useEffect(() => {
-    const fields = Object.values(formData);
-    const filledFields = fields.filter((val) => val !== '').length;
-    const percent = Math.round((filledFields / fields.length) * 100);
-    setProgress(percent);
-  }, [formData]);
-
-  const handleChanges = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const [medications, setMedications] = useState([]);
-  const [medicationAdded, setMedicationAdded] = useState(false);
   
   const handleAddMedication = () => {
-    if (!medicationAdded) {
-      setMedications([{ name: '', dosage: '', frequency: '' }]);
-      setMedicationAdded(true); // Prevent adding again
-    }
+    setMedications([...medications, { name: "", dosage: "", frequency: "" }]);
   };
-
+  
   const handleInputChange = (index, field, value) => {
     const updatedMedications = [...medications];
-    updatedMedications[index][field] = value;
+    updatedMedications[index] = {
+      ...updatedMedications[index],
+      [field]: value
+    };
     setMedications(updatedMedications);
   };
   
+  const toggleSection = (section) => {
+    setSections((prev) => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+  
+  const calculateProgress = (fields) => {
+    const filledFields = fields.filter(
+      (field) => formData[field] && formData[field] !== ""
+    ).length;
+    return Math.round((filledFields / fields.length) * 100);
+  };
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Profile Updated Successfully!");
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-2">PROFILE - Priya96</h1>
-      <p className="mb-6 text-gray-700">
-        Complete this profile to help us curate the best experience for you. Don’t worry—feel free to return and update it anytime. Keeping it up to date will ensure you get the most relevant and personalized support throughout your journey.
-      </p>
-
-      <div className="bg-gray-100 p-4 rounded mb-6">
-        <h2 className="font-semibold text-lg">Section 1: General Details</h2>
-        <p className="text-gray-600">Let’s start with some basic information to get to know you better.</p>
+    <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">PROFILE - Priya96</h1>
+        <p className="text-gray-600">
+          Complete this profile to help us curate the best experience for you.
+        </p>
       </div>
 
-      <form className="space-y-6">
-      <div className="mt-4 space-y-4">
-              <label className="block">First Name</label>
-              <input
-                type="text"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                className="input-field"
-              />
-              <label className="block">Last Name</label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                className="input-field"
-              />
- 
-              <label className="block">Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                className="input-field"
-              />
- 
-              <label className="block">Gender</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="input-field"
-              >
-              <option value="">Select an option</option>
-               <option>Female</option>
-                <option>Male</option>
-                <option>Transgender</option>
-                <option>Other</option>
-                <option>Prefer not to say</option>
-              </select>
- 
-              <label className="block">Nationality</label>
-              <select
-                name="nationality"
-                value={formData.nationality}
-                onChange={handleChange}
-                className="input-field"
-              >
-              <option value="">Select an option</option>
-               <option>India</option>
-                <option>Pakistan</option>
-                <option>Bangladesh</option>
-                <option>SriLanka</option>
-              </select>
- 
-              <label className="block">Mobile Phone Number</label>
-              <input
-                type="text"
-                name="Phonenumber"
-                value={formData.Phonenumber}
-                onChange={handleChange}
-                className="input-field"
-              />
-              <label className="block">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="input-field"
-              />
-              <div className="bg-yellow-50 p-6 rounded-md shadow-sm">
-                <h2 className="text-lg font-semibold mb-4">Address</h2>
- 
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Country</label>
-                  <select
-                    name="country"
-                    value={formData.country}
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* General Details Section */}
+        <div className="bg-gray-100 p-4 rounded mb-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-semibold text-lg">Section 1: General Details</h2>
+              <p className="text-gray-600">Basic information to get to know you better.</p>
+            </div>
+            <button
+              type="button"
+              className="p-1 rounded-full hover:bg-gray-200"
+              onClick={() => toggleSection('general')}
+            >
+              {sections.general ? <ChevronUp /> : <ChevronDown />}
+            </button>
+          </div>
+
+          {sections.general && (
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">First Name</label>
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
                     onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
-                    required
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Last Name</label>
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 font-medium">Gender</label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
                   >
-                    <option value="">Select Country</option>
-                    <option value="United States">United States</option>
-                    <option value="India">India</option>
-                    <option value="Canada">Canada</option>
-                    {/* Add more countries */}
+                    <option value="">Select Gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
- 
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">
-                    Address Line 1{" "}
-                    <span className="text-red-500">(required)</span>
-                  </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 font-medium">Mobile Phone Number</label>
                   <input
-                    type="text"
-                    name="Addressline1"
-                    value={formData.Addressline1}
+                    type="tel"
+                    name="Phonenumber"
+                    value={formData.Phonenumber}
                     onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
-                    required
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
                   />
                 </div>
- 
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">
-                    Address Line 2
-                  </label>
+                <div>
+                  <label className="block mb-1 font-medium">Email</label>
                   <input
-                    type="text"
-                    name="Addressline2"
-                    value={formData.Addressline2}
+                    type="email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleChange}
-                    className="w-full border px-3 py-2 rounded-md"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2"
                   />
                 </div>
- 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              </div>
+
+              {/* Address Section */}
+              <div className="bg-yellow-50 p-6 rounded-md">
+                <h3 className="text-lg font-semibold mb-4">Address</h3>
+                <div className="space-y-4">
                   <div>
-                    <label className="block mb-1 font-medium">
-                      City <span className="text-red-500">(required)</span>
-                    </label>
+                    <label className="block mb-1 font-medium">Country</label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                    >
+                      <option value="">Select Country</option>
+                      <option value="United States">United States</option>
+                      <option value="India">India</option>
+                      <option value="Canada">Canada</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 font-medium">Address Line 1</label>
                     <input
                       type="text"
-                      name="city"
-                      value={formData.city}
+                      name="Addressline1"
+                      value={formData.Addressline1}
                       onChange={handleChange}
-                      className="w-full border px-3 py-2 rounded-md"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
                       required
                     />
                   </div>
+
                   <div>
-                    <label className="block mb-1 font-medium">
-                      State <span className="text-red-500">(required)</span>
-                    </label>
+                    <label className="block mb-1 font-medium">Address Line 2</label>
                     <input
                       type="text"
-                      name="State"
-                      value={formData.State}
+                      name="Addressline2"
+                      value={formData.Addressline2}
                       onChange={handleChange}
-                      className="w-full border px-3 py-2 rounded-md"
-                      required
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
                     />
                   </div>
-                  <div>
-                    <label className="block mb-1 font-medium">
-                      ZIP Code <span className="text-red-500">(required)</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="Zip_code"
-                      value={formData.Zip_code}
-                      onChange={handleChange}
-                      className="w-full border px-3 py-2 rounded-md"
-                      required
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block mb-1 font-medium">City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">State</label>
+                      <input
+                        type="text"
+                        name="State"
+                        value={formData.State}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">ZIP Code</label>
+                      <input
+                        type="text"
+                        name="Zip_code"
+                        value={formData.Zip_code}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Pregnancy Status Section */}
+        <div className="bg-gray-100 p-4 rounded-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-semibold text-lg">Section 2: Pregnancy Status</h2>
+              <p className="text-gray-600">Information about your pregnancy journey.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-[100px] bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${calculateProgress([
+                    'currentlyPregnant',
+                    'Last_menstrualperiod',
+                    'estimatedDueDate',
+                    'PregnancyLoss',
+                    'firstChild'
+                  ])}%` }}
+                ></div>
+              </div>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-gray-200"
+                onClick={() => toggleSection('pregnancy')}
+              >
+                {sections.pregnancy ? <ChevronUp /> : <ChevronDown />}
+              </button>
+            </div>
+          </div>
+
+          {sections.pregnancy && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1 font-medium">Are you currently pregnant?</label>
+                <select
+                  name="currentlyPregnant"
+                  value={formData.currentlyPregnant}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Last Menstrual Period</label>
+                <input
+                  type="date"
+                  name="Last_menstrualperiod"
+                  value={formData.Last_menstrualperiod}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Estimated Due Date</label>
+                <input
+                  type="date"
+                  name="estimatedDueDate"
+                  value={formData.estimatedDueDate}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Have you experienced pregnancy loss?</label>
+                <select
+                  name="PregnancyLoss"
+                  value={formData.PregnancyLoss}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              {formData.PregnancyLoss === "Yes" && (
+                <div className="space-y-4 pl-4 border-l-2 border-gray-300">
+                  <div>
+                    <label className="block mb-1 font-medium">Date of Loss</label>
+                    <input
+                      type="date"
+                      name="dateOfLoss"
+                      value={formData.dateOfLoss}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 font-medium">Reason</label>
+                    <select
+                      name="reason"
+                      value={formData.reason}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                    >
+                      <option value="">Select an option</option>
+                      <option value="Medical Issue">Medical Issue</option>
+                      <option value="Accident">Accident</option>
+                      <option value="Unknown">Unknown</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block mb-1 font-medium">Is this your first child?</label>
+                <select
+                  name="firstChild"
+                  value={formData.firstChild}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              {formData.firstChild === "No" && (
+                <div className="space-y-4 pl-4 border-l-2 border-gray-300">
+                  <div>
+                    <label className="block mb-1 font-medium">First Child's Date of Birth</label>
+                    <input
+                      type="date"
+                      name="firstChildDob"
+                      value={formData.firstChildDob}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block mb-1 font-medium">Were there any complications?</label>
+                    <textarea
+                      name="complications"
+                      value={formData.complications}
+                      onChange={handleChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      rows={3}
+                    ></textarea>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Healthcare Section */}
+        <div className="bg-gray-100 p-4 rounded-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-semibold text-lg">Section 3: Healthcare</h2>
+              <p className="text-gray-600">Your healthcare information.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-[100px] bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${calculateProgress([
+                    'hasPrimaryCarePhysician',
+                    'insuranceProvider',
+                    'consumesAlcoholOrSmokes'
+                  ])}%` }}
+                ></div>
+              </div>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-gray-200"
+                onClick={() => toggleSection('healthcare')}
+              >
+                {sections.healthcare ? <ChevronUp /> : <ChevronDown />}
+              </button>
+            </div>
+          </div>
+
+          {sections.healthcare && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1 font-medium">Do you have a primary care physician?</label>
+                <select
+                  name="hasPrimaryCarePhysician"
+                  value={formData.hasPrimaryCarePhysician}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+
+              {formData.hasPrimaryCarePhysician === "true" && (
+                <div className="space-y-4 pl-4 border-l-2 border-gray-300">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block mb-1 font-medium">Doctor's First Name</label>
+                      <input
+                        type="text"
+                        name="primaryFirst_name"
+                        value={formData.primaryFirst_name}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 font-medium">Doctor's Last Name</label>
+                      <input
+                        type="text"
+                        name="primaryLast_name"
+                        value={formData.primaryLast_name}
+                        onChange={handleChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block mb-1 font-medium">Doctor's Address</label>
+                    <input
+                      type="text"
+                      name="primaryAddressline1"
+                      value={formData.primaryAddressline1}
+                      onChange={handleChange}
+                      placeholder="Address Line 1"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      name="primaryAddressline2"
+                      value={formData.primaryAddressline2}
+                      onChange={handleChange}
+                      placeholder="Address Line 2"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                    <div className="grid grid-cols-3 gap-4">
+                      <input
+                        type="text"
+                        name="primaryCity"
+                        value={formData.primaryCity}
+                        onChange={handleChange}
+                        placeholder="City"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        name="primaryState"
+                        value={formData.primaryState}
+                        onChange={handleChange}
+                        placeholder="State"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      />
+                      <input
+                        type="text"
+                        name="primaryZip_code"
+                        value={formData.primaryZip_code}
+                        onChange={handleChange}
+                        placeholder="ZIP Code"
+                        className="w-full rounded-md border border-gray-300 px-3 py-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block mb-1 font-medium">Insurance Provider</label>
+                <input
+                  type="text"
+                  name="insuranceProvider"
+                  value={formData.insuranceProvider}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Current Medications</label>
+                <button
+                  type="button"
+                  onClick={handleAddMedication}
+                  className="mb-4 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+                >
+                  Add Medication
+                </button>
+
+                {medications.map((med, index) => (
+                  <div key={index} className="grid grid-cols-3 gap-4 mb-4">
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={med.name}
+                      onChange={(e) => handleInputChange(index, "name", e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Dosage"
+                      value={med.dosage}
+                      onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Frequency"
+                      value={med.frequency}
+                      onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Do you consume alcohol or smoke?</label>
+                <select
+                  name="consumesAlcoholOrSmokes"
+                  value={formData.consumesAlcoholOrSmokes}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Lifestyle Section */}
+        <div className="bg-gray-100 p-4 rounded-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-semibold text-lg">Section 4: Lifestyle</h2>
+              <p className="text-gray-600">Your lifestyle preferences.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-[100px] bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${calculateProgress([
+                    'preferredLanguage',
+                    'dietaryPreferences',
+                    'exerciseDuringPregnancy',
+                    'infoSourceDuringPregnancy'
+                  ])}%` }}
+                ></div>
+              </div>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-gray-200"
+                onClick={() => toggleSection('lifestyle')}
+              >
+                {sections.lifestyle ? <ChevronUp /> : <ChevronDown />}
+              </button>
+            </div>
+          </div>
+
+          {sections.lifestyle && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1 font-medium">Preferred Language</label>
+                <input
+                  type="text"
+                  name="preferredLanguage"
+                  value={formData.preferredLanguage}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Dietary Preferences</label>
+                <textarea
+                  name="dietaryPreferences"
+                  value={formData.dietaryPreferences}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={3}
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Exercise During Pregnancy</label>
+                <textarea
+                  name="exerciseDuringPregnancy"
+                  value={formData.exerciseDuringPregnancy}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={3}
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Primary Information Source</label>
+                <input
+                  type="text"
+                  name="infoSourceDuringPregnancy"
+                  value={formData.infoSourceDuringPregnancy}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Experience Section */}
+        <div className="bg-gray-100 p-4 rounded-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="font-semibold text-lg">Section 5: Experience</h2>
+              <p className="text-gray-600">Your expectations and feedback.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-[100px] bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full" 
+                  style={{ width: `${calculateProgress([
+                    'platformExpectations',
+                    'challengesOrConcerns',
+                    'personalizedResources',
+                    'additionalFeedback'
+                  ])}%` }}
+                ></div>
+              </div>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-gray-200"
+                onClick={() => toggleSection('experience')}
+              >
+                {sections.experience ? <ChevronUp /> : <ChevronDown />}
+              </button>
+            </div>
+          </div>
+
+          {sections.experience && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block mb-1 font-medium">Platform Expectations</label>
+                <textarea
+                  name="platformExpectations"
+                  value={formData.platformExpectations}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={3}
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Challenges or Concerns</label>
+                <textarea
+                  name="challengesOrConcerns"
+                  value={formData.challengesOrConcerns}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={3}
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Would you like personalized resources?</label>
+                <select
+                  name="personalizedResources"
+                  value={formData.personalizedResources}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
+                >
+                  <option value="">Select an option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">Additional Feedback</label>
+                <textarea
+                  name="additionalFeedback"
+                  value={formData.additionalFeedback}
+                  onChange={handleChange}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={3}
+                ></textarea>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 flex justify-end">
+          <button
+            type="submit"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Save Profile
+          </button>
+        </div>
       </form>
-      <div className="mt-6 bg-[#f4f4f4] p-4 rounded-lg shadow">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="font-semibold text-lg">Section 2: Pregnancy Status</h2>
-          <p className="text-gray-600 text-sm">Let’s know about your pregnancy journey.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="bg-green-600 text-white text-sm px-3 py-1 rounded-full font-semibold">
-            {value} % complete
-          </span>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="bg-black text-white w-6 h-6 flex items-center justify-center rounded-full text-sm"
-          >
-            {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}    
-          </button>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="mt-4 space-y-4">
-    <label className="block">
-      Are you currently pregnant or planning on becoming pregnant?
-    </label>
-    <select
-      name="currentlyPregnant"
-      value={formData.currentlyPregnant ? "Yes" : "No"}
-      onChange={(e) =>
-        setFormData({
-          ...formData,
-          currentlyPregnant: e.target.value === "Yes",
-        })
-      }
-    >
-      <option value="">Select an option</option>
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
-    </select>
- 
-    <label className="block">
-      When was the first day of your last menstrual period?
-    </label>
-    <input
-      type="date"
-      name="Last_menstrualperiod"
-      value={formData.Last_menstrualperiod}
-      onChange={handleChange}
-      className="input-field"
-    />
- 
-    <label className="block">
-      If established, what is your estimated due date?
-    </label>
-    <input
-      type="date"
-      name="estimatedDueDate"
-      value={formData.estimatedDueDate}
-      onChange={handleChange}
-      className="input-field"
-    />
- 
-    {/* Pregnancy Loss Section */}
-    <div>
-      <label className="block">Have you ever experienced any pregnancy loss?</label>
-      <select
-        name="PregnancyLoss"
-        value={formData.PregnancyLoss ? "Yes" : "No"}
-        onChange={(e) =>
-          setFormData({
-            ...formData,
-            PregnancyLoss: e.target.value === "Yes",
-          })
-        }
-        className="input-field"
-      >
-        <option value="">Select an option</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
- 
-      {formData.PregnancyLoss && (
-        <>
-          <label className="block mt-4">When was your last pregnancy loss?</label>
-          <input
-            type="date"
-            name="dateOfLoss"
-            value={formData.dateOfLoss}
-            onChange={handleChange}
-            className="input-field"
-          />
- 
-          <label className="block mt-4">What was the reason given for the loss?</label>
-          <select
-            name="reason"
-            value={formData.reason}
-            onChange={handleChange}
-            className="input-field"
-          >
-            <option value="">Select an option</option>
-            <option value="Medical Issue">Medical Issue</option>
-            <option value="Accident">Accident</option>
-            <option value="Unknown">Unknown</option>
-          </select>
- 
-          <label className="block mt-4">How many weeks was the fetus at the time of the loss?</label>
-          <input
-            type="number"
-            name="gestationWeeks"
-            value={formData.gestationWeeks}
-            onChange={handleChange}
-            className="input-field"
-          />
- 
-          <label className="block mt-4">Where did you get treated?</label>
-          <input
-            type="text"
-            name="treatmentLocation"
-            placeholder="City, State, Country"
-            value={formData.treatmentLocation}
-            onChange={handleChange}
-            className="input-field"
-          />
-        </>
-      )}
-    </div>
- 
-    {/* First Child Section */}
-    <div>
-      <label className="block">Would this be your first child?</label>
-      <select
-        name="firstChild"
-        value={formData.firstChild ? "No" : "Yes"}
-        onChange={(e) =>
-          setFormData({
-            ...formData,
-            firstChild: e.target.value === "No",
-          })
-        }
-        className="input-field"
-      >
-        <option value="">Select an option</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
- 
-      {formData.firstChild && (
-        <>
-          <label className="block mt-4">What is the date of birth of your first child?</label>
-          <input
-            type="date"
-            name="firstChildDob"
-            value={formData.firstChildDob}
-            onChange={handleChange}
-            className="input-field"
-          />
- 
-          <label className="block mt-4">Were there any complications?</label>
-          <textarea
-            name="complications"
-            value={formData.complications}
-            onChange={handleChange}
-            className="input-field"
-          />
- 
-          <label className="block mt-4">What kind of delivery method was used?</label>
-          <select
-            name="deliverymethod"
-            value={formData.deliverymethod}
-            onChange={handleChange}
-            className="input-field"
-          >
-            <option value="">Select an option</option>
-            <option value="Normal">Normal</option>
-            <option value="C-section">C-section</option>
-            <option value="Forceps/Vacuum">Forceps/Vacuum</option>
-          </select>
- 
-          <label className="block mt-4">Where was your child born?</label>
-          <input
-            type="text"
-            name="childbornlocation"
-            placeholder="City, State, Country"
-            value={formData.childbornlocation}
-            onChange={handleChange}
-            className="input-field"
-          />
- 
-          <label className="block mt-4">What was the baby's gestational age at birth?</label>
-          <input
-            type="text"
-            name="gestationalAgeAtBirth"
-            placeholder="Weeks and Days"
-            value={formData.gestationalAgeAtBirth}
-            onChange={handleChange}
-            className="input-field"
-          />
-        </>
-      )}
-    </div>
-  </div>
-      )}
-    </div>
-    <section className="mt-6">
-      <div className="bg-gray-100 p-4 rounded-md flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold text-black">Section 3: Health & Healthcare</h3>
-          <p className="text-gray-500 text-sm">Understanding your experience with healthcare during pregnancy.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="bg-purple-300 text-purple-900 text-sm font-semibold px-3 py-1 rounded-full">
-            {item} % complete
-          </span>
-          <button
-            onClick={() => setIsOpens(!isOpens)}
-            className="bg-black rounded-full w-6 h-6 flex items-center justify-center text-white"
-          >
-            {isOpens ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
-      </div>
-
-      {isOpens && (
-        <div className="mt-4 space-y-4">
-        {/* Primary Care Physician */}
-        <div>
-          <label className="block mb-1">Do you have a primary care physician?</label>
-          <select
-            name="hasPrimaryCarePhysician"
-            value={formData.hasPrimaryCarePhysician}
-            onChange={handleChange}
-            className="input-field border p-2 rounded w-full mb-4"
-          >
-            <option value="">Select an option</option>
-            <option value={true}>Yes</option>
-            <option value={false}>No</option>
-          </select>
-     
-          {formData.hasPrimaryCarePhysician === "true" && (
-            <>
-              <div className="mb-2 font-semibold">Name of Doctor</div>
-              <div className="flex gap-4 mb-4">
-                <input
-                  type="text"
-                  name="primaryFirst_name"
-                  placeholder="First Name"
-                  value={formData.primaryFirst_name}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="primaryLast_name"
-                  placeholder="Last Name"
-                  value={formData.primaryLast_name}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-              </div>
-     
-              <div className="mb-2 font-semibold">Address of Doctor</div>
-              <label className="block mb-1">Country</label>
-              <select
-                name="primaryCountry"
-                value={formData.primaryCountry}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-4"
-              >
-                <option value="United States">United States</option>
-              </select>
-     
-              <input
-                type="text"
-                name="primaryAddressline1"
-                placeholder="Address Line 1 (required)"
-                value={formData.primaryAddressline1}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-2"
-              />
-              <input
-                type="text"
-                name="primaryAddressline2"
-                placeholder="Address Line 2"
-                value={formData.primaryAddressline2}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-2"
-              />
-     
-              <div className="flex gap-4 mb-2">
-                <input
-                  type="text"
-                  name="primaryCity"
-                  placeholder="City (required)"
-                  value={formData.primaryCity}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="primaryState"
-                  placeholder="State (required)"
-                  value={formData.primaryState}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="primaryZip_code"
-                  placeholder="ZIP Code (required)"
-                  value={formData.primaryZip_code}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-              </div>
-     
-              <input
-                type="text"
-                name="primaryPhonenumber"
-                placeholder="Phone Number of Doctor"
-                value={formData.primaryPhonenumber}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full"
-              />
-            </>
-          )}
-        </div>
-     
-        {/* OB/GYN Section */}
-        <div>
-          <label className="block mb-1">Do you have an OB/GYN?</label>
-          <select
-            name="hasOBGYN"
-            value={formData.hasOBGYN}
-            onChange={handleChange}
-            className="input-field border p-2 rounded w-full mb-4"
-          >
-            <option value="">Select an option</option>
-            <option value={true}>Yes</option>
-            <option value={false}>No</option>
-          </select>
-     
-          {formData.hasOBGYN === "true" && (
-            <>
-              <div className="mb-2 font-semibold">Name of Doctor</div>
-              <div className="flex gap-4 mb-4">
-                <input
-                  type="text"
-                  name="obgynFirst_name"
-                  placeholder="First Name"
-                  value={formData.obgynFirst_name}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="obgynLast_name"
-                  placeholder="Last Name"
-                  value={formData.obgynLast_name}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-              </div>
-     
-              <div className="mb-2">Address of Doctor</div>
-              <label className="block mb-1">Country</label>
-              <select
-                name="obgynCountry"
-                value={formData.obgynCountry}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-4"
-              >
-                <option value="United States">United States</option>
-              </select>
-     
-              <input
-                type="text"
-                name="obgynAddressline1"
-                placeholder="Address Line 1 (required)"
-                value={formData.obgynAddressline1}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-2"
-              />
-              <input
-                type="text"
-                name="obgynAddressline2"
-                placeholder="Address Line 2"
-                value={formData.obgynAddressline2}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full mb-2"
-              />
-     
-              <div className="flex gap-4 mb-2">
-                <input
-                  type="text"
-                  name="obgynCity"
-                  placeholder="City (required)"
-                  value={formData.obgynCity}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="obgynState"
-                  placeholder="State (required)"
-                  value={formData.obgynState}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-                <input
-                  type="text"
-                  name="obgynZip_code"
-                  placeholder="ZIP Code (required)"
-                  value={formData.obgynZip_code}
-                  onChange={handleChange}
-                  className="input-field border p-2 rounded w-full"
-                />
-              </div>
-     
-              <input
-                type="text"
-                name="obgynPhonenumber"
-                placeholder="Phone Number of Doctor"
-                value={formData.obgynPhonenumber}
-                onChange={handleChange}
-                className="input-field border p-2 rounded w-full"
-              />
-            </>
-          )}
-        </div>
-     
-        {/* Insurance */}
-        <label className="block">Who is your Insurance Provider?</label>
-        <input
-          type="text"
-          name="insuranceProvider"
-          value={formData.insuranceProvider}
-          onChange={handleChange}
-          className="input-field"
-        />
-     
-        {/* Medications */}
-        <div className="">
-          <label className="block mb-3 text-black">Are you currently on any medications?</label>
-          <div className="flex flex-col gap-3">
-      <button
-        className="bg-black text-white py-2 px-4 w-fit mb-4"
-        onClick={handleAddMedication}
-      >
-        Add Medication
-      </button>
-
-      {medications.map((med, index) => (
-        <div key={index} className="mb-4 space-y-2">
-          <input
-            type="text"
-            placeholder="Name"
-            value={med.name}
-            onChange={(e) => handleInputChange(index, "name", e.target.value)}
-            className="border p-2 w-full"
-          />
-          <input
-            type="text"
-            placeholder="Dosage"
-            value={med.dosage}
-            onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
-            className="border p-2 w-full"
-          />
-          <input
-            type="text"
-            placeholder="Frequency"
-            value={med.frequency}
-            onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
-            className="border p-2 w-full"
-          />
-        </div>
-      ))}
-    </div>
-        </div>
-     
-        {/* Alcohol or Smoke */}
-        <label className="block">Do you consume alcohol or smoke?</label>
-        <select
-          name="consumesAlcoholOrSmokes"
-          value={formData.consumesAlcoholOrSmokes}
-          onChange={handleChange}
-          className="input-field border p-2 rounded w-full"
-        >
-          <option value="">Select an option</option>
-          <option value={true}>Yes</option>
-          <option value={false}>No</option>
-        </select>
-      </div>
-      )}
-    </section>
-    <section className="mt-6">
-      <div className="bg-gray-100 p-4 rounded-md flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold text-black">Section 4: Lifestyle & Preferences</h3>
-          <p className="text-gray-500 text-sm">
-            Help us understand your personal preferences and lifestyle.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="bg-purple-300 text-purple-900 text-sm font-semibold px-3 py-1 rounded-full">
-            {type} % complete
-          </span>
-          <button
-            onClick={() => setIsopens(!isopens)}
-            className="bg-black rounded-full w-6 h-6 flex items-center justify-center text-white"
-          >
-            {isopens ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
-      </div>
-
-      {isopens && (
-        <div className="mt-4 space-y-4 px-4 py-3 border border-gray-200 rounded-md bg-white">
-          <div>
-            <label className="block font-medium">
-              What is your preferred language for medical advice and resources?
-            </label>
-            <input
-              type="text"
-              name="preferredLanguage"
-              value={formData.preferredLanguage}
-              onChange={handleChanges}
-              className="mt-1 w-full border border-gray-300 rounded-md p-2"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium">
-              Do you follow any specific dietary preferences or restrictions?
-            </label>
-            <input
-              type="text"
-              name="dietaryPreferences"
-              value={formData.dietaryPreferences}
-              onChange={handleChanges}
-              className="mt-1 w-full border border-gray-300 rounded-md p-2"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium">
-              Do you currently exercise or engage in physical activity during pregnancy?
-            </label>
-            <input
-              type="text"
-              name="exerciseDuringPregnancy"
-              value={formData.exerciseDuringPregnancy}
-              onChange={handleChanges}
-              className="mt-1 w-full border border-gray-300 rounded-md p-2"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium">
-              What is your primary source of information during pregnancy?
-            </label>
-            <input
-              type="text"
-              name="infoSourceDuringPregnancy"
-              value={formData.infoSourceDuringPregnancy}
-              onChange={handleChanges}
-              className="mt-1 w-full border border-gray-300 rounded-md p-2"
-            />
-          </div>
-        </div>
-      )}
-    </section>
-    <section className="mt-6">
-  <div className="bg-gray-100 p-4 rounded-md flex justify-between items-center">
-    <div>
-      <h3 className="font-semibold text-black">Section 5: Your Experience and Expectations</h3>
-      <p className="text-gray-500 text-sm">
-        We’d like to hear about your expectations and any concerns you may have.
-      </p>
-    </div>
-
-    <div className="flex items-center gap-3">
-      <span className="bg-purple-300 text-purple-900 text-sm font-semibold px-3 py-1 rounded-full">
-        {use} % complete
-      </span>
-      <button
-        onClick={() => setIsopen(!isopen)}
-        className="bg-black rounded-full w-6 h-6 flex items-center justify-center text-white"
-      >
-        {isopen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </button>
-    </div>
-  </div>
-
-  {isopen && (
-    <div className="mt-4 space-y-4 px-4 py-3 border border-gray-200 rounded-md bg-white">
-      <div>
-        <label className="block font-medium">
-          What do you expect most from this platform?
-        </label>
-        <input
-          type="text"
-          name="platformExpectations"
-          value={formData.platformExpectations}
-          onChange={handleChanges}
-          className="mt-1 w-full border border-gray-300 rounded-md p-2"
-        />
-      </div>
-
-      <div>
-        <label className="block font-medium">
-          Are there any specific challenges or concerns you would like support with?
-        </label>
-        <input
-          type="text"
-          name="challengesOrConcerns"
-          value={formData.challengesOrConcerns}
-          onChange={handleChanges}
-          className="mt-1 w-full border border-gray-300 rounded-md p-2"
-        />
-      </div>
-
-      <div>
-        <label className="block font-medium">
-          Would you like to receive personalized resources, tips, or reminders based on your profile?
-        </label>
-        <input
-          type="text"
-          name="personalizedResources"
-          value={formData.personalizedResources}
-          onChange={handleChanges}
-          className="mt-1 w-full border border-gray-300 rounded-md p-2"
-        />
-      </div>
-
-      <div>
-        <label className="block font-medium">
-          Any additional comments or feedback for us?
-        </label>
-        <input
-          type="text"
-          name="additionalFeedback"
-          value={formData.additionalFeedback}
-          onChange={handleChanges}
-          className="mt-1 w-full border border-gray-300 rounded-md p-2"
-        />
-      </div>
-    </div>
-  )}
-</section>
-
     </div>
   );
 };
 
 export default ProfileDisplay;
-
-
 
 
 

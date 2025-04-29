@@ -66,14 +66,7 @@ const ProfileSetup = () => {
    
     // Other
     insuranceProvider: "",
-    //medications: [],
-      // Medications
-      medication1Name: "",
-      medication1Dosage: "",
-      medication1Frequency: "",
-      medication2Name: "",
-      medication2Dosage: "",
-      medication2Frequency: "",
+    medications: [],
     consumesAlcoholOrSmokes: false,
     preferredLanguage: "",
     dietaryPreferences: "",
@@ -84,6 +77,8 @@ const ProfileSetup = () => {
     wantsPersonalizedResources: false,
     additionalComments: "",
   });
+
+  const [medications, setMedications] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,10 +107,27 @@ const ProfileSetup = () => {
     }
    
     try {
-      // Filter out empty strings from formData
-      const filteredData = Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value !== "")
-      );
+      // Prepare the data to send with medications
+      const dataToSend = {
+        ...formData,
+        medications: medications.map(med => ({
+          name: med.name,
+          dosage: med.dosage,
+          frequency: med.frequency
+        }))
+      };
+
+     // Filter out empty strings from formData
+const filteredData = Object.fromEntries(
+  Object.entries(dataToSend).filter(
+    ([_, value]) =>
+      value !== "" &&
+      value !== undefined &&
+      value !== null &&
+      !(Array.isArray(value) && value.length === 0)
+  )
+);
+
    
       const res = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
@@ -153,45 +165,43 @@ const ProfileSetup = () => {
     }));
   };
 
-  const [medications, setMedications] = useState([]);
+  const handleAddMedication1 = () => {
+    // Check if medication 1 already exists
+    const med1Exists = medications.some(med => med.type === 1);
+    
+    if (!med1Exists) {
+      setMedications([...medications, { 
+        type: 1, 
+        name: "", 
+        dosage: "", 
+        frequency: "" 
+      }]);
+    }
+  };
 
-const handleAddMedication1 = () => {
-  // Check if medication 1 already exists
-  const med1Exists = medications.some(med => med.type === 1);
-  
-  if (!med1Exists) {
-    setMedications([...medications, { 
-      type: 1, 
-      name: "", 
-      dosage: "", 
-      frequency: "" 
-    }]);
-  }
-};
+  const handleAddMedication2 = () => {
+    // Check if medication 2 already exists
+    const med2Exists = medications.some(med => med.type === 2);
+    
+    if (!med2Exists) {
+      setMedications([...medications, { 
+        type: 2, 
+        name: "", 
+        dosage: "", 
+        frequency: "" 
+      }]);
+    }
+  };
 
-const handleAddMedication2 = () => {
-  // Check if medication 2 already exists
-  const med2Exists = medications.some(med => med.type === 2);
-  
-  if (!med2Exists) {
-    setMedications([...medications, { 
-      type: 2, 
-      name: "", 
-      dosage: "", 
-      frequency: "" 
-    }]);
-  }
-};
+  const handleMedicationInputChange = (index, field, value) => {
+    const updatedMedications = [...medications];
+    updatedMedications[index][field] = value;
+    setMedications(updatedMedications);
+  };
 
-const handleInputChange = (index, field, value) => {
-  const updatedMedications = [...medications];
-  updatedMedications[index][field] = value;
-  setMedications(updatedMedications);
-};
-
-const handleRemoveMedication = (type) => {
-  setMedications(medications.filter(med => med.type !== type));
-};
+  const handleRemoveMedication = (type) => {
+    setMedications(medications.filter(med => med.type !== type));
+  };
 
   return (
     <div className="min-h-screen bg-[#fefdf7]">
@@ -944,92 +954,103 @@ const handleRemoveMedication = (type) => {
               </div>
             </div>
 
-            <div className="mt-6">
-  <label className="block text-sm font-medium mb-2">
-    Are you currently on any medications?
-  </label>
-  
-  <div className="flex gap-4 mb-4">
-    {/* Add Medication 1 Button */}
-    <button
-      type="button"
-      className={`py-2 px-4 rounded-md transition-colors ${
-        medications.some(med => med.type === 1) 
-          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-          : 'bg-black text-white hover:bg-gray-800'
-      }`}
-      onClick={handleAddMedication1}
-      disabled={medications.some(med => med.type === 1)}
-    >
-      Add Medication 1
-    </button>
-    
-    {/* Add Medication 2 Button */}
-    <button
-      type="button"
-      className={`py-2 px-4 rounded-md transition-colors ${
-        medications.some(med => med.type === 2) 
-          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-          : 'bg-black text-white hover:bg-gray-800'
-      }`}
-      onClick={handleAddMedication2}
-      disabled={medications.some(med => med.type === 2)}
-    >
-      Add Medication 2
-    </button>
-  </div>
+            <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Profile Setup</h1>
+      <form onSubmit={handleSubmit}>
+        {/* Your existing form fields go here */}
+        
+        {/* Medications Section */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium mb-2">
+            Are you currently on any medications?
+          </label>
+          
+          <div className="flex gap-4 mb-4">
+            {/* Add Medication 1 Button */}
+            <button
+              type="button"
+              className={`py-2 px-4 rounded-md transition-colors ${
+                medications.some(med => med.type === 1) 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
+              onClick={handleAddMedication1}
+              disabled={medications.some(med => med.type === 1)}
+            >
+              Add Medication 1
+            </button>
+            
+            {/* Add Medication 2 Button */}
+            <button
+              type="button"
+              className={`py-2 px-4 rounded-md transition-colors ${
+                medications.some(med => med.type === 2) 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
+              onClick={handleAddMedication2}
+              disabled={medications.some(med => med.type === 2)}
+            >
+              Add Medication 2
+            </button>
+          </div>
 
-  {/* Medication Forms */}
-  {medications.map((med, index) => (
-    <div key={med.type} className="mt-4 p-4 bg-gray-50 rounded-lg relative">
-      <h3 className="text-lg font-medium mb-4">Medication {med.type}</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-2">Name</label>
-          <input
-            type="text"
-            placeholder="Medication Name"
-            value={med.name}
-            onChange={(e) => handleInputChange(index, "name", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+          {/* Medication Forms */}
+          {medications.map((med, index) => (
+            <div key={med.type} className="mt-4 p-4 bg-gray-50 rounded-lg relative">
+              <h3 className="text-lg font-medium mb-4">Medication {med.type}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Name</label>
+                  <input
+                    type="text"
+                    placeholder="Medication Name"
+                    value={med.name}
+                    onChange={(e) => handleMedicationInputChange(index, "name", e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Dosage</label>
+                  <input
+                    type="text"
+                    placeholder="Dosage"
+                    value={med.dosage}
+                    onChange={(e) => handleMedicationInputChange(index, "dosage", e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Frequency</label>
+                  <input
+                    type="text"
+                    placeholder="Frequency"
+                    value={med.frequency}
+                    onChange={(e) => handleMedicationInputChange(index, "frequency", e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+              
+              {/* Remove button for each medication */}
+              <button
+                type="button"
+                onClick={() => handleRemoveMedication(med.type)}
+                className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                aria-label={`Remove medication ${med.type}`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          ))}
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Dosage</label>
-          <input
-            type="text"
-            placeholder="Dosage"
-            value={med.dosage}
-            onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Frequency</label>
-          <input
-            type="text"
-            placeholder="Frequency"
-            value={med.frequency}
-            onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-      
-      {/* Remove button for each medication */}
-      <button
-        type="button"
-        onClick={() => handleRemoveMedication(med.type)}
-        className="absolute top-4 right-4 text-red-500 hover:text-red-700"
-        aria-label={`Remove medication ${med.type}`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-      </button>
+      </form>
     </div>
-  ))}
-</div>
           </div>
 
           {/* Lifestyle Section */}
@@ -1175,9 +1196,6 @@ const handleRemoveMedication = (type) => {
 };
 
 export default ProfileSetup;
-
-
-
 
 
 

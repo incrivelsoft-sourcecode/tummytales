@@ -6,7 +6,7 @@ const passport = require("passport");
 const router = express.Router();
 
 router.post('/register-user', createUser);
-router.post("/verify-otp",verifyOtp );
+//router.post("/verify-otp",verifyOtp );
 router.post('/login', loginUser);
 router.delete("/user/:id",deleteUser);
 router.get("/all",getallusers)
