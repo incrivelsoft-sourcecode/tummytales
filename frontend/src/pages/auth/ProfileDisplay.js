@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-const ProfileDisplay = () => {
+const ProfileForm = () => {
   const [formData, setFormData] = useState({
     // General Details
     first_name: '',
@@ -67,9 +67,7 @@ const ProfileDisplay = () => {
     experience: false
   });
 
-  const [medications, setMedications] = useState([
-    { name: "", dosage: "", frequency: "" }
-  ]);
+  const [medications, setMedications] = useState([]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,19 +75,6 @@ const ProfileDisplay = () => {
       ...prev,
       [name]: value
     }));
-  };
-  
-  const handleAddMedication = () => {
-    setMedications([...medications, { name: "", dosage: "", frequency: "" }]);
-  };
-  
-  const handleInputChange = (index, field, value) => {
-    const updatedMedications = [...medications];
-    updatedMedications[index] = {
-      ...updatedMedications[index],
-      [field]: value
-    };
-    setMedications(updatedMedications);
   };
   
   const toggleSection = (section) => {
@@ -109,6 +94,47 @@ const ProfileDisplay = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     alert("Profile Updated Successfully!");
+  };
+
+  const handleAddMedication1 = () => {
+    // Check if medication 1 already exists
+    const med1Exists = medications.some(med => med.type === 1);
+    
+    if (!med1Exists) {
+      setMedications([...medications, { 
+        type: 1, 
+        name: "", 
+        dosage: "", 
+        frequency: "" 
+      }]);
+    }
+  };
+  
+  const handleAddMedication2 = () => {
+    // Check if medication 2 already exists
+    const med2Exists = medications.some(med => med.type === 2);
+    
+    if (!med2Exists) {
+      setMedications([...medications, { 
+        type: 2, 
+        name: "", 
+        dosage: "", 
+        frequency: "" 
+      }]);
+    }
+  };
+
+  const handleRemoveMedication = (type) => {
+    setMedications(medications.filter(med => med.type !== type));
+  };
+
+  const handleInputChange = (index, field, value) => {
+    const updatedMedications = [...medications];
+    updatedMedications[index] = {
+      ...updatedMedications[index],
+      [field]: value
+    };
+    setMedications(updatedMedications);
   };
 
   return (
@@ -578,39 +604,89 @@ const ProfileDisplay = () => {
                 />
               </div>
 
-              <div>
-                <label className="block mb-1 font-medium">Current Medications</label>
-                <button
-                  type="button"
-                  onClick={handleAddMedication}
-                  className="mb-4 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-                >
-                  Add Medication
-                </button>
+              <div className="mt-6">
+                <label className="block text-sm font-medium mb-2">
+                  Are you currently on any medications?
+                </label>
+                
+                <div className="flex gap-4 mb-4">
+                  {/* Add Medication 1 Button */}
+                  <button
+                    type="button"
+                    className={`py-2 px-4 rounded-md transition-colors ${
+                      medications.some(med => med.type === 1) 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                    onClick={handleAddMedication1}
+                    disabled={medications.some(med => med.type === 1)}
+                  >
+                    Add Medication 1
+                  </button>
+                  
+                  {/* Add Medication 2 Button */}
+                  <button
+                    type="button"
+                    className={`py-2 px-4 rounded-md transition-colors ${
+                      medications.some(med => med.type === 2) 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                    onClick={handleAddMedication2}
+                    disabled={medications.some(med => med.type === 2)}
+                  >
+                    Add Medication 2
+                  </button>
+                </div>
 
+                {/* Medication Forms */}
                 {medications.map((med, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-4 mb-4">
-                    <input
-                      type="text"
-                      placeholder="Name"
-                      value={med.name}
-                      onChange={(e) => handleInputChange(index, "name", e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Dosage"
-                      value={med.dosage}
-                      onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Frequency"
-                      value={med.frequency}
-                      onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2"
-                    />
+                  <div key={med.type} className="mt-4 p-4 bg-gray-50 rounded-lg relative">
+                    <h3 className="text-lg font-medium mb-4">Medication {med.type}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Name</label>
+                        <input
+                          type="text"
+                          placeholder="Medication Name"
+                          value={med.name}
+                          onChange={(e) => handleInputChange(index, "name", e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Dosage</label>
+                        <input
+                          type="text"
+                          placeholder="Dosage"
+                          value={med.dosage}
+                          onChange={(e) => handleInputChange(index, "dosage", e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Frequency</label>
+                        <input
+                          type="text"
+                          placeholder="Frequency"
+                          value={med.frequency}
+                          onChange={(e) => handleInputChange(index, "frequency", e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Remove button for each medication */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMedication(med.type)}
+                      className="absolute top-4 right-4 text-red-500 hover:text-red-700"
+                      aria-label={`Remove medication ${med.type}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>
@@ -804,8 +880,7 @@ const ProfileDisplay = () => {
   );
 };
 
-export default ProfileDisplay;
-
+export default ProfileForm;
 
 
 

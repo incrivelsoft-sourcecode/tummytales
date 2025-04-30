@@ -1,6 +1,7 @@
 const express = require ('express');
 const {Survey,SupporterSurvey} = require('../model/momsurvey');
 const mongoose= require('mongoose');
+const User = require('../model/User')
 
 const createsurvey = async (req, res) => {
     try {
@@ -198,6 +199,9 @@ const createsurvey = async (req, res) => {
       });
   
       await newSurvey.save();
+      
+// ✅ Activate the user
+//await User.findByIdAndUpdate(userId, { isActive: true });
       res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
   
     } catch (error) {
