@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from 'axios';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ const Navbar = () => {
   const profileImage = "/image.png"; // Actual profile image
   const dummyImage = "/dummy-profile.png"; // Dummy image when not logged in
   const [showPregnancyDropdown, setShowPregnancyDropdown] = useState(false);
+  const [formData, setFormData] = useState({});
 
   useEffect(() => {
     const checkAuth = () => {
@@ -26,19 +28,67 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
+    const userId = localStorage.getItem("userId");
+    const existingSurveyId = localStorage.getItem("surveyId");
+  
+    if (!userId) return;
+  
+    // If no surveyId is saved, fetch all surveys to get one
+    if (!existingSurveyId) {
+      axios
+        .get(`${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`)
+        .then((res) => {
+          if (res.data && res.data.surveys && res.data.surveys.length > 0) {
+            const latestSurvey = res.data.surveys[0]; // or use .at(-1) for latest
+            localStorage.setItem("surveyId", latestSurvey._id);
+  
+            // Now fetch that survey by ID
+            axios
+              .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}?userId=${userId}`)
+              .then((res) => {
+                if (res.data && res.data.survey) {
+                  setFormData(res.data.survey);
+                }
+              })
+              .catch((err) => {
+                console.error("Error fetching survey by ID:", err);
+              });
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching all surveys:", err);
+        });
+    } else {
+      // surveyId exists, fetch it directly
+      axios
+        .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}?userId=${userId}`)
+        .then((res) => {
+          if (res.data && res.data.survey) {
+            setFormData(res.data.survey);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching survey by ID:", err);
+        });
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showDropdown]);
+  }, [isLoggedIn]);
+  
+  
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setShowDropdown(false);
+    }
+  };
+
+  if (showDropdown) {
+    document.addEventListener("mousedown", handleClickOutside);
+  }
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [showDropdown]);
+
 
   // Check if the current route is related to Pregnancy Map or its subpages
   const isPregnancyMapActive =
@@ -184,16 +234,41 @@ const Navbar = () => {
               >
                 Supporters
               </li>
+              {/* Profile Link Updated with userId */}
               <li
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                onClick={() => {
-                  const id = localStorage.getItem("profileId");
-                  navigate(`/profile-display/${id}`);
-                  setShowDropdown(false);
-                }}
-              >
-                Profile
-              </li>
+  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+  onClick={async () => {
+    const surveyId = localStorage.getItem("surveyId");
+    const userId = localStorage.getItem("userId");
+
+    if (surveyId) {
+      navigate(`/profile-display/${surveyId}`);
+    } else if (userId) {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`
+        );
+        const surveys = res.data?.surveys;
+        if (surveys && surveys.length > 0) {
+          const latestSurveyId = surveys[0]._id;
+          localStorage.setItem("surveyId", latestSurveyId);
+          navigate(`/profile-display/${latestSurveyId}`);
+        } else {
+          alert("No profile found.");
+        }
+      } catch (err) {
+        console.error("Error fetching surveys:", err);
+        alert("Failed to fetch profile.");
+      }
+    } else {
+      alert("No profile found.");
+    }
+    setShowDropdown(false);
+  }}
+>
+  Profile
+</li>
+
               {isLoggedIn ? (
                 <li
                   className="px-4 py-2 hover:bg-red-500 text-black cursor-pointer"
