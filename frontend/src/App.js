@@ -28,6 +28,7 @@ import UrineTest from "./pages/auth/UrineTest";
 import DatingViability from "./pages/auth/DatingViability";
 import GeneticScreening from "./pages/auth/GeneticScreening";
 import NuchalTranslucency from "./pages/auth/NuchalTranslucency";
+import MandatoryHealthCare from "./pages/auth/MandatoryHealthCare";
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -79,7 +80,7 @@ function App() {
           <Route path="/dating-viability" element={<DatingViability/>}/>
           <Route path="/genetic-screening" element={<GeneticScreening/>}/>
           <Route path="/nuchal-translucency" element={<NuchalTranslucency/>}/>
-
+          <Route path="/mandatoryhealthcare" element={<MandatoryHealthCare/>}/>
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
