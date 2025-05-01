@@ -79,7 +79,7 @@ const SelectRole = () => {
         </div>
 
         {/* Supporter Card */}
-        <div className="relative flex flex-col items-center w-full max-w-xs bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* <div className="relative flex flex-col items-center w-full max-w-xs bg-white rounded-lg shadow-lg overflow-hidden">
           <div 
             className="w-full h-40 bg-cover bg-center"
             style={{ backgroundImage: "url('https://www.shutterstock.com/shutterstock/photos/404955949/display_1500/stock-vector-nurse-at-work-vector-illustration-of-cheerful-nurse-404955949.jpg')" }}
@@ -123,7 +123,7 @@ const SelectRole = () => {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
       </div>
     </div>

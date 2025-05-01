@@ -49,6 +49,20 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // ✅ New fields for OTP verification
+    // status: {
+    //   type: String,
+    //   enum: ["unverified", "verified"],
+    //   default: "unverified",
+    // },
+    // otp: {
+    //   type: String,
+    //   default: null,
+    // },
+    // otpExpiresAt: {
+    //   type: Date,
+    //   default: null,
+    // },
   },
   { timestamps: true }
 );

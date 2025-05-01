@@ -4,6 +4,8 @@ const axios = require("axios");
 const User = require('../model/User.js');
 const UserDetails = require('../model/User.js');
 //const redisClient = require("../config/redisClient");
+const sendEmail = require("../utils/sendEmail.js"); // Create this helper
+const crypto = require("crypto");
 
 
 
@@ -61,6 +63,7 @@ const createUser = async (req, res) => {
 		res.status(500).json({ message: err.message });
 	}
 };
+
 
 
 
@@ -292,6 +295,106 @@ const deleteSupporter = async(req, res) => {
 
 
 
+const getallusers = async (req,res)=>{
+	try{
+		const users = await User.find();
+
+		return res.status(200).json({ success:true,users})
+
+	}catch(error){
+		console.error('Failed to get allusers',error);
+		return res.status(505).json({error:"Failed to retrive users"})
+	}
+}
+
+// Delete all users
+const deleteAllUsers = async (req, res) => {
+	try {
+		const result = await User.deleteMany({});
+		res.json({ message: 'All users deleted successfully', deletedCount: result.deletedCount });
+	} catch (err) {
+		res.status(500).json({ message: err.message });
+	}
+};
+
+
+
+module.exports = { googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+
+
+
+
+
+
+
+
+// const createUser = async (req, res) => {
+// 	try {
+// 		const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
+
+// 		// Validate role
+// 		if (!["mom", "supporter"].includes(role)) {
+// 			return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+// 		}
+
+// 		// Check if user already exists (single DB query)
+// 		const existingUser = await User.findOne({ $or: [{ email }, { user_name }] });
+// 		if (existingUser) {
+// 			return res.status(400).json({ message: "Email or username already in use." });
+// 		}
+
+// 		// Validate passwords
+// 		if (confirm_password !== password) {
+// 			return res.status(400).json({ message: "Passwords do not match." });
+// 		}
+
+// 		// Validate required fields dynamically
+// 		const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
+// 		const missingFields = Object.entries(requiredFields)
+// 			.filter(([_, value]) => !value)
+// 			.map(([key]) => key);
+
+// 		if (missingFields.length > 0) {
+// 			return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
+// 		}
+
+// 		// If role is "supporter", validate referal_code
+// 		if (role === "supporter") {
+// 			const existingMom = await User.findById(referal_code);
+// 			if (!existingMom) {
+// 				return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
+// 			}
+// 		}
+
+// 		// Create new user
+// 		const user = new User({ user_name, email, password, role, referal_code: role === "supporter" ? referal_code : null, permissions });
+
+// 		// Save user
+// 		await user.save();
+
+// 		const token = jwt.sign(
+// 			{ userId: user._id, role: user.role },
+// 			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
+// 			{ expiresIn: "1h" } // Token expires in 1 hour
+// 		);
+// 		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
+// 	} catch (err) {
+// 		res.status(500).json({ message: err.message });
+// 	}
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // const checkUsernameAvailability = async (req, res) => {
 // 	const { user_name } = req.query;
@@ -324,28 +427,138 @@ const deleteSupporter = async(req, res) => {
 //   };
 
 
-const getallusers = async (req,res)=>{
-	try{
-		const users = await User.find();
 
-		return res.status(200).json({ success:true,users})
 
-	}catch(error){
-		console.error('Failed to get allusers',error);
-		return res.status(505).json({error:"Failed to retrive users"})
-	}
-}
+/*main tom
 
-// Delete all users
-const deleteAllUsers = async (req, res) => {
+const createUser = async (req, res) => {
 	try {
-		const result = await User.deleteMany({});
-		res.json({ message: 'All users deleted successfully', deletedCount: result.deletedCount });
+	  const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
+  
+	  // Validate role
+	  if (!["mom", "supporter"].includes(role)) {
+		return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+	  }
+  
+	  // Check if user already exists
+	  const existingUser = await UserDetails.findOne({ $or: [{ email }, { user_name }] });
+	  if (existingUser) {
+		return res.status(400).json({ message: "Email or username already in use." });
+	  }
+  
+	  // Password match
+	  if (confirm_password !== password) {
+		return res.status(400).json({ message: "Passwords do not match." });
+	  }
+  
+	  // Validate required fields
+	  const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
+	  const missingFields = Object.entries(requiredFields)
+		.filter(([_, value]) => !value)
+		.map(([key]) => key);
+  
+	  if (missingFields.length > 0) {
+		return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
+	  }
+  
+	  // Validate referal code
+	  if (role === "supporter") {
+		const existingMom = await User.findById(referal_code);
+		if (!existingMom) {
+		  return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
+		}
+	  }
+  
+	  // Generate 6-digit OTP
+	  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+	  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
+  
+	  // Create user (status = unverified)
+	  const user = new UserDetails({
+		user_name,
+		email,
+		password,
+		role,
+		referal_code: role === "supporter" ? referal_code : null,
+		permissions,
+		otp,
+		otpExpiresAt,
+		status: "unverified"
+	  });
+  
+	  await user.save();
+  
+	  // Send OTP email
+	  await sendEmail(email, `Your OTP Code`, `Your OTP for verification is: ${otp}`);
+	  return res.status(201).json({
+		message: "User created. OTP sent to email for verification.",
+		user: {
+		  userId: user._id,
+		  email: user.email,
+		  role: user.role,
+		  status: user.status
+		}
+	  });
+	  
+	 // return res.status(201).json({ message: "User created. OTP sent to email for verification." });
 	} catch (err) {
-		res.status(500).json({ message: err.message });
+	  return res.status(500).json({ message: err.message });
 	}
-};
+  };
 
 
-
-module.exports = { googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+  const verifyOtp = async (req, res) => {
+	try {
+	  const { email, otp } = req.body;
+  
+	  if (!email || !otp) {
+		return res.status(400).json({ message: "Email and OTP are required." });
+	  }
+  
+	  const user = await User.findOne({ email });
+  
+	  if (!user) {
+		return res.status(404).json({ message: "User not found." });
+	  }
+  
+	  if (user.status === "verified") {
+		return res.status(400).json({ message: "User is already verified." });
+	  }
+  
+	  if (user.otp !== otp) {
+		return res.status(400).json({ message: "Invalid OTP." });
+	  }
+  
+	  if (user.otpExpiresAt < new Date()) {
+		return res.status(400).json({ message: "OTP has expired." });
+	  }
+  
+	  // Mark user as verified
+	  user.status = "verified";
+	  user.otp = undefined;
+	  user.otpExpiresAt = undefined;
+	  await user.save();
+  
+	  // Optionally issue a token now
+	  const token = jwt.sign(
+		{ userId: user._id, role: user.role },
+		process.env.JWT_SECRET || "your_secret_key",
+		{ expiresIn: "1h" }
+	  );
+  
+	  return res.status(200).json({
+		message: "Email verified successfully. You can proceed with your profile now.",
+		token,
+		userId: user._id,
+		userName: user.user_name,
+		email: user.email,
+		role: user.role,
+		permissions: user.permissions
+	  });
+  
+	} catch (err) {
+	  return res.status(500).json({ message: err.message });
+	}
+  };
+  
+  */
