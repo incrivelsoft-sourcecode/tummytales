@@ -92,6 +92,201 @@ const ProfileForm = () => {
     experience: false
   });
 
+  useEffect(() => {
+      if (!id || !userId) return;
+      
+      axios
+        .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?userId=${userId}`)
+        .then((res) => {
+          if (res.data && res.data.survey) {
+            const survey = res.data.survey;
+            
+            // Mapping the response to the formData state
+            setFormData({
+              // General Details
+              first_name: survey.generalDetails.first_name || '',
+              last_name: survey.generalDetails.last_name || '',
+              dob: survey.generalDetails.dob ? survey.generalDetails.dob.split('T')[0] : '', // formatting the date
+              gender: survey.generalDetails.gender || '',
+              nationality: survey.generalDetails.nationality || '',
+              Phonenumber: survey.generalDetails.Phonenumber || '',
+              email: survey.generalDetails.email || '',
+              country: survey.generalDetails.country || '',
+              Addressline1: survey.generalDetails.Addressline1 || '',
+              Addressline2: survey.generalDetails.Addressline2 || '',
+              city: survey.generalDetails.city || '',
+              State: survey.generalDetails.State || '',
+              Zip_code: survey.generalDetails.Zip_code || '',
+    
+              // Pregnancy Status
+              currentlyPregnant: survey.pregnancyStatus.currentlyPregnant || '',
+              Last_menstrualperiod: survey.pregnancyStatus.Last_menstrualperiod || '',
+              estimatedDueDate: survey.pregnancyStatus.estimatedDueDate || '',
+              PregnancyLoss: survey.pregnancyStatus.PregnancyLoss || '',
+              dateOfLoss: survey.pregnancyStatus.dateOfLoss || '',
+              reason: survey.pregnancyStatus.reason || '',
+              gestationWeeks: survey.pregnancyStatus.gestationWeeks || '',
+              treatmentLocation: survey.pregnancyStatus.treatmentLocation || '',
+              firstChild: survey.pregnancyStatus.firstChild || '',
+              firstChildDob: survey.pregnancyStatus.firstChildDob || '',
+              complications: survey.pregnancyStatus.complications || '',
+              deliverymethod: survey.pregnancyStatus.deliverymethod || '',
+              childbornlocation: survey.pregnancyStatus.childbornlocation || '',
+              gestationalAgeAtBirth: survey.pregnancyStatus.gestationalAgeAtBirth || '',
+    
+              // Healthcare
+              hasPrimaryCarePhysician: survey.healthCare.primaryCare.hasPrimaryCarePhysician || '',
+              primaryFirst_name: survey.healthCare.primaryCare.details.first_name || '',
+              primaryLast_name: survey.healthCare.primaryCare.details.last_name || '',
+              primaryAddressline1: survey.healthCare.primaryCare.details.Addressline1 || '',
+              primaryAddressline2: survey.healthCare.primaryCare.details.Addressline2 || '',
+              primaryCity: survey.healthCare.primaryCare.details.city || '',
+              primaryState: survey.healthCare.primaryCare.details.State || '',
+              primaryZip_code: survey.healthCare.primaryCare.details.Zip_code || '',
+              hasOBGYN: survey.healthCare.obgyn.hasOBGYN || '',
+              obgynFirst_name: survey.healthCare.obgyn.details.first_name || '',
+              obgynLast_name: survey.healthCare.obgyn.details.last_name || '',
+              obgynCountry: survey.healthCare.obgyn.details.country || '',
+              obgynAddressline1: survey.healthCare.obgyn.details.Addressline1 || '',
+              obgynAddressline2: survey.healthCare.obgyn.details.Addressline2 || '',
+              obgynCity: survey.healthCare.obgyn.details.city || '',
+              obgynState: survey.healthCare.obgyn.details.State || '',
+              obgynZip_code: survey.healthCare.obgyn.details.Zip_code || '',
+              obgynPhonenumber: survey.healthCare.obgyn.details.Phonenumber || '',
+    
+              insuranceProvider: survey.healthCare.insuranceProvider || '',
+              medication1Name: survey.healthCare.medication1.name || '',
+              medication1Dosage: survey.healthCare.medication1.dosage || '',
+              medication1Frequency: survey.healthCare.medication1.frequency || '',
+              medication2Name: survey.healthCare.medication2.name || '',
+              medication2Dosage: survey.healthCare.medication2.dosage || '',
+              medication2Frequency: survey.healthCare.medication2.frequency || '',
+              consumesAlcoholOrSmokes: survey.healthCare.consumesAlcoholOrSmokes || '',
+    
+              // Lifestyle
+              preferredLanguage: survey.lifestylePreferences.preferredLanguage || '',
+              dietaryPreferences: survey.lifestylePreferences.dietaryPreferences || '',
+              exerciseDuringPregnancy: survey.lifestylePreferences.physicalActivity || '',
+              infoSourceDuringPregnancy: survey.lifestylePreferences.primaryInfoSource || '',
+    
+              // Experience
+              platformExpectations: survey.experienceAndExpectations.expectations || '',
+              challengesOrConcerns: survey.experienceAndExpectations.challenges || '',
+              personalizedResources: survey.experienceAndExpectations.wantsPersonalizedResources || '',
+              additionalFeedback: survey.experienceAndExpectations.additionalComments || '',
+            });
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching survey by ID:", err);
+        });
+    }, [id, userId]);
+    
+    const handleSubmit = (e) => {
+      e.preventDefault();
+    
+      const updatedData = {
+        generalDetails: {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          dob: formData.dob,
+          gender: formData.gender,
+          nationality: formData.nationality,
+          Phonenumber: formData.Phonenumber,
+          email: formData.email,
+          country: formData.country,
+          Addressline1: formData.Addressline1,
+          Addressline2: formData.Addressline2,
+          city: formData.city,
+          State: formData.State,
+          Zip_code: formData.Zip_code,
+        },
+        pregnancyStatus: {
+          currentlyPregnant: formData.currentlyPregnant,
+          Last_menstrualperiod: formData.Last_menstrualperiod,
+          estimatedDueDate: formData.estimatedDueDate,
+          PregnancyLoss: formData.PregnancyLoss,
+          dateOfLoss: formData.dateOfLoss,
+          reason: formData.reason,
+          gestationWeeks: formData.gestationWeeks,
+          treatmentLocation: formData.treatmentLocation,
+          firstChild: formData.firstChild,
+          firstChildDob: formData.firstChildDob,
+          complications: formData.complications,
+          deliverymethod: formData.deliverymethod,
+          childbornlocation: formData.childbornlocation,
+          gestationalAgeAtBirth: formData.gestationalAgeAtBirth,
+        },
+        healthCare: {
+          primaryCare: {
+            hasPrimaryCarePhysician: formData.hasPrimaryCarePhysician,
+            details: {
+              first_name: formData.primaryFirst_name,
+              last_name: formData.primaryLast_name,
+              Addressline1: formData.primaryAddressline1,
+              Addressline2: formData.primaryAddressline2,
+              city: formData.primaryCity,
+              State: formData.primaryState,
+              Zip_code: formData.primaryZip_code,
+              Phonenumber: formData.primaryPhonenumber,
+            },
+          },
+          obgyn: {
+            hasOBGYN: formData.hasOBGYN,
+            details: {
+              first_name: formData.obgynFirst_name,
+              last_name: formData.obgynLast_name,
+              country: formData.obgynCountry,
+              Addressline1: formData.obgynAddressline1,
+              Addressline2: formData.obgynAddressline2,
+              city: formData.obgynCity,
+              State: formData.obgynState,
+              Zip_code: formData.obgynZip_code,
+              Phonenumber: formData.obgynPhonenumber,
+            },
+          },
+          medication1: {
+            name: formData.medication1Name,
+            dosage: formData.medication1Dosage,
+            frequency: formData.medication1Frequency,
+          },
+          medication2: {
+            name: formData.medication2Name,
+            dosage: formData.medication2Dosage,
+            frequency: formData.medication2Frequency,
+          },
+          insuranceProvider: formData.insuranceProvider,
+          consumesAlcoholOrSmokes: formData.consumesAlcoholOrSmokes,
+        },
+        lifestylePreferences: {
+          preferredLanguage: formData.preferredLanguage,
+          dietaryPreferences: formData.dietaryPreferences,
+          physicalActivity: formData.exerciseDuringPregnancy,
+          primaryInfoSource: formData.infoSourceDuringPregnancy,
+        },
+        experienceAndExpectations: {
+          expectations: formData.platformExpectations,
+          challenges: formData.challengesOrConcerns,
+          wantsPersonalizedResources: formData.personalizedResources,
+          additionalComments: formData.additionalFeedback,
+        },
+      };
+    
+      axios
+        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/update/${id}?userId=${userId}`, updatedData)
+        .then((res) => {
+          if (res.data && res.data.message) {
+            alert(res.data.message);
+          }
+        })
+        .catch((err) => {
+          console.error('Error updating survey:', err);
+          alert('Failed to update survey. Please try again.');
+        });
+    };
+    
+    
+  
 
   
   const handleChange = (e) => {
@@ -117,11 +312,7 @@ const ProfileForm = () => {
     return Math.round((filledFields / fields.length) * 100);
   };
   
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("Profile Updated Successfully!");
-  };
-
+ 
 
   const [showMedication1, setShowMedication1] = useState(false);
   const [showMedication2, setShowMedication2] = useState(false);
