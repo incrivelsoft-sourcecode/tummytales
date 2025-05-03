@@ -273,7 +273,7 @@ const ProfileForm = () => {
       };
     
       axios
-        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/update/${id}?userId=${userId}`, updatedData)
+        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}?userId=${userId}`, updatedData)
         .then((res) => {
           if (res.data && res.data.message) {
             alert(res.data.message);

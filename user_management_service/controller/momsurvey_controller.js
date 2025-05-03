@@ -251,22 +251,26 @@ const getAllSurveys = async (req, res) => {
   }
 };
 
-
-
 const update_momsurvey = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const updates = req.body;
-     // First, log the input to see what's received
-    // console.log("Incoming userId param:", userId);
+    const { id } = req.params; // ID of the survey
+    const { userId, ...updates } = req.body; // userId and other fields to update
 
-    // Find the existing survey using userId as a string
-    const existingsurvey = await Survey.findOne({ userId });
-    if (!existingsurvey) {
+    if (!userId) {
+      return res.status(400).json({ error: "User Id is required for verification" });
+    }
+
+    const existingSurvey = await Survey.findOne({ _id: id });
+
+    if (!existingSurvey) {
       return res.status(404).json({ error: "Survey not found" });
     }
 
-    // Build update query from non-undefined fields
+    if (existingSurvey.userId.toString() !== userId) {
+      return res.status(403).json({ error: "UserId does not match the survey owner" });
+    }
+
+    // Prepare update query
     const updateQuery = {};
     for (const key in updates) {
       if (updates[key] !== undefined) {
@@ -274,67 +278,17 @@ const update_momsurvey = async (req, res) => {
       }
     }
 
-    // Update the survey
-    // const Updatedsurvey = await Survey.findOneAndUpdate(
-    //   { userId },
-    //   { $set: updateQuery },
-    //   { new: true, runValidators: true }
-    // );
-
-    const update_momsurvey = async (req, res) => {
-      try {
-        const { id } = req.params; // Get the survey ID from the params
-        const { userId } = req.body; // Get userId from the request body
-        const updates = req.body; // Get the updates from the request body
-    
-        // Check if userId is provided in the request body
-        if (!userId) {
-          return res.status(400).json({ error: "User Id is required for verification" });
-        }
-    
-        // Find the survey by its ID
-        const existingSurvey = await Survey.findOne({ _id: id });
-    
-        if (!existingSurvey) {
-          return res.status(404).json({ error: "Survey not found" });
-        }
-    
-        // Verify if the userId in the body matches the userId of the survey
-        if (existingSurvey.userId.toString() !== userId) {
-          return res.status(403).json({ error: "UserId does not match the survey owner" });
-        }
-    
-        // Build the update query from non-undefined fields
-        const updateQuery = {};
-        for (const key in updates) {
-          if (updates[key] !== undefined) {
-            updateQuery[key] = updates[key];
-          }
-        }
-    
-        // Update the survey
-        const updatedSurvey = await Survey.findOneAndUpdate(
-          { _id: id },
-          { $set: updateQuery },
-          { new: true, runValidators: true }
-        );
-    
-        return res.status(200).json({
-          message: 'Survey updated successfully',
-          survey: updatedSurvey,
-        });
-    
-      } catch (error) {
-        console.error('Failed to update survey', error);
-        return res.status(500).json({ error: "Failed to update survey" });
-      }
-    };
-    
+    const updatedSurvey = await Survey.findOneAndUpdate(
+      { _id: id },
+      { $set: updateQuery },
+      { new: true, runValidators: true }
+    );
 
     return res.status(200).json({
       message: 'Survey updated successfully',
-      survey: Updatedsurvey,
+      survey: updatedSurvey,
     });
+
   } catch (error) {
     console.error('Failed to update survey', error);
     return res.status(500).json({ error: "Failed to update survey" });
@@ -690,3 +644,95 @@ module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey
     //         res.status(500).json({ error: "Failed to save survey data" });
     //     }
     //   };
+
+
+
+    
+
+// const update_momsurvey = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+//     const updates = req.body;
+//      // First, log the input to see what's received
+//     // console.log("Incoming userId param:", userId);
+
+//     // Find the existing survey using userId as a string
+//     const existingsurvey = await Survey.findOne({ userId });
+//     if (!existingsurvey) {
+//       return res.status(404).json({ error: "Survey not found" });
+//     }
+
+//     // Build update query from non-undefined fields
+//     const updateQuery = {};
+//     for (const key in updates) {
+//       if (updates[key] !== undefined) {
+//         updateQuery[key] = updates[key];
+//       }
+//     }
+
+//     // Update the survey
+//     // const Updatedsurvey = await Survey.findOneAndUpdate(
+//     //   { userId },
+//     //   { $set: updateQuery },
+//     //   { new: true, runValidators: true }
+//     // );
+
+//     const Updatedsurvey = async (req, res) => {
+//       try {
+//         const { id } = req.params; // Get the survey ID from the params
+//         const { userId } = req.body; // Get userId from the request body
+//         const updates = req.body; // Get the updates from the request body
+    
+//         // Check if userId is provided in the request body
+//         if (!userId) {
+//           return res.status(400).json({ error: "User Id is required for verification" });
+//         }
+    
+//         // Find the survey by its ID
+//         const existingSurvey = await Survey.findOne({ _id: id });
+    
+//         if (!existingSurvey) {
+//           return res.status(404).json({ error: "Survey not found" });
+//         }
+    
+//         // Verify if the userId in the body matches the userId of the survey
+//         if (existingSurvey.userId.toString() !== userId) {
+//           return res.status(403).json({ error: "UserId does not match the survey owner" });
+//         }
+    
+//         // Build the update query from non-undefined fields
+//         const updateQuery = {};
+//         for (const key in updates) {
+//           if (updates[key] !== undefined) {
+//             updateQuery[key] = updates[key];
+//           }
+//         }
+    
+//         // Update the survey
+//         const updatedSurvey = await Survey.findOneAndUpdate(
+//           { _id: id },
+//           { $set: updateQuery },
+//           { new: true, runValidators: true }
+//         );
+    
+//         return res.status(200).json({
+//           message: 'Survey updated successfully',
+//           survey: updatedSurvey,
+//         });
+    
+//       } catch (error) {
+//         console.error('Failed to update survey', error);
+//         return res.status(500).json({ error: "Failed to update survey" });
+//       }
+//     };
+    
+
+//     return res.status(200).json({
+//       message: 'Survey updated successfully',
+//       survey: Updatedsurvey,
+//     });
+//   } catch (error) {
+//     console.error('Failed to update survey', error);
+//     return res.status(500).json({ error: "Failed to update survey" });
+//   }
+// };
