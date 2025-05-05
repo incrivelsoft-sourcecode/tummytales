@@ -3,7 +3,7 @@ name: Tummytales User Service CI/CD
 on:
   push:
     branches:
-      - main
+      - Release-1
     paths:
       - 'user_management_service/**'
       - '.github/workflows/tummytales-userservice.yml'
