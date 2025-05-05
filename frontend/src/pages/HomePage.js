@@ -221,7 +221,7 @@ const HomePage = () => {
     >
       <div className="absolute inset-0 bg-black bg-opacity-30"></div>
       <div className="relative text-center text-white">
-        <h2 className="text-3xl font-bold mb-2">Subscribe to Our Newsletter</h2>
+        <h2 className="text-3xl font-bold mb-2">Subscribe to Our NewsLetter</h2>
         <p className="mb-4">Sign up with your email address to receive news and updates.</p>
         <div className="flex justify-center items-center">
           <input
