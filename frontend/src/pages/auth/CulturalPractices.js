@@ -4,56 +4,47 @@ import React from 'react';
 const essentials = [
   {
     title: 'SRIMANTHAM/ GODH BHARAYI / VALAKAAPU SAMPRADAYAM',
-    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+    img: process.env.PUBLIC_URL + '/image19.jpg',
   },
   {
     title: 'DHUPAN / SMOKE FUMIGATION',
-    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+    img: process.env.PUBLIC_URL + '/image19.jpg',
   },
   {
     title: 'NAMING CEREMONY',
-    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+    img: process.env.PUBLIC_URL + '/image19.jpg',
   },
   {
-    title: 'NPOST-NATAL MASSAGE KIT FOR THE BABY AND MOM',
-    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+    title: 'POST-NATAL MASSAGE KIT FOR THE BABY AND MOM',
+    img: process.env.PUBLIC_URL + '/image19.jpg',
   },
   {
     title: 'ANNAPRASHAN/ MUKHE BHAAT',
-    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+    img: process.env.PUBLIC_URL + '/image19.jpg',
   },
 ];
 
 const CulturalPractices = () => {
   return (
     <>
-      {/* Green Section with Curved Bottom */}
+      
       <section className="relative bg-[#B7B87F] text-white px-8 py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10 items-center">
           <div>
             <h2 className="text-4xl md:text-5xl font-extrabold">
-              Mandatory Baby Prep Practices
+            CULTURAL BABY PREP PRACTICES 
             </h2>
           </div>
           <div>
             <p className="text-lg leading-relaxed">
-              <strong>“Baby prep, the must-do list.”</strong>
-              <br />
-              Here’s everything required for prepping for your baby in the U.S.—from healthcare
-              essentials to products you’ll need, with links to help you get started.
-              <br />
-              Curious about cultural baby prep?{' '}
-              <a
-                href="/cultural-prep"
-                className="underline hover:text-gray-200 transition"
-              >
-                Head over to our dedicated page.
-              </a>
+            Being a South Asian pregnant woman in the U.S. can feel overwhelming—but you shouldn’t have to miss out on the traditions you hold close, and neither should your baby.
+We’ve got you covered for events, customs, rituals, and the traditional tacit knowledge that nourishes your baby and your prep.
+We know the list is diverse—and there’s always room for more. If there’s a practice from your culture that’s missing, reach out to us. Together, we can grow this space to be more inclusive for every tradition, every baby, and every parent.
             </p>
           </div>
         </div>
 
-        {/* Bottom SVG Curve */}
+      
         <div className="absolute bottom-0 left-0 w-full">
           <svg viewBox="0 0 1440 150" xmlns="http://www.w3.org/2000/svg">
             <path
@@ -64,7 +55,7 @@ const CulturalPractices = () => {
         </div>
       </section>
 
-      {/* Essentials Section */}
+      
       <section className="bg-[#FAF9BE] py-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {essentials.map((item, index) => (
