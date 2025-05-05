@@ -1,6 +1,5 @@
 import React from 'react';
 
-// Sample data — replace with actual props or API data
 const essentials = [
   {
     title: 'SRIMANTHAM/ GODH BHARAYI / VALAKAAPU SAMPRADAYAM',
