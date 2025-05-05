@@ -25,7 +25,7 @@ const MandatoryHealthCare = () => {
 
   return (
     <>
-      <header className="bg-[#2F3002] text-white px-8 py-16 flex items-center justify-between">
+      {/* <header className="bg-[#2F3002] text-white px-8 py-16 flex items-center justify-between">
         <div className="flex items-center gap-10">
           <h1 className="text-xl font-bold text-[#F4F391]">TummyTales</h1>
           <nav className="hidden md:flex gap-6 text-sm font-medium text-white">
@@ -38,7 +38,7 @@ const MandatoryHealthCare = () => {
           <a href="#" className="hover:text-[#F4F391]">Login</a>
           <button className="border border-[#F4F391] px-4 py-1 rounded-md text-[#F4F391] hover:bg-[#F4F391] hover:text-[#2F3002] transition">Sign Up</button>
         </div>
-      </header>
+      </header> */}
 
       <section className="bg-[#B7B87F] text-white px-8 py-20">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-10">
@@ -77,7 +77,7 @@ const MandatoryHealthCare = () => {
           ))}
         </div>
       </section>
-
+{/* 
       <footer className="bg-[#B7B87F] py-12 px-6 text-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
           <div>
@@ -98,7 +98,7 @@ const MandatoryHealthCare = () => {
             <a href="#">Resources</a>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </>
   );
 };
