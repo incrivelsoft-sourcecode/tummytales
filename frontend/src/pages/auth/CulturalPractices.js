@@ -3,16 +3,24 @@ import React from 'react';
 // Sample data — replace with actual props or API data
 const essentials = [
   {
-    title: 'Prenatal Visits',
-    img: 'https://via.placeholder.com/400x240?text=Prenatal+Visits',
+    title: 'SRIMANTHAM/ GODH BHARAYI / VALAKAAPU SAMPRADAYAM',
+    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
   },
   {
-    title: 'Baby Insurance',
-    img: 'https://via.placeholder.com/400x240?text=Baby+Insurance',
+    title: 'DHUPAN / SMOKE FUMIGATION',
+    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
   },
   {
-    title: 'Birthing Classes',
-    img: 'https://via.placeholder.com/400x240?text=Birthing+Classes',
+    title: 'NAMING CEREMONY',
+    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+  },
+  {
+    title: 'NPOST-NATAL MASSAGE KIT FOR THE BABY AND MOM',
+    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
+  },
+  {
+    title: 'ANNAPRASHAN/ MUKHE BHAAT',
+    img: 'Tummytails/tummytales/frontend/public/image19.jpg',
   },
 ];
 

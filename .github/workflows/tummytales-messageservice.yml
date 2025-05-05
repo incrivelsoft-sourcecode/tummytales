@@ -3,7 +3,7 @@ name: Tummytales Message Service CI/CD
 on:
   push:
     branches:
-      - main
+      - Release-1
     paths:
       - 'message_management_service/**'
       - '.github/workflows/tummytales-messageservice.yml'
