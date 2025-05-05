@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom'; //  add this at the top with other imports
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 const ProfileForm = () => {
    const { id } = useParams();
@@ -181,11 +184,13 @@ const ProfileForm = () => {
           console.error("Error fetching survey by ID:", err);
         });
     }, [id, userId]);
-    
+
+
     const handleSubmit = (e) => {
       e.preventDefault();
     
       const updatedData = {
+        userId: userId,
         generalDetails: {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -202,27 +207,36 @@ const ProfileForm = () => {
           Zip_code: formData.Zip_code,
         },
         pregnancyStatus: {
-          currentlyPregnant: formData.currentlyPregnant,
+          currentlyPregnant: !!formData.currentlyPregnant, // default false
           Last_menstrualperiod: formData.Last_menstrualperiod,
           estimatedDueDate: formData.estimatedDueDate,
-          PregnancyLoss: formData.PregnancyLoss,
-          dateOfLoss: formData.dateOfLoss,
-          reason: formData.reason,
-          gestationWeeks: formData.gestationWeeks,
-          treatmentLocation: formData.treatmentLocation,
-          firstChild: formData.firstChild,
-          firstChildDob: formData.firstChildDob,
-          complications: formData.complications,
-          deliverymethod: formData.deliverymethod,
-          childbornlocation: formData.childbornlocation,
-          gestationalAgeAtBirth: formData.gestationalAgeAtBirth,
+          PregnancyLossInfo: {
+            hasPregnancyLoss: !!formData.PregnancyLoss, // default false
+            details: {
+              dateOfLoss: formData.dateOfLoss,
+              reason: formData.reason,
+              gestationWeeks: formData.gestationWeeks,
+              treatmentLocation: formData.treatmentLocation,
+            },
+          },
+          firstChildInfo: {
+            isFirstChild: !!formData.firstChild, // default false
+            details: {
+              dob: formData.firstChildDob,
+              complications: formData.complications,
+              deliverymethod: formData.deliverymethod,
+              childbornlocation: formData.childbornlocation,
+              gestationalAgeAtBirth: formData.gestationalAgeAtBirth,
+            },
+          },
         },
         healthCare: {
           primaryCare: {
-            hasPrimaryCarePhysician: formData.hasPrimaryCarePhysician,
+            hasPrimaryCarePhysician: !!formData.hasPrimaryCarePhysician, // default false
             details: {
               first_name: formData.primaryFirst_name,
               last_name: formData.primaryLast_name,
+              country: formData.primaryCountry,
               Addressline1: formData.primaryAddressline1,
               Addressline2: formData.primaryAddressline2,
               city: formData.primaryCity,
@@ -232,7 +246,7 @@ const ProfileForm = () => {
             },
           },
           obgyn: {
-            hasOBGYN: formData.hasOBGYN,
+            hasOBGYN: !!formData.hasOBGYN, // default false
             details: {
               first_name: formData.obgynFirst_name,
               last_name: formData.obgynLast_name,
@@ -256,7 +270,7 @@ const ProfileForm = () => {
             frequency: formData.medication2Frequency,
           },
           insuranceProvider: formData.insuranceProvider,
-          consumesAlcoholOrSmokes: formData.consumesAlcoholOrSmokes,
+          consumesAlcoholOrSmokes: !!formData.consumesAlcoholOrSmokes, // default false
         },
         lifestylePreferences: {
           preferredLanguage: formData.preferredLanguage,
@@ -267,23 +281,28 @@ const ProfileForm = () => {
         experienceAndExpectations: {
           expectations: formData.platformExpectations,
           challenges: formData.challengesOrConcerns,
-          wantsPersonalizedResources: formData.personalizedResources,
+          wantsPersonalizedResources: !!formData.personalizedResources, // default false
           additionalComments: formData.additionalFeedback,
         },
       };
     
       axios
-        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}?userId=${userId}`, updatedData)
+        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`, updatedData)
         .then((res) => {
           if (res.data && res.data.message) {
-            alert(res.data.message);
+            toast.success("Updated successfully!");
+            console.log(res.data.message);
+          }else {
+            toast.error("Update failed. Please try again."); // ❌ If no success message
           }
         })
         .catch((err) => {
           console.error('Error updating survey:', err);
-          alert('Failed to update survey. Please try again.');
+          toast.error("Failed to update. Something went wrong."); // ❌ Error popup
         });
     };
+    
+    
     
     
   
@@ -1573,6 +1592,7 @@ const ProfileForm = () => {
             Save Profile
           </button>
         </div>
+        <ToastContainer position="top-center" autoClose={3000} />  {/* 👈 Add here */}
       </form>
     </div>
   );
