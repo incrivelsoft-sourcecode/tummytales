@@ -3,7 +3,7 @@ name: Tummytales Frontend Service CI/CD
 on:
   push:
     branches:
-      - main
+      - Release-1
     paths:
       - 'frontend/**'
       - '.github/workflows/tummytales-frontend.yml'
