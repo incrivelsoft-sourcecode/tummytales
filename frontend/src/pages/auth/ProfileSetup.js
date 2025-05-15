@@ -132,22 +132,22 @@ const filteredData = Object.fromEntries(
 );
  
    
-      // const res = await axios.post(
-      //   `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-      //   { userId, ...filteredData }
-      // );
-   
-      const token = localStorage.getItem("token");
- 
       const res = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-        filteredData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { userId, ...filteredData }
       );
+   
+      //const token = localStorage.getItem("token");
+ 
+      // const res = await axios.post(
+      //   `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
+      //   filteredData,
+      //   {
+      //     headers: {
+      //       Authorization: `Bearer ${token}`,
+      //     },
+      //   }
+      // );
  
       if (res.status === 200) {
         console.log(res.data);

@@ -2,17 +2,17 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom'; //  add this at the top with other imports
- 
+
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-const token = localStorage.getItem("token");
- 
- 
+//const token = localStorage.getItem("token");
+
+
 const ProfileForm = () => {
    const { id } = useParams();
     console.log("Profile ID:", id);
   const userId = localStorage.getItem("userId") || "";
-   
+  //  const token = localStorage.getItem("token");
   const [formData, setFormData] = useState({
     // General Details
     first_name: '',
@@ -28,7 +28,7 @@ const ProfileForm = () => {
     city: '',
     State: '',
     Zip_code: '',
- 
+
     // Pregnancy Status
     currentlyPregnant: '',
     Last_menstrualperiod: '',
@@ -44,7 +44,7 @@ const ProfileForm = () => {
     deliverymethod: '',
     childbornlocation: '',
     gestationalAgeAtBirth: '',
- 
+
     // Healthcare
     hasPrimaryCarePhysician: '',
     primaryFirst_name: '',
@@ -73,21 +73,21 @@ const ProfileForm = () => {
     medication2Dosage: "",
     medication2Frequency: "",
     consumesAlcoholOrSmokes: '',
- 
- 
+
+
     // Lifestyle
     preferredLanguage: '',
     dietaryPreferences: '',
     exerciseDuringPregnancy: '',
     infoSourceDuringPregnancy: '',
- 
+
     // Experience
     platformExpectations: '',
     challengesOrConcerns: '',
     personalizedResources: '',
     additionalFeedback: '',
   });
- 
+
   const [sections, setSections] = useState({
     general: false,
     pregnancy: false,
@@ -95,30 +95,30 @@ const ProfileForm = () => {
     lifestyle: false,
     experience: false
   });
- 
+
  useEffect(() => {
   if (!id || !userId) return;
- 
-  // axios
-  //   .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?userId=${userId}`)
-   
+       //  const token = localStorage.getItem("token");
   axios
-    .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`, // ← assuming you store the JWT token
-      },
-    })
+    .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?userId=${userId}`)
+   
+  // axios
+  //   .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}`, {
+  //     headers: {
+  //       Authorization: `Bearer ${token}`, // ← assuming you store the JWT token
+  //     },
+  //   })
     .then((res) => {
       if (res.data && res.data.survey) {
         const survey = res.data.survey;
- 
+
         // Fallbacks for optional deeply nested objects
         const primaryCareDetails =
           survey.healthCare?.primaryCare?.details || {};
         const obgynDetails = survey.healthCare?.obgyn?.details || {};
         const medication1 = survey.healthCare?.medication1 || {};
         const medication2 = survey.healthCare?.medication2 || {};
- 
+
         // Mapping the response to the formData state
         setFormData({
           // General Details
@@ -137,7 +137,7 @@ const ProfileForm = () => {
           city: survey.generalDetails?.city || "",
           State: survey.generalDetails?.State || "",
           Zip_code: survey.generalDetails?.Zip_code || "",
- 
+
           // Pregnancy Status
           currentlyPregnant: survey.pregnancyStatus?.currentlyPregnant || "",
           // Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod || '',
@@ -160,7 +160,7 @@ const ProfileForm = () => {
           childbornlocation: survey.pregnancyStatus?.childbornlocation || "",
           gestationalAgeAtBirth:
             survey.pregnancyStatus?.gestationalAgeAtBirth || "",
- 
+
           // Healthcare
           hasPrimaryCarePhysician:
             survey.healthCare?.primaryCare?.hasPrimaryCarePhysician || "",
@@ -181,7 +181,7 @@ const ProfileForm = () => {
           obgynState: obgynDetails.State || "",
           obgynZip_code: obgynDetails.Zip_code || "",
           obgynPhonenumber: obgynDetails.Phonenumber || "",
- 
+
           insuranceProvider: survey.healthCare?.insuranceProvider || "",
           medication1Name: medication1.name || "",
           medication1Dosage: medication1.dosage || "",
@@ -191,7 +191,7 @@ const ProfileForm = () => {
           medication2Frequency: medication2.frequency || "",
           consumesAlcoholOrSmokes:
             survey.healthCare?.consumesAlcoholOrSmokes || "",
- 
+
           // Lifestyle
           preferredLanguage:
             survey.lifestylePreferences?.preferredLanguage || "",
@@ -201,7 +201,7 @@ const ProfileForm = () => {
             survey.lifestylePreferences?.physicalActivity || "",
           infoSourceDuringPregnancy:
             survey.lifestylePreferences?.primaryInfoSource || "",
- 
+
           // Experience
           platformExpectations:
             survey.experienceAndExpectations?.expectations || "",
@@ -217,15 +217,15 @@ const ProfileForm = () => {
     .catch((err) => {
       console.error("Error fetching survey by ID:", err);
     });
-}, [id, userId]);
- 
- 
- 
+}, [id,userId]);
+
+
+
     const handleSubmit = (e) => {
       e.preventDefault();
-   
+    
       const updatedData = {
-        //userId: userId,
+        userId: userId,
         generalDetails: {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -320,21 +320,21 @@ const ProfileForm = () => {
           additionalComments: formData.additionalFeedback,
         },
       };
-   
-      // axios
-      //   .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`, updatedData)
- 
+    
       axios
-        .put(
-          `${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`,
-          updatedData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        )
- 
+        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`, updatedData)
+      // const token = localStorage.getItem("token");
+      // axios
+      //   .put(
+      //     `${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`,
+      //     updatedData,
+      //     {
+      //       headers: {
+      //         Authorization: `Bearer ${token}`,
+      //       },
+      //     }
+      //   )
+
         .then((res) => {
           if (res.data && res.data.message) {
             toast.success("Updated successfully!");
@@ -348,13 +348,13 @@ const ProfileForm = () => {
           toast.error("Failed to update. Something went wrong."); // ❌ Error popup
         });
     };
-   
-   
-   
-   
- 
- 
- 
+    
+    
+    
+    
+  
+
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -362,27 +362,26 @@ const ProfileForm = () => {
       [name]: value
     }));
   };
- 
+  
   const toggleSection = (section) => {
     setSections((prev) => ({
       ...prev,
       [section]: !prev[section]
     }));
   };
- 
- 
+  
+
   const calculateProgress = (fields) => {
     const filledFields = fields.filter(
       (field) => formData[field] !== undefined && formData[field] !== null && formData[field] !== ""
     ).length;
     return Math.round((filledFields / fields.length) * 100);
   };
+  
  
- 
- 
+
   const [showMedication1, setShowMedication1] = useState(false);
   const [showMedication2, setShowMedication2] = useState(false);
- 
    
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">

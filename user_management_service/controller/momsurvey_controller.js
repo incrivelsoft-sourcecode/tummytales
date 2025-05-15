@@ -5,10 +5,10 @@ const User = require('../model/User')
 
 const createsurvey = async (req, res) => {
     try {
-      const userId = req.user.id; 
+     // const userId = req.user.id; 
       const {
        // user_name,
-        //userId,
+        userId,
         // generalDetails
         first_name,
         last_name,
@@ -215,8 +215,8 @@ const createsurvey = async (req, res) => {
 const getbyid_momsurvey = async(req,res)=>{
     try{
         const {id}=req.params;
-        //const { userId } = req.query;
-        const userId = req.user.id;
+        const { userId } = req.query;
+       // const userId = req.user.id;
         if (!userId) {
           return res.status(400).json({ error: "User Id is required" });
       }
@@ -234,8 +234,8 @@ const getbyid_momsurvey = async(req,res)=>{
 
 const getAllSurveys = async (req, res) => {
   try {
-    //const { userId } = req.query; // Accessing userId from the query string
-    const userId = req.user.id;
+    const { userId } = req.query; // Accessing userId from the query string
+    //const userId = req.user.id;
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
@@ -256,8 +256,8 @@ const getAllSurveys = async (req, res) => {
 const update_momsurvey = async (req, res) => {
   try {
     const { id } = req.params; // ID of the survey
-    const { ...updates } = req.body; // userId and other fields to update
-    const userId = req.user.id;
+    const {userId, ...updates } = req.body; // userId and other fields to update
+    //const userId = req.user.id;
     if (!userId) {
       return res.status(400).json({ error: "User Id is required for verification" });
     }
