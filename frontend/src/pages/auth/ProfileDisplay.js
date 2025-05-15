@@ -96,18 +96,19 @@ const ProfileForm = () => {
     experience: false
   });
 
+
  useEffect(() => {
   if (!id || !userId) return;
-       //  const token = localStorage.getItem("token");
-  axios
-    .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?userId=${userId}`)
-   
+        const token = localStorage.getItem("token");
   // axios
-  //   .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}`, {
-  //     headers: {
-  //       Authorization: `Bearer ${token}`, // ← assuming you store the JWT token
-  //     },
-  //   })
+  //   .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}?userId=${userId}`)
+   
+  axios
+    .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`, // ← assuming you store the JWT token
+      },
+    })
     .then((res) => {
       if (res.data && res.data.survey) {
         const survey = res.data.survey;
@@ -225,7 +226,7 @@ const ProfileForm = () => {
       e.preventDefault();
     
       const updatedData = {
-        userId: userId,
+      //  userId: userId,
         generalDetails: {
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -321,19 +322,19 @@ const ProfileForm = () => {
         },
       };
     
-      axios
-        .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`, updatedData)
-      // const token = localStorage.getItem("token");
       // axios
-      //   .put(
-      //     `${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`,
-      //     updatedData,
-      //     {
-      //       headers: {
-      //         Authorization: `Bearer ${token}`,
-      //       },
-      //     }
-      //   )
+      //   .put(`${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`, updatedData)
+      const token = localStorage.getItem("token");
+      axios
+        .put(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/update/${id}`,
+          updatedData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
 
         .then((res) => {
           if (res.data && res.data.message) {
@@ -348,6 +349,7 @@ const ProfileForm = () => {
           toast.error("Failed to update. Something went wrong."); // ❌ Error popup
         });
     };
+    
     
     
     
