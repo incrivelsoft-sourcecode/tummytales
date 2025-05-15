@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
+
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -10,6 +13,7 @@ const Navbar = () => {
   const profileImage = "/image.png"; // Actual profile image
   const dummyImage = "/dummy-profile.png"; // Dummy image when not logged in
   const [showPregnancyDropdown, setShowPregnancyDropdown] = useState(false);
+  const [formData, setFormData] = useState({});
 
   useEffect(() => {
     const checkAuth = () => {
@@ -24,21 +28,178 @@ const Navbar = () => {
       window.removeEventListener("storage", checkAuth);
     };
   }, []);
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
+  const decoded = jwtDecode(token);
+  const userId = decoded?.userId; // or whatever key holds the user ID in your JWT
+
+  if (!userId) return;
+
+  const existingSurveyId = localStorage.getItem("surveyId");
+
+  const fetchSurvey = async () => {
+    try {
+      if (!existingSurveyId) {
+        // Get all surveys to find the latest
+        const allRes = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const surveys = allRes.data?.surveys;
+        if (surveys && surveys.length > 0) {
+          const latestSurvey = surveys[0]; // Or .at(-1)
+          localStorage.setItem("surveyId", latestSurvey._id);
+
+          // Now get that survey by ID
+          const singleRes = await axios.get(
+            `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setFormData(singleRes.data?.survey);
+        }
+      } else {
+        // surveyId exists, fetch it directly
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setFormData(res.data?.survey);
       }
-    };
-
-    if (showDropdown) {
-      document.addEventListener("mousedown", handleClickOutside);
+    } catch (error) {
+      console.error("Error fetching surveys:", error);
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showDropdown]);
+  };
+
+  fetchSurvey();
+}, [isLoggedIn]);
+  // main..
+  // useEffect(() => {
+  //   const userId = localStorage.getItem("userId");
+  //   const existingSurveyId = localStorage.getItem("surveyId");
+  
+  //   if (!userId) return;
+  
+  //   // If no surveyId is saved, fetch all surveys to get one
+  //   if (!existingSurveyId) {
+  //     axios
+  //       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`)
+  //       .then((res) => {
+  //         if (res.data && res.data.surveys && res.data.surveys.length > 0) {
+  //           const latestSurvey = res.data.surveys[0]; // or use .at(-1) for latest
+  //           localStorage.setItem("surveyId", latestSurvey._id);
+  
+  //           // Now fetch that survey by ID
+  //           axios
+  //             .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}?userId=${userId}`)
+  //             .then((res) => {
+  //               if (res.data && res.data.survey) {
+  //                 setFormData(res.data.survey);
+  //               }
+  //             })
+  //             .catch((err) => {
+  //               console.error("Error fetching survey by ID:", err);
+  //             });
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         console.error("Error fetching all surveys:", err);
+  //       });
+  //   } else {
+  //     // surveyId exists, fetch it directly
+  //     axios
+  //       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}?userId=${userId}`)
+  //       .then((res) => {
+  //         if (res.data && res.data.survey) {
+  //           setFormData(res.data.survey);
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         console.error("Error fetching survey by ID:", err);
+  //       });
+  //   }
+  // }, [isLoggedIn]);
+
+//     useEffect(() => {
+//   const token = localStorage.getItem("token");
+//   const existingSurveyId = localStorage.getItem("surveyId");
+
+//   if (!token) return;
+
+//   const headers = {
+//     Authorization: `Bearer ${token}`,
+//   };
+
+//   // If no surveyId is saved, fetch all surveys to get one
+//   if (!existingSurveyId) {
+//     axios
+//       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`, { headers })
+//       .then((res) => {
+//         if (res.data && res.data.surveys && res.data.surveys.length > 0) {
+//           const latestSurvey = res.data.surveys[0]; // or .at(-1) for latest
+//           localStorage.setItem("surveyId", latestSurvey._id);
+
+//           // Now fetch that survey by ID
+//           axios
+//             .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}`, { headers })
+//             .then((res) => {
+//               if (res.data && res.data.survey) {
+//                 setFormData(res.data.survey);
+//               }
+//             })
+//             .catch((err) => {
+//               console.error("Error fetching survey by ID:", err);
+//             });
+//         }
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching all surveys:", err);
+//       });
+//   } else {
+//     // surveyId exists, fetch it directly
+//     axios
+//       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}`, { headers })
+//       .then((res) => {
+//         if (res.data && res.data.survey) {
+//           setFormData(res.data.survey);
+//         }
+//       })
+//       .catch((err) => {
+//         console.error("Error fetching survey by ID:", err);
+//       });
+//   }
+// }, [isLoggedIn]);
+  
+  
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setShowDropdown(false);
+    }
+  };
+
+  if (showDropdown) {
+    document.addEventListener("mousedown", handleClickOutside);
+  }
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [showDropdown]);
+
 
   // Check if the current route is related to Pregnancy Map or its subpages
   const isPregnancyMapActive =
@@ -184,16 +345,93 @@ const Navbar = () => {
               >
                 Supporters
               </li>
-              <li
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                onClick={() => {
-                  const id = localStorage.getItem("profileId");
-                  navigate(`/profile-display/${id}`);
-                  setShowDropdown(false);
-                }}
-              >
-                Profile
-              </li>
+              {/* Profile Link Updated with userId */}
+             {/* <li
+  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+  onClick={async () => {
+    const surveyId = localStorage.getItem("surveyId");
+    const userId = localStorage.getItem("userId");
+
+    if (surveyId) {
+      navigate(`/profile-display/${surveyId}`);
+    } else if (userId) {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`
+        );
+        const surveys = res.data?.surveys;
+        if (surveys && surveys.length > 0) {
+          const latestSurveyId = surveys[0]._id;
+          localStorage.setItem("surveyId", latestSurveyId);
+          navigate(`/profile-display/${latestSurveyId}`);
+        } else {
+          alert("No profile found.");
+        }
+      } catch (err) {
+        console.error("Error fetching surveys:", err);
+        alert("Failed to fetch profile.");
+      }
+    } else {
+      alert("No profile found.");
+    }
+    setShowDropdown(false);
+  }}
+>
+  Profile
+</li> */}
+<li
+  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+  onClick={async () => {
+    const token = localStorage.getItem("token");
+    const surveyId = localStorage.getItem("surveyId");
+
+    if (!token) {
+      alert("You are not logged in.");
+      return;
+    }
+
+    if (surveyId) {
+      navigate(`/profile-display/${surveyId}`);
+    } else {
+      try {
+        const decoded = jwtDecode(token);
+        const userId = decoded?.userId; // Adjust if your token uses a different key
+
+        if (!userId) {
+          alert("Invalid token. User ID not found.");
+          return;
+        }
+
+        const res = await axios.get(
+          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const surveys = res.data?.surveys;
+        if (surveys && surveys.length > 0) {
+          const latestSurveyId = surveys[0]._id;
+          localStorage.setItem("surveyId", latestSurveyId);
+          navigate(`/profile-display/${latestSurveyId}`);
+        } else {
+          alert("No profile found.");
+        }
+      } catch (err) {
+        console.error("Error fetching surveys:", err);
+        alert("Failed to fetch profile.");
+      }
+    }
+
+    setShowDropdown(false);
+  }}
+>
+  Profile
+</li>
+ 
+             
               {isLoggedIn ? (
                 <li
                   className="px-4 py-2 hover:bg-red-500 text-black cursor-pointer"

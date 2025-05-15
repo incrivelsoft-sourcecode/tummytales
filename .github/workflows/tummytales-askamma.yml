@@ -3,7 +3,7 @@ name: Tummytales AskAmma CI/CD
 on:
   push:
     branches:
-      - main
+      - Release-1
     paths:
       - 'AskAmma/**'
       - '.github/workflows/tummytales-askamma.yml'

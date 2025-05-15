@@ -10,7 +10,10 @@ const connectDB = require('./config/db.js');
 const userRouter  = require('./route/userRoutes.js');
 const momsurvey_router=require('./route/momsurvey_router.js');
 const booknow_router = require("./route/booknow_router.js");
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 
 const port = process.env.DB_PORT || 5001;  
 
@@ -18,7 +21,9 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000", "https://tummytales.info"] }));
+app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000", "https://tummytales.info"] ,
+   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,}));
 
 
 app.use(express.json({ limit: '6mb' }));

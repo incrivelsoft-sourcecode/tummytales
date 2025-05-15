@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Added import
 
 const SupportersManagement = () => {
   const [supporters, setSupporters] = useState([]);
@@ -15,6 +16,8 @@ const SupportersManagement = () => {
   const token = useMemo(() => {
     return localStorage.getItem("token");
   }, []);
+
+  const navigate = useNavigate(); // Initialize the navigation hook
 
   useEffect(() => {
     fetchSupporters();
@@ -155,11 +158,16 @@ const SupportersManagement = () => {
               YES
             </button>
             <button 
+              type="button"
               className={`px-6 py-2 rounded ${!hasSupporters ? 'bg-green-500 text-white' : 'bg-white border border-gray-300 text-gray-700'}`}
-              onClick={() => setHasSupporters(false)}
+              onClick={() => {
+                setHasSupporters(false);
+                navigate('/'); // Redirect to home page when NO button is clicked
+              }}
             >
               NO
             </button>
+
           </div>
         </div>
 
