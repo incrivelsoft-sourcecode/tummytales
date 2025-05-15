@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
+ 
 const ProfileSetup = () => {
   const userId = localStorage.getItem("userId") || "";
   const navigate = useNavigate();
-  
+ 
   const [formData, setFormData] = useState({
     // Required general fields
     first_name: "",
@@ -84,9 +84,9 @@ const ProfileSetup = () => {
     wantsPersonalizedResources: false,
     additionalComments: "",
   });
-
  
-
+ 
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
    
@@ -118,8 +118,8 @@ const ProfileSetup = () => {
       const dataToSend = {
         ...formData
       };
-      
-
+     
+ 
      // Filter out empty strings from formData
 const filteredData = Object.fromEntries(
   Object.entries(dataToSend).filter(
@@ -130,13 +130,25 @@ const filteredData = Object.fromEntries(
       !(Array.isArray(value) && value.length === 0)
   )
 );
-
+ 
    
+      // const res = await axios.post(
+      //   `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
+      //   { userId, ...filteredData }
+      // );
+   
+      const token = localStorage.getItem("token");
+ 
       const res = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-        { userId, ...filteredData }
+        filteredData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-   
+ 
       if (res.status === 200) {
         console.log(res.data);
         const { survey } = res.data;
@@ -159,7 +171,7 @@ const filteredData = Object.fromEntries(
       toast.error(errorMessage, { autoClose: 5000 });
     }
   };
-
+ 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prevData) => ({
@@ -167,7 +179,7 @@ const filteredData = Object.fromEntries(
       [name]: type === "checkbox" ? checked : value || undefined,
     }));
   };
-
+ 
  
   const [showMedication1, setShowMedication1] = useState(false);
   const [showMedication2, setShowMedication2] = useState(false);
