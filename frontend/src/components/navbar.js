@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,6 +13,7 @@ const Navbar = () => {
   const dummyImage = "/dummy-profile.png"; // Dummy image when not logged in
   const [showPregnancyDropdown, setShowPregnancyDropdown] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false); // 👈 new state
 
   useEffect(() => {
     const checkAuth = () => {
@@ -22,186 +22,87 @@ const Navbar = () => {
     };
 
     checkAuth();
-    window.addEventListener("storage", checkAuth);
+
+    const handleStorage = () => checkAuth();
+    window.addEventListener("storage", handleStorage);
 
     return () => {
-      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("storage", handleStorage);
     };
-  }, []);
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
+  }, [location]);
 
-  const decoded = jwtDecode(token);
-  const userId = decoded?.userId; // or whatever key holds the user ID in your JWT
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-  if (!userId) return;
+    const decoded = jwtDecode(token);
+    const userId = decoded?.userId;
 
-  const existingSurveyId = localStorage.getItem("surveyId");
+    if (!userId) return;
 
-  const fetchSurvey = async () => {
-    try {
-      if (!existingSurveyId) {
-        // Get all surveys to find the latest
-        const allRes = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+    const existingSurveyId = localStorage.getItem("surveyId");
 
-        const surveys = allRes.data?.surveys;
-        if (surveys && surveys.length > 0) {
-          const latestSurvey = surveys[0]; // Or .at(-1)
-          localStorage.setItem("surveyId", latestSurvey._id);
-
-          // Now get that survey by ID
-          const singleRes = await axios.get(
-            `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}`,
+    const fetchSurvey = async () => {
+      try {
+        if (!existingSurveyId) {
+          const allRes = await axios.get(
+            `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
             }
           );
-          setFormData(singleRes.data?.survey);
-        }
-      } else {
-        // surveyId exists, fetch it directly
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+
+          const surveys = allRes.data?.surveys;
+          if (surveys && surveys.length > 0) {
+            const latestSurvey = surveys[0];
+            localStorage.setItem("surveyId", latestSurvey._id);
+
+            const singleRes = await axios.get(
+              `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            setFormData(singleRes.data?.survey);
           }
-        );
-        setFormData(res.data?.survey);
+        } else {
+          const res = await axios.get(
+            `${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setFormData(res.data?.survey);
+        }
+      } catch (error) {
+        console.error("Error fetching surveys:", error);
       }
-    } catch (error) {
-      console.error("Error fetching surveys:", error);
+    };
+
+    fetchSurvey();
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
     }
-  };
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDropdown]);
 
-  fetchSurvey();
-}, [isLoggedIn]);
-  // main..
-  // useEffect(() => {
-  //   const userId = localStorage.getItem("userId");
-  //   const existingSurveyId = localStorage.getItem("surveyId");
-  
-  //   if (!userId) return;
-  
-  //   // If no surveyId is saved, fetch all surveys to get one
-  //   if (!existingSurveyId) {
-  //     axios
-  //       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`)
-  //       .then((res) => {
-  //         if (res.data && res.data.surveys && res.data.surveys.length > 0) {
-  //           const latestSurvey = res.data.surveys[0]; // or use .at(-1) for latest
-  //           localStorage.setItem("surveyId", latestSurvey._id);
-  
-  //           // Now fetch that survey by ID
-  //           axios
-  //             .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}?userId=${userId}`)
-  //             .then((res) => {
-  //               if (res.data && res.data.survey) {
-  //                 setFormData(res.data.survey);
-  //               }
-  //             })
-  //             .catch((err) => {
-  //               console.error("Error fetching survey by ID:", err);
-  //             });
-  //         }
-  //       })
-  //       .catch((err) => {
-  //         console.error("Error fetching all surveys:", err);
-  //       });
-  //   } else {
-  //     // surveyId exists, fetch it directly
-  //     axios
-  //       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}?userId=${userId}`)
-  //       .then((res) => {
-  //         if (res.data && res.data.survey) {
-  //           setFormData(res.data.survey);
-  //         }
-  //       })
-  //       .catch((err) => {
-  //         console.error("Error fetching survey by ID:", err);
-  //       });
-  //   }
-  // }, [isLoggedIn]);
-
-//     useEffect(() => {
-//   const token = localStorage.getItem("token");
-//   const existingSurveyId = localStorage.getItem("surveyId");
-
-//   if (!token) return;
-
-//   const headers = {
-//     Authorization: `Bearer ${token}`,
-//   };
-
-//   // If no surveyId is saved, fetch all surveys to get one
-//   if (!existingSurveyId) {
-//     axios
-//       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`, { headers })
-//       .then((res) => {
-//         if (res.data && res.data.surveys && res.data.surveys.length > 0) {
-//           const latestSurvey = res.data.surveys[0]; // or .at(-1) for latest
-//           localStorage.setItem("surveyId", latestSurvey._id);
-
-//           // Now fetch that survey by ID
-//           axios
-//             .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${latestSurvey._id}`, { headers })
-//             .then((res) => {
-//               if (res.data && res.data.survey) {
-//                 setFormData(res.data.survey);
-//               }
-//             })
-//             .catch((err) => {
-//               console.error("Error fetching survey by ID:", err);
-//             });
-//         }
-//       })
-//       .catch((err) => {
-//         console.error("Error fetching all surveys:", err);
-//       });
-//   } else {
-//     // surveyId exists, fetch it directly
-//     axios
-//       .get(`${process.env.REACT_APP_BACKEND_URL}/mom/survey/${existingSurveyId}`, { headers })
-//       .then((res) => {
-//         if (res.data && res.data.survey) {
-//           setFormData(res.data.survey);
-//         }
-//       })
-//       .catch((err) => {
-//         console.error("Error fetching survey by ID:", err);
-//       });
-//   }
-// }, [isLoggedIn]);
-  
-  
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-      setShowDropdown(false);
-    }
-  };
-
-  if (showDropdown) {
-    document.addEventListener("mousedown", handleClickOutside);
-  }
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [showDropdown]);
-
-
-  // Check if the current route is related to Pregnancy Map or its subpages
   const isPregnancyMapActive =
     location.pathname === "/pregnancy-map" ||
     location.pathname === "/essential-tests" ||
@@ -209,257 +110,250 @@ useEffect(() => {
     location.pathname === "/set-up-baby";
 
   return (
-    <nav className="fixed top-0 left-0 w-full flex justify-between items-center px-16 py-4 bg-[#2A2A0A] text-[#D4D700] shadow-md z-50">
-      {/* Logo */}
-      <div className="flex justify-center items-center border-2 border-blue-500 bg-[#F8E8FF] p-2">
-        <span className="text-[2rem] font-extrabold tracking-wide relative leading-none">
-          <span className="inline-block outline-text -rotate-12">T</span>
-          <span className="inline-block outline-text">u</span>
-          <span className="inline-block outline-text rotate-6">m</span>
-          <span className="inline-block outline-text -rotate-6">m</span>
-          <span className="inline-block outline-text rotate-3">y</span>
-          <span className="inline-block outline-text rotate-12">T</span>
-          <span className="inline-block outline-text">a</span>
-          <span className="inline-block outline-text">l</span>
-          <span className="inline-block outline-text -rotate-3">e</span>
-          <span className="inline-block outline-text rotate-6">s</span>
-        </span>
-      </div>
+    <>
+      <nav className="fixed top-0 left-0 w-full flex justify-between items-center px-16 py-4 bg-[#2A2A0A] text-[#D4D700] shadow-md z-50">
+        {/* Logo */}
+        <div className="flex justify-center items-center border-2 border-blue-500 bg-[#F8E8FF] p-2">
+          <span className="text-[2rem] font-extrabold tracking-wide relative leading-none">
+            <span className="inline-block outline-text -rotate-12">T</span>
+            <span className="inline-block outline-text">u</span>
+            <span className="inline-block outline-text rotate-6">m</span>
+            <span className="inline-block outline-text -rotate-6">m</span>
+            <span className="inline-block outline-text rotate-3">y</span>
+            <span className="inline-block outline-text rotate-12">T</span>
+            <span className="inline-block outline-text">a</span>
+            <span className="inline-block outline-text">l</span>
+            <span className="inline-block outline-text -rotate-3">e</span>
+            <span className="inline-block outline-text rotate-6">s</span>
+          </span>
+        </div>
 
-      {/* Navigation Links */}
-      <ul className="flex gap-10 text-lg font-medium">
-        <li>
-          <a
-            href="/"
-            className={`px-3 py-1 ${
-              location.pathname === "/" ? "underline" : ""
-            }`}
+        {/* Navigation Links */}
+        <ul className="flex gap-10 text-lg font-medium">
+          <li>
+            <a
+              href="/"
+              className={`px-3 py-1 ${
+                location.pathname === "/" ? "underline" : ""
+              }`}
+            >
+              Home
+            </a>
+          </li>
+
+          {/* Pregnancy Map Dropdown */}
+          <li
+            className="relative group"
+            onMouseEnter={() => setShowPregnancyDropdown(true)}
+            onMouseLeave={() => setShowPregnancyDropdown(false)}
           >
-            Home
-          </a>
-        </li>
-
-        {/* Pregnancy Map Dropdown */}
-        <li
-          className="relative group"
-          onMouseEnter={() => setShowPregnancyDropdown(true)}
-          onMouseLeave={() => setShowPregnancyDropdown(false)}
-        >
-          <a className={`px-3 py-1 ${isPregnancyMapActive ? "underline" : ""}`}>
-            Pregnancy Map
-          </a>
-          {showPregnancyDropdown && (
-            <ul className="absolute left-0 mt-1 w-48 bg-[#2d2d08] text-[#d4d75f] shadow-lg rounded-md">
-              <li>
-                <a
-                  href="/essential-tests"
-                  className={`block px-3 py-2 hover:bg-[#3b3b10] ${
-                    location.pathname === "/essential-tests" ? "underline" : ""
-                  }`}
-                >
-                  Your Essential Tests
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/thali"
-                  className={`block px-3 py-2 hover:bg-[#3b3b10] ${
-                    location.pathname === "/thali" ? "underline" : ""
-                  }`}
-                >
-                  What's In Your Thali
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/set-up-baby"
-                  className={`block px-3 py-2 hover:bg-[#3b3b10] ${
-                    location.pathname === "/set-up-baby" ? "underline" : ""
-                  }`}
-                >
-                  Set Up For The Baby
-                </a>
-              </li>
-            </ul>
-          )}
-        </li>
-
-        <li>
-          <a
-            href="/mom-network"
-            className={`px-3 py-1 ${
-              location.pathname === "/mom-network" ? "underline" : ""
-            }`}
-          >
-            Mom-to-Mom Network
-          </a>
-        </li>
-        <li>
-          <a
-            href="/ask-amma"
-            className={`px-3 py-1 ${
-              location.pathname === "/ask-amma" ? "underline" : ""
-            }`}
-          >
-            Ask Amma
-          </a>
-        </li>
-        <li>
-          <a
-            href="/resources"
-            className={`px-3 py-1 ${
-              location.pathname === "/resources" ? "underline" : ""
-            }`}
-          >
-            Resources
-          </a>
-        </li>
-      </ul>
-
-      {/* Profile Icon with Dropdown */}
-      <div className="relative" ref={dropdownRef}>
-        <img
-          src={isLoggedIn ? profileImage : dummyImage}
-          alt="Profile"
-          className="w-10 h-10 rounded-full cursor-pointer"
-          onClick={() => setShowDropdown(!showDropdown)}
-        />
-        {showDropdown && (
-          <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg">
-            <ul className="text-gray-800 text-center">
-              <li
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                onClick={() => {
-                  navigate("/");
-                  setShowDropdown(false);
-                }}
-              >
-                Home
-              </li>
-              <li
-                className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                onClick={() => {
-                  navigate("/supporters");
-                  setShowDropdown(false);
-                }}
-              >
-                Supporters
-              </li>
-              {/* Profile Link Updated with userId */}
-             {/* <li
-  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-  onClick={async () => {
-    const surveyId = localStorage.getItem("surveyId");
-    const userId = localStorage.getItem("userId");
-
-    if (surveyId) {
-      navigate(`/profile-display/${surveyId}`);
-    } else if (userId) {
-      try {
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys?userId=${userId}`
-        );
-        const surveys = res.data?.surveys;
-        if (surveys && surveys.length > 0) {
-          const latestSurveyId = surveys[0]._id;
-          localStorage.setItem("surveyId", latestSurveyId);
-          navigate(`/profile-display/${latestSurveyId}`);
-        } else {
-          alert("No profile found.");
-        }
-      } catch (err) {
-        console.error("Error fetching surveys:", err);
-        alert("Failed to fetch profile.");
-      }
-    } else {
-      alert("No profile found.");
-    }
-    setShowDropdown(false);
-  }}
->
-  Profile
-</li> */}
-<li
-  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-  onClick={async () => {
-    const token = localStorage.getItem("token");
-    const surveyId = localStorage.getItem("surveyId");
-
-    if (!token) {
-      alert("You are not logged in.");
-      return;
-    }
-
-    if (surveyId) {
-      navigate(`/profile-display/${surveyId}`);
-    } else {
-      try {
-        const decoded = jwtDecode(token);
-        const userId = decoded?.userId; // Adjust if your token uses a different key
-
-        if (!userId) {
-          alert("Invalid token. User ID not found.");
-          return;
-        }
-
-        const res = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const surveys = res.data?.surveys;
-        if (surveys && surveys.length > 0) {
-          const latestSurveyId = surveys[0]._id;
-          localStorage.setItem("surveyId", latestSurveyId);
-          navigate(`/profile-display/${latestSurveyId}`);
-        } else {
-          alert("No profile found.");
-        }
-      } catch (err) {
-        console.error("Error fetching surveys:", err);
-        alert("Failed to fetch profile.");
-      }
-    }
-
-    setShowDropdown(false);
-  }}
->
-  Profile
-</li>
- 
-             
-              {isLoggedIn ? (
-                <li
-                  className="px-4 py-2 hover:bg-red-500 text-black cursor-pointer"
-                  onClick={() => {
-                    localStorage.clear();
-                    setIsLoggedIn(false);
-                    setShowDropdown(false);
-                    navigate("/home");
-                  }}
-                >
-                  Sign Out
+            <a className={`px-3 py-1 ${isPregnancyMapActive ? "underline" : ""}`}>
+              Pregnancy Map
+            </a>
+            {showPregnancyDropdown && (
+              <ul className="absolute left-0 mt-1 w-48 bg-[#2d2d08] text-[#d4d75f] shadow-lg rounded-md">
+                <li>
+                  <a
+                    href="/essential-tests"
+                    className={`block px-3 py-2 hover:bg-[#3b3b10] ${
+                      location.pathname === "/essential-tests" ? "underline" : ""
+                    }`}
+                  >
+                    Your Essential Tests
+                  </a>
                 </li>
-              ) : (
+                <li>
+                  <a
+                    href="/thali"
+                    className={`block px-3 py-2 hover:bg-[#3b3b10] ${
+                      location.pathname === "/thali" ? "underline" : ""
+                    }`}
+                  >
+                    What's In Your Thali
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/set-up-baby"
+                    className={`block px-3 py-2 hover:bg-[#3b3b10] ${
+                      location.pathname === "/set-up-baby" ? "underline" : ""
+                    }`}
+                  >
+                    Set Up For The Baby
+                  </a>
+                </li>
+              </ul>
+            )}
+          </li>
+
+          <li>
+            <a
+              href="/mom-network"
+              className={`px-3 py-1 ${
+                location.pathname === "/mom-network" ? "underline" : ""
+              }`}
+            >
+              Mom-to-Mom Network
+            </a>
+          </li>
+          <li>
+            <a
+              href="/ask-amma"
+              className={`px-3 py-1 ${
+                location.pathname === "/ask-amma" ? "underline" : ""
+              }`}
+            >
+              Ask Amma
+            </a>
+          </li>
+          <li>
+            <a
+              href="/resources"
+              className={`px-3 py-1 ${
+                location.pathname === "/resources" ? "underline" : ""
+              }`}
+            >
+              Resources
+            </a>
+          </li>
+        </ul>
+
+        {/* Profile Icon with Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <img
+            src={isLoggedIn ? profileImage : dummyImage}
+            alt="Profile"
+            className="w-10 h-10 rounded-full cursor-pointer"
+            onClick={() => setShowDropdown(!showDropdown)}
+          />
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg">
+              <ul className="text-gray-800 text-center">
                 <li
                   className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
                   onClick={() => {
-                    navigate("/signin");
+                    navigate("/");
                     setShowDropdown(false);
                   }}
                 >
-                  Sign In
+                  Home
                 </li>
-              )}
-            </ul>
+                <li
+                  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                  onClick={() => {
+                    navigate("/supporters");
+                    setShowDropdown(false);
+                  }}
+                >
+                  Supporters
+                </li>
+
+                <li
+                  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                  onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    const surveyId = localStorage.getItem("surveyId");
+
+                    if (!token) {
+                      setShowLoginPrompt(true); // 👈 show popup instead of alert
+                      return;
+                    }
+
+                    if (surveyId) {
+                      navigate(`/profile-display/${surveyId}`);
+                    } else {
+                      try {
+                        const decoded = jwtDecode(token);
+                        const userId = decoded?.userId;
+
+                        if (!userId) {
+                          alert("Invalid token. User ID not found.");
+                          return;
+                        }
+
+                        const res = await axios.get(
+                          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
+                          {
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                            },
+                          }
+                        );
+
+                        const surveys = res.data?.surveys;
+                        if (surveys && surveys.length > 0) {
+                          const latestSurveyId = surveys[0]._id;
+                          localStorage.setItem("surveyId", latestSurveyId);
+                          navigate(`/profile-display/${latestSurveyId}`);
+                        } else {
+                          alert("No profile found.");
+                        }
+                      } catch (err) {
+                        console.error("Error fetching surveys:", err);
+                        alert("Failed to fetch profile.");
+                      }
+                    }
+
+                    setShowDropdown(false);
+                  }}
+                >
+                  Profile
+                </li>
+
+                {isLoggedIn ? (
+                  <li
+                    className="px-4 py-2 hover:bg-red-500 text-black cursor-pointer"
+                    onClick={() => {
+                      localStorage.clear();
+                      setIsLoggedIn(false);
+                      setShowDropdown(false);
+                      navigate("/home");
+                    }}
+                  >
+                    Sign Out
+                  </li>
+                ) : (
+                  <li
+                    className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                    onClick={() => {
+                      navigate("/signin");
+                      setShowDropdown(false);
+                    }}
+                  >
+                    Sign In
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* 👇 Sign In Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 text-center shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">You're not signed in</h2>
+            <p className="mb-6">Please sign in to view your profile.</p>
+            <button
+              className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+              onClick={() => {
+                setShowLoginPrompt(false);
+                navigate("/signin");
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              className="ml-4 text-gray-600 hover:text-black"
+              onClick={() => setShowLoginPrompt(false)}
+            >
+              Cancel
+            </button>
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      )}
+    </>
   );
 };
 
