@@ -113,106 +113,219 @@ const ProfileForm = () => {
       if (res.data && res.data.survey) {
         const survey = res.data.survey;
 
-        // Fallbacks for optional deeply nested objects
-        const primaryCareDetails =
-          survey.healthCare?.primaryCare?.details || {};
-        const obgynDetails = survey.healthCare?.obgyn?.details || {};
-        const medication1 = survey.healthCare?.medication1 || {};
-        const medication2 = survey.healthCare?.medication2 || {};
+        // // Fallbacks for optional deeply nested objects
+        // const primaryCareDetails =
+        //   survey.healthCare?.primaryCare?.details || {};
+        // const obgynDetails = survey.healthCare?.obgyn?.details || {};
+        // const medication1 = survey.healthCare?.medication1 || {};
+        // const medication2 = survey.healthCare?.medication2 || {};
 
         // Mapping the response to the formData state
-        setFormData({
-          // General Details
-          first_name: survey.generalDetails?.first_name || "",
-          last_name: survey.generalDetails?.last_name || "",
-          dob: survey.generalDetails?.dob
-            ? survey.generalDetails.dob.split("T")[0]
-            : "",
-          gender: survey.generalDetails?.gender || "",
-          nationality: survey.generalDetails?.nationality || "",
-          Phonenumber: survey.generalDetails?.Phonenumber || "",
-          email: survey.generalDetails?.email || "",
-          country: survey.generalDetails?.country || "",
-          Addressline1: survey.generalDetails?.Addressline1 || "",
-          Addressline2: survey.generalDetails?.Addressline2 || "",
-          city: survey.generalDetails?.city || "",
-          State: survey.generalDetails?.State || "",
-          Zip_code: survey.generalDetails?.Zip_code || "",
+  //       setFormData({
+  //         // General Details
+  //         first_name: survey.generalDetails?.first_name || "",
+  //         last_name: survey.generalDetails?.last_name || "",
+  //         dob: survey.generalDetails?.dob
+  //           ? survey.generalDetails.dob.split("T")[0]
+  //           : "",
+  //         gender: survey.generalDetails?.gender || "",
+  //         nationality: survey.generalDetails?.nationality || "",
+  //         Phonenumber: survey.generalDetails?.Phonenumber || "",
+  //         email: survey.generalDetails?.email || "",
+  //         country: survey.generalDetails?.country || "",
+  //         Addressline1: survey.generalDetails?.Addressline1 || "",
+  //         Addressline2: survey.generalDetails?.Addressline2 || "",
+  //         city: survey.generalDetails?.city || "",
+  //         State: survey.generalDetails?.State || "",
+  //         Zip_code: survey.generalDetails?.Zip_code || "",
 
-          // Pregnancy Status
-          currentlyPregnant: survey.pregnancyStatus?.currentlyPregnant || "",
-          // Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod || '',
-          // estimatedDueDate: survey.pregnancyStatus?.estimatedDueDate || '',
-          Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod
-            ? survey.pregnancyStatus.Last_menstrualperiod.split("T")[0]
-            : "",
-          estimatedDueDate: survey.pregnancyStatus?.estimatedDueDate
-            ? survey.pregnancyStatus.estimatedDueDate.split("T")[0]
-            : "",
-          PregnancyLoss: survey.pregnancyStatus?.PregnancyLoss || "",
-          dateOfLoss: survey.pregnancyStatus?.dateOfLoss || "",
-          reason: survey.pregnancyStatus?.reason || "",
-          gestationWeeks: survey.pregnancyStatus?.gestationWeeks || "",
-          treatmentLocation: survey.pregnancyStatus?.treatmentLocation || "",
-          firstChild: survey.pregnancyStatus?.firstChild || "",
-          firstChildDob: survey.pregnancyStatus?.firstChildDob || "",
-          complications: survey.pregnancyStatus?.complications || "",
-          deliverymethod: survey.pregnancyStatus?.deliverymethod || "",
-          childbornlocation: survey.pregnancyStatus?.childbornlocation || "",
-          gestationalAgeAtBirth:
-            survey.pregnancyStatus?.gestationalAgeAtBirth || "",
+  //         // // Pregnancy Status
+  //         // currentlyPregnant: survey.pregnancyStatus?.currentlyPregnant || "",
+  //         // // Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod || '',
+  //         // // estimatedDueDate: survey.pregnancyStatus?.estimatedDueDate || '',
+  //         // Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod
+  //         //   ? survey.pregnancyStatus.Last_menstrualperiod.split("T")[0]
+  //         //   : "",
+  //         // estimatedDueDate: survey.pregnancyStatus?.estimatedDueDate
+  //         //   ? survey.pregnancyStatus.estimatedDueDate.split("T")[0]
+  //         //   : "",
+  //         // PregnancyLoss: survey.pregnancyStatus?.PregnancyLoss || "",
+  //         // dateOfLoss: survey.pregnancyStatus?.dateOfLoss || "",
+  //         // reason: survey.pregnancyStatus?.reason || "",
+  //         // gestationWeeks: survey.pregnancyStatus?.gestationWeeks || "",
+  //         // treatmentLocation: survey.pregnancyStatus?.treatmentLocation || "",
+  //         // firstChild: survey.pregnancyStatus?.firstChild || "",
+  //         // firstChildDob: survey.pregnancyStatus?.firstChildDob || "",
+  //         // complications: survey.pregnancyStatus?.complications || "",
+  //         // deliverymethod: survey.pregnancyStatus?.deliverymethod || "",
+  //         // childbornlocation: survey.pregnancyStatus?.childbornlocation || "",
+  //         // gestationalAgeAtBirth:
+  //         //   survey.pregnancyStatus?.gestationalAgeAtBirth || "",
+ 
+  //          // Pregnancy Status (corrected)
+  // currentlyPregnant: survey.pregnancyStatus?.currentlyPregnant || "",
+  // Last_menstrualperiod: survey.pregnancyStatus?.Last_menstrualperiod?.split("T")[0] || "",
+  // estimatedDueDate: survey.pregnancyStatus?.estimatedDueDate?.split("T")[0] || "",
 
-          // Healthcare
-          hasPrimaryCarePhysician:
-            survey.healthCare?.primaryCare?.hasPrimaryCarePhysician || "",
-          primaryFirst_name: primaryCareDetails.first_name || "",
-          primaryLast_name: primaryCareDetails.last_name || "",
-          primaryAddressline1: primaryCareDetails.Addressline1 || "",
-          primaryAddressline2: primaryCareDetails.Addressline2 || "",
-          primaryCity: primaryCareDetails.city || "",
-          primaryState: primaryCareDetails.State || "",
-          primaryZip_code: primaryCareDetails.Zip_code || "",
-          hasOBGYN: survey.healthCare?.obgyn?.hasOBGYN || "",
-          obgynFirst_name: obgynDetails.first_name || "",
-          obgynLast_name: obgynDetails.last_name || "",
-          obgynCountry: obgynDetails.country || "",
-          obgynAddressline1: obgynDetails.Addressline1 || "",
-          obgynAddressline2: obgynDetails.Addressline2 || "",
-          obgynCity: obgynDetails.city || "",
-          obgynState: obgynDetails.State || "",
-          obgynZip_code: obgynDetails.Zip_code || "",
-          obgynPhonenumber: obgynDetails.Phonenumber || "",
+  // PregnancyLoss: survey.pregnancyStatus?.PregnancyLossInfo?.hasPregnancyLoss || "",
+  // dateOfLoss: pregnancyLossDetails.dateOfLoss?.split("T")[0] || "",
+  // reason: pregnancyLossDetails.reason || "",
+  // gestationWeeks: pregnancyLossDetails.gestationWeeks || "",
+  // treatmentLocation: pregnancyLossDetails.treatmentLocation || "",
 
-          insuranceProvider: survey.healthCare?.insuranceProvider || "",
-          medication1Name: medication1.name || "",
-          medication1Dosage: medication1.dosage || "",
-          medication1Frequency: medication1.frequency || "",
-          medication2Name: medication2.name || "",
-          medication2Dosage: medication2.dosage || "",
-          medication2Frequency: medication2.frequency || "",
-          consumesAlcoholOrSmokes:
-            survey.healthCare?.consumesAlcoholOrSmokes || "",
+  // firstChild: survey.pregnancyStatus?.firstChildInfo?.isFirstChild || "",
+  // firstChildDob: firstChildDetails.dob?.split("T")[0] || "",
+  // complications: firstChildDetails.complications || "",
+  // deliverymethod: firstChildDetails.deliverymethod || "",
+  // childbornlocation: firstChildDetails.childbornlocation || "",
+  // gestationalAgeAtBirth: firstChildDetails.gestationalAgeAtBirth || "",
+  //         // Healthcare
+  //         hasPrimaryCarePhysician:
+  //           survey.healthCare?.primaryCare?.hasPrimaryCarePhysician || "",
+  //         primaryFirst_name: primaryCareDetails.first_name || "",
+  //         primaryLast_name: primaryCareDetails.last_name || "",
+  //         primaryAddressline1: primaryCareDetails.Addressline1 || "",
+  //         primaryAddressline2: primaryCareDetails.Addressline2 || "",
+  //         primaryCity: primaryCareDetails.city || "",
+  //         primaryState: primaryCareDetails.State || "",
+  //         primaryZip_code: primaryCareDetails.Zip_code || "",
+  //         hasOBGYN: survey.healthCare?.obgyn?.hasOBGYN || "",
+  //         obgynFirst_name: obgynDetails.first_name || "",
+  //         obgynLast_name: obgynDetails.last_name || "",
+  //         obgynCountry: obgynDetails.country || "",
+  //         obgynAddressline1: obgynDetails.Addressline1 || "",
+  //         obgynAddressline2: obgynDetails.Addressline2 || "",
+  //         obgynCity: obgynDetails.city || "",
+  //         obgynState: obgynDetails.State || "",
+  //         obgynZip_code: obgynDetails.Zip_code || "",
+  //         obgynPhonenumber: obgynDetails.Phonenumber || "",
 
-          // Lifestyle
-          preferredLanguage:
-            survey.lifestylePreferences?.preferredLanguage || "",
-          dietaryPreferences:
-            survey.lifestylePreferences?.dietaryPreferences || "",
-          exerciseDuringPregnancy:
-            survey.lifestylePreferences?.physicalActivity || "",
-          infoSourceDuringPregnancy:
-            survey.lifestylePreferences?.primaryInfoSource || "",
+  //         insuranceProvider: survey.healthCare?.insuranceProvider || "",
+  //         medication1Name: medication1.name || "",
+  //         medication1Dosage: medication1.dosage || "",
+  //         medication1Frequency: medication1.frequency || "",
+  //         medication2Name: medication2.name || "",
+  //         medication2Dosage: medication2.dosage || "",
+  //         medication2Frequency: medication2.frequency || "",
+  //         consumesAlcoholOrSmokes:
+  //           survey.healthCare?.consumesAlcoholOrSmokes || "",
 
-          // Experience
-          platformExpectations:
-            survey.experienceAndExpectations?.expectations || "",
-          challengesOrConcerns:
-            survey.experienceAndExpectations?.challenges || "",
-          personalizedResources:
-            survey.experienceAndExpectations?.wantsPersonalizedResources || "",
-          additionalFeedback:
-            survey.experienceAndExpectations?.additionalComments || "",
-        });
+  //         // Lifestyle
+  //         preferredLanguage:
+  //           survey.lifestylePreferences?.preferredLanguage || "",
+  //         dietaryPreferences:
+  //           survey.lifestylePreferences?.dietaryPreferences || "",
+  //         exerciseDuringPregnancy:
+  //           survey.lifestylePreferences?.physicalActivity || "",
+  //         infoSourceDuringPregnancy:
+  //           survey.lifestylePreferences?.primaryInfoSource || "",
+
+  //         // Experience
+  //         platformExpectations:
+  //           survey.experienceAndExpectations?.expectations || "",
+  //         challengesOrConcerns:
+  //           survey.experienceAndExpectations?.challenges || "",
+  //         personalizedResources:
+  //           survey.experienceAndExpectations?.wantsPersonalizedResources || "",
+  //         additionalFeedback:
+  //           survey.experienceAndExpectations?.additionalComments || "",
+  //       });
+
+  const getBooleanString = (value) => {
+  if (value === true) return "Yes";
+  if (value === false) return "No";
+  return ""; // fallback to default "Select" if undefined
+};
+
+  // 🟡 Fallbacks to avoid breaking if nested data is missing
+           const healthCare = survey.healthCare || {};
+          const primaryCareDetails = healthCare.primaryCare?.details || {};
+          const obgynDetails = healthCare.obgyn?.details || {};
+          const medication1 = survey.healthCare?.medication1 || {};
+          const medication2 = survey.healthCare?.medication2 || {};
+
+          // 🟡 Pregnancy Details Safe Handling
+          const pregnancyStatus = survey.pregnancyStatus || {};
+          const pregnancyLossDetails = pregnancyStatus.PregnancyLossInfo?.details || {};
+          const firstChildDetails = pregnancyStatus.firstChildInfo?.details || {};
+setFormData({
+  // General
+  first_name: survey.generalDetails?.first_name || "",
+  last_name: survey.generalDetails?.last_name || "",
+  dob: survey.generalDetails?.dob ? survey.generalDetails.dob.split("T")[0] : "",
+  gender: survey.generalDetails?.gender || "",
+  nationality: survey.generalDetails?.nationality || "",
+  Phonenumber: survey.generalDetails?.Phonenumber || "",
+  email: survey.generalDetails?.email || "",
+  country: survey.generalDetails?.country || "",
+  Addressline1: survey.generalDetails?.Addressline1 || "",
+  Addressline2: survey.generalDetails?.Addressline2 || "",
+  city: survey.generalDetails?.city || "",
+  State: survey.generalDetails?.State || "",
+  Zip_code: survey.generalDetails?.Zip_code || "",
+
+  // ✅ Pregnancy Status
+  currentlyPregnant: getBooleanString(pregnancyStatus.currentlyPregnant),
+  Last_menstrualperiod: pregnancyStatus.Last_menstrualperiod ? pregnancyStatus.Last_menstrualperiod.split("T")[0] : "",
+  estimatedDueDate: pregnancyStatus.estimatedDueDate ? pregnancyStatus.estimatedDueDate.split("T")[0] : "",
+
+  PregnancyLoss: getBooleanString(pregnancyStatus.PregnancyLossInfo?.hasPregnancyLoss),
+  dateOfLoss: pregnancyLossDetails.dateOfLoss ? pregnancyLossDetails.dateOfLoss.split("T")[0] : "",
+  reason: pregnancyLossDetails.reason || "",
+  gestationWeeks: pregnancyLossDetails.gestationWeeks || "",
+  treatmentLocation: pregnancyLossDetails.treatmentLocation || "",
+
+  firstChild: getBooleanString(pregnancyStatus.firstChildInfo?.isFirstChild),
+  firstChildDob: firstChildDetails.dob ? firstChildDetails.dob.split("T")[0] : "",
+  complications: firstChildDetails.complications || "",
+  deliverymethod: firstChildDetails.deliverymethod || "",
+  childbornlocation: firstChildDetails.childbornlocation || "",
+  gestationalAgeAtBirth: firstChildDetails.gestationalAgeAtBirth || "",
+
+  // ✅ HealthCare
+  hasPrimaryCarePhysician: getBooleanString(survey.healthCare?.primaryCare?.hasPrimaryCarePhysician),
+  primaryFirst_name: primaryCareDetails.first_name || "",
+  primaryLast_name: primaryCareDetails.last_name || "",
+  primaryAddressline1: primaryCareDetails.Addressline1 || "",
+  primaryAddressline2: primaryCareDetails.Addressline2 || "",
+  primaryCity: primaryCareDetails.city || "",
+  primaryState: primaryCareDetails.State || "",
+  primaryZip_code: primaryCareDetails.Zip_code || "",
+
+  hasOBGYN: getBooleanString(survey.healthCare?.obgyn?.hasOBGYN),
+  obgynFirst_name: obgynDetails.first_name || "",
+  obgynLast_name: obgynDetails.last_name || "",
+  obgynCountry: obgynDetails.country || "",
+  obgynAddressline1: obgynDetails.Addressline1 || "",
+  obgynAddressline2: obgynDetails.Addressline2 || "",
+  obgynCity: obgynDetails.city || "",
+  obgynState: obgynDetails.State || "",
+  obgynZip_code: obgynDetails.Zip_code || "",
+  obgynPhonenumber: obgynDetails.Phonenumber || "",
+
+  insuranceProvider: survey.healthCare?.insuranceProvider || "",
+  medication1Name: medication1.name || "",
+  medication1Dosage: medication1.dosage || "",
+  medication1Frequency: medication1.frequency || "",
+  medication2Name: medication2.name || "",
+  medication2Dosage: medication2.dosage || "",
+  medication2Frequency: medication2.frequency || "",
+  consumesAlcoholOrSmokes: getBooleanString(survey.healthCare?.consumesAlcoholOrSmokes),
+
+  // ✅ Lifestyle
+  preferredLanguage: survey.lifestylePreferences?.preferredLanguage || "",
+  dietaryPreferences: survey.lifestylePreferences?.dietaryPreferences || "",
+  exerciseDuringPregnancy: survey.lifestylePreferences?.physicalActivity || "",
+  infoSourceDuringPregnancy: survey.lifestylePreferences?.primaryInfoSource || "",
+
+  // ✅ Experience
+  platformExpectations: survey.experienceAndExpectations?.expectations || "",
+  challengesOrConcerns: survey.experienceAndExpectations?.challenges || "",
+  personalizedResources: getBooleanString(survey.experienceAndExpectations?.wantsPersonalizedResources),
+  additionalFeedback: survey.experienceAndExpectations?.additionalComments || "",
+});
+
+
       }
     })
     .catch((err) => {
@@ -604,11 +717,20 @@ const ProfileForm = () => {
                   className="bg-blue-600 h-2.5 rounded-full"
                   style={{
                     width: `${calculateProgress([
-                      "currentlyPregnant",
-                      "Last_menstrualperiod",
-                      "estimatedDueDate",
-                      "PregnancyLoss",
-                      "firstChild",
+                     "currentlyPregnant",
+  "Last_menstrualperiod",
+  "estimatedDueDate",
+  "PregnancyLoss",
+  "dateOfLoss",
+  "reason",
+  "gestationWeeks",
+  "treatmentLocation",
+  "firstChild",
+  "firstChildDob",
+  "complications",
+  "deliverymethod",
+  "childbornlocation",
+  "gestationalAgeAtBirth"
                     ])}%`,
                   }}
                 ></div>
@@ -617,10 +739,19 @@ const ProfileForm = () => {
               <span className="text-sm font-medium text-gray-700">
                 {calculateProgress([
                   "currentlyPregnant",
-                  "Last_menstrualperiod",
-                  "estimatedDueDate",
-                  "PregnancyLoss",
-                  "firstChild",
+  "Last_menstrualperiod",
+  "estimatedDueDate",
+  "PregnancyLoss",
+  "dateOfLoss",
+  "reason",
+  "gestationWeeks",
+  "treatmentLocation",
+  "firstChild",
+  "firstChildDob",
+  "complications",
+  "deliverymethod",
+  "childbornlocation",
+  "gestationalAgeAtBirth"
                 ])}
                 %
               </span>
@@ -961,13 +1092,13 @@ const ProfileForm = () => {
                   onChange={handleChange}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
                 >
-                  <option value="">Select an option</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                 <option value="">Select an option</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
                 </select>
               </div>
 
-              {formData.hasPrimaryCarePhysician === "true" && (
+              {formData.hasPrimaryCarePhysician === "Yes" && (
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="mb-4 font-semibold">Name of Doctor</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -1108,12 +1239,12 @@ const ProfileForm = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="">Select an option</option>
-                    <option value={true}>Yes</option>
-                    <option value={false}>No</option>
-                  </select>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
                 </div>
               </div>
-              {formData.hasOBGYN === "true" && (
+              {formData.hasOBGYN === "Yes" && (
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="mb-4 font-semibold">Name of Doctor</div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -1414,8 +1545,8 @@ const ProfileForm = () => {
                   className="w-full rounded-md border border-gray-300 px-3 py-2 bg-white"
                 >
                   <option value="">Select an option</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
                 </select>
               </div>
             </div>
