@@ -8,62 +8,191 @@ const sendEmail = require("../utils/sendEmail.js"); // Create this helper
 const crypto = require("crypto");
 
 
-
 const createUser = async (req, res) => {
 	try {
-		const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
-
-		// Validate role
-		if (!["mom", "supporter"].includes(role)) {
-			return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+	  const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
+  
+	  // Validate role
+	  if (!["mom", "supporter"].includes(role)) {
+		return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+	  }
+  
+	  // Check if user already exists
+	  const existingUser = await UserDetails.findOne({ $or: [{ email }, { user_name }] });
+	  if (existingUser) {
+		return res.status(400).json({ message: "Email or username already in use." });
+	  }
+  
+	  // Password match
+	  if (confirm_password !== password) {
+		return res.status(400).json({ message: "Passwords do not match." });
+	  }
+  
+	  // Validate required fields
+	  const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
+	  const missingFields = Object.entries(requiredFields)
+		.filter(([_, value]) => !value)
+		.map(([key]) => key);
+  
+	  if (missingFields.length > 0) {
+		return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
+	  }
+  
+	  // Validate referal code
+	  if (role === "supporter") {
+		const existingMom = await User.findById(referal_code);
+		if (!existingMom) {
+		  return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
 		}
+	  }
+  
+	  // Generate 6-digit OTP
+	  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+	  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
+  
+	  // Create user (status = unverified)
+	  const user = new UserDetails({
+		user_name,
+		email,
+		password,
+		role,
+		referal_code: role === "supporter" ? referal_code : null,
+		permissions,
+		otp,
+		otpExpiresAt,
+		status: "unverified"
+	  });
+  
+	  await user.save();
+  
+	  // Send OTP email
+	//  await sendEmail(email, `Your OTP Code`, `Your OTP for verification is: ${otp}`);
+	await sendEmail(email, `Your OTP Code`, otp, email);
 
-		// Check if user already exists (single DB query)
-		const existingUser = await User.findOne({ $or: [{ email }, { user_name }] });
-		if (existingUser) {
-			return res.status(400).json({ message: "Email or username already in use." });
+	  return res.status(201).json({
+		message: "User created. OTP sent to email for verification.",
+		user: {
+		  userId: user._id,
+		  email: user.email,
+		  role: user.role,
+		  status: user.status
 		}
-
-		// Validate passwords
-		if (confirm_password !== password) {
-			return res.status(400).json({ message: "Passwords do not match." });
-		}
-
-		// Validate required fields dynamically
-		const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
-		const missingFields = Object.entries(requiredFields)
-			.filter(([_, value]) => !value)
-			.map(([key]) => key);
-
-		if (missingFields.length > 0) {
-			return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
-		}
-
-		// If role is "supporter", validate referal_code
-		if (role === "supporter") {
-			const existingMom = await User.findById(referal_code);
-			if (!existingMom) {
-				return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
-			}
-		}
-
-		// Create new user
-		const user = new User({ user_name, email, password, role, referal_code: role === "supporter" ? referal_code : null, permissions });
-
-		// Save user
-		await user.save();
-
-		const token = jwt.sign(
-			{ userId: user._id, role: user.role },
-			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
-			{ expiresIn: "1h" } // Token expires in 1 hour
-		);
-		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
+	  });
+	  
+	 // return res.status(201).json({ message: "User created. OTP sent to email for verification." });
 	} catch (err) {
-		res.status(500).json({ message: err.message });
+	  return res.status(500).json({ message: err.message });
 	}
+  };
+
+
+  const verifyOtp = async (req, res) => {
+	try {
+	  const { email, otp } = req.body;
+  
+	  if (!email || !otp) {
+		return res.status(400).json({ message: "Email and OTP are required." });
+	  }
+  
+	  const user = await User.findOne({ email });
+  
+	  if (!user) {
+		return res.status(404).json({ message: "User not found." });
+	  }
+  
+	  if (user.status === "verified") {
+		return res.status(400).json({ message: "User is already verified." });
+	  }
+  
+	  if (user.otp !== otp) {
+		return res.status(400).json({ message: "Invalid OTP." });
+	  }
+  
+	  if (user.otpExpiresAt < new Date()) {
+		return res.status(400).json({ message: "OTP has expired." });
+	  }
+  
+	  // Mark user as verified
+	  user.status = "verified";
+	  user.otp = undefined;
+	  user.otpExpiresAt = undefined;
+	  await user.save();
+  
+	  // Optionally issue a token now
+	  const token = jwt.sign(
+		{ userId: user._id, role: user.role },
+		process.env.JWT_SECRET || "your_secret_key",
+		{ expiresIn: "1h" }
+	  );
+  
+	  return res.status(200).json({
+		message: "Email verified successfully. You can proceed with your profile now.",
+		token,
+		userId: user._id,
+		userName: user.user_name,
+		email: user.email,
+		role: user.role,
+		permissions: user.permissions
+	  });
+  
+	} catch (err) {
+	  return res.status(500).json({ message: err.message });
+	}
+  };
+  
+
+const getOtpByEmail = async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: "Email required" });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (user.status === "verified") {
+    return res.status(400).json({ message: "User is already verified" });
+  }
+
+  if (user.otpExpiresAt < new Date()) {
+    return res.status(400).json({ message: "OTP expired" });
+  }
+
+  return res.status(200).json({ otp: user.otp });
 };
 
+const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.status === "verified") {
+      return res.status(400).json({ message: "User is already verified." });
+    }
+
+    // Generate new OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    user.otp = newOtp;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+
+    // Send new OTP to email
+    await sendEmail(email, `Your New OTP Code`, newOtp, email);
+
+    return res.status(200).json({ message: "New OTP sent to your email." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
 
 
 
@@ -319,7 +448,7 @@ const deleteAllUsers = async (req, res) => {
 
 
 
-module.exports = { googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+module.exports = {verifyOtp,getOtpByEmail, resendOtp , googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
 
 
 
@@ -562,3 +691,60 @@ const createUser = async (req, res) => {
   };
   
   */
+
+
+  /*old create user without otp 
+  const createUser = async (req, res) => {
+	try {
+		const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
+
+		// Validate role
+		if (!["mom", "supporter"].includes(role)) {
+			return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
+		}
+
+		// Check if user already exists (single DB query)
+		const existingUser = await User.findOne({ $or: [{ email }, { user_name }] });
+		if (existingUser) {
+			return res.status(400).json({ message: "Email or username already in use." });
+		}
+
+		// Validate passwords
+		if (confirm_password !== password) {
+			return res.status(400).json({ message: "Passwords do not match." });
+		}
+
+		// Validate required fields dynamically
+		const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
+		const missingFields = Object.entries(requiredFields)
+			.filter(([_, value]) => !value)
+			.map(([key]) => key);
+
+		if (missingFields.length > 0) {
+			return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
+		}
+
+		// If role is "supporter", validate referal_code
+		if (role === "supporter") {
+			const existingMom = await User.findById(referal_code);
+			if (!existingMom) {
+				return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
+			}
+		}
+
+		// Create new user
+		const user = new User({ user_name, email, password, role, referal_code: role === "supporter" ? referal_code : null, permissions });
+
+		// Save user
+		await user.save();
+
+		const token = jwt.sign(
+			{ userId: user._id, role: user.role },
+			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
+			{ expiresIn: "1h" } // Token expires in 1 hour
+		);
+		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
+	} catch (err) {
+		res.status(500).json({ message: err.message });
+	}
+};*/

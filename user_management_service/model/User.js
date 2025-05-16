@@ -43,26 +43,26 @@ const userSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true
+      default: false
     },
     permissions: {
       type: [String],
       default: [],
     },
     // ✅ New fields for OTP verification
-    // status: {
-    //   type: String,
-    //   enum: ["unverified", "verified"],
-    //   default: "unverified",
-    // },
-    // otp: {
-    //   type: String,
-    //   default: null,
-    // },
-    // otpExpiresAt: {
-    //   type: Date,
-    //   default: null,
-    // },
+    status: {
+      type: String,
+      enum: ["unverified", "verified"],
+      default: "unverified",
+    },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

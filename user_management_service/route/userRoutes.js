@@ -1,14 +1,18 @@
 const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
-const { googleCallback, deleteUser, verifyOtp ,updatePassword,deleteAllUsers, getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers} = require('../controller/userController.js');
+const { googleCallback, deleteUser, resendOtp,verifyOtp ,getOtpByEmail,updatePassword,deleteAllUsers, 
+  getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter, 
+  getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers} = require('../controller/userController.js');
 const passport = require("passport");
 
 const router = express.Router();
 
 router.post('/register-user', createUser);
-//router.post("/verify-otp",verifyOtp );
+router.post("/verify-otp",verifyOtp );
+router.get('/get-latest-otp', getOtpByEmail);
+router.post("/resend-otp", resendOtp);
 router.post('/login', loginUser);
-router.delete("/user/:id",deleteUser);
+router.delete("/userdel/:id",deleteUser);
 router.get("/all",getallusers)
 router.delete('/all',deleteAllUsers)
 

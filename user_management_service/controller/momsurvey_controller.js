@@ -202,7 +202,7 @@ const createsurvey = async (req, res) => {
       await newSurvey.save();
       
 // ✅ Activate the user
-//await User.findByIdAndUpdate(userId, { isActive: true });
+await User.findByIdAndUpdate(userId, { isActive: true });
       res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
   
     } catch (error) {
