@@ -133,9 +133,7 @@ const Navbar = () => {
           <li>
             <a
               href="/"
-              className={`px-3 py-1 ${
-                location.pathname === "/" ? "underline" : ""
-              }`}
+              className={`px-3 py-1 ${location.pathname === "/" ? "underline" : ""}`}
             >
               Home
             </a>
@@ -189,9 +187,7 @@ const Navbar = () => {
           <li>
             <a
               href="/mom-network"
-              className={`px-3 py-1 ${
-                location.pathname === "/mom-network" ? "underline" : ""
-              }`}
+              className={`px-3 py-1 ${location.pathname === "/mom-network" ? "underline" : ""}`}
             >
               Mom-to-Mom Network
             </a>
@@ -199,9 +195,7 @@ const Navbar = () => {
           <li>
             <a
               href="/ask-amma"
-              className={`px-3 py-1 ${
-                location.pathname === "/ask-amma" ? "underline" : ""
-              }`}
+              className={`px-3 py-1 ${location.pathname === "/ask-amma" ? "underline" : ""}`}
             >
               Ask Amma
             </a>
@@ -209,9 +203,7 @@ const Navbar = () => {
           <li>
             <a
               href="/resources"
-              className={`px-3 py-1 ${
-                location.pathname === "/resources" ? "underline" : ""
-              }`}
+              className={`px-3 py-1 ${location.pathname === "/resources" ? "underline" : ""}`}
             >
               Resources
             </a>
@@ -248,57 +240,59 @@ const Navbar = () => {
                   Supporters
                 </li>
 
-                <li
-                  className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                  onClick={async () => {
-                    const token = localStorage.getItem("token");
-                    const surveyId = localStorage.getItem("surveyId");
+                {isLoggedIn && (
+                  <li
+                    className="px-4 py-2 hover:bg-gray-200 cursor-pointer"
+                    onClick={async () => {
+                      const token = localStorage.getItem("token");
+                      const surveyId = localStorage.getItem("surveyId");
 
-                    if (!token) {
-                      setShowLoginPrompt(true); // 👈 show popup instead of alert
-                      return;
-                    }
-
-                    if (surveyId) {
-                      navigate(`/profile-display/${surveyId}`);
-                    } else {
-                      try {
-                        const decoded = jwtDecode(token);
-                        const userId = decoded?.userId;
-
-                        if (!userId) {
-                          alert("Invalid token. User ID not found.");
-                          return;
-                        }
-
-                        const res = await axios.get(
-                          `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
-                          {
-                            headers: {
-                              Authorization: `Bearer ${token}`,
-                            },
-                          }
-                        );
-
-                        const surveys = res.data?.surveys;
-                        if (surveys && surveys.length > 0) {
-                          const latestSurveyId = surveys[0]._id;
-                          localStorage.setItem("surveyId", latestSurveyId);
-                          navigate(`/profile-display/${latestSurveyId}`);
-                        } else {
-                          alert("No profile found.");
-                        }
-                      } catch (err) {
-                        console.error("Error fetching surveys:", err);
-                        alert("Failed to fetch profile.");
+                      if (!token) {
+                        setShowLoginPrompt(true);
+                        return;
                       }
-                    }
 
-                    setShowDropdown(false);
-                  }}
-                >
-                  Profile
-                </li>
+                      if (surveyId) {
+                        navigate(`/profile-display/${surveyId}`);
+                      } else {
+                        try {
+                          const decoded = jwtDecode(token);
+                          const userId = decoded?.userId;
+
+                          if (!userId) {
+                            alert("Invalid token. User ID not found.");
+                            return;
+                          }
+
+                          const res = await axios.get(
+                            `${process.env.REACT_APP_BACKEND_URL}/mom/all/surveys`,
+                            {
+                              headers: {
+                                Authorization: `Bearer ${token}`,
+                              },
+                            }
+                          );
+
+                          const surveys = res.data?.surveys;
+                          if (surveys && surveys.length > 0) {
+                            const latestSurveyId = surveys[0]._id;
+                            localStorage.setItem("surveyId", latestSurveyId);
+                            navigate(`/profile-display/${latestSurveyId}`);
+                          } else {
+                            alert("No profile found.");
+                          }
+                        } catch (err) {
+                          console.error("Error fetching surveys:", err);
+                          alert("Failed to fetch profile.");
+                        }
+                      }
+
+                      setShowDropdown(false);
+                    }}
+                  >
+                    Profile
+                  </li>
+                )}
 
                 {isLoggedIn ? (
                   <li

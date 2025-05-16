@@ -30,6 +30,7 @@ import GeneticScreening from "./pages/auth/GeneticScreening";
 import NuchalTranslucency from "./pages/auth/NuchalTranslucency";
 import MandatoryHealthCare from "./pages/auth/MandatoryHealthCare";
 import CulturalPractices from "./pages/auth/CulturalPractices";
+import OtpVerification from "./pages/auth/OtpVerification";
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -70,6 +71,7 @@ function App() {
           <Route path="/register" element={<Register />}></Route>
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
+          <Route path="/otp-verification" element={<OtpVerification />} />
           <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
           <Route path="/thali" element={<Thali/>}/>
           <Route path="/mom-network" element={<MomNetworkPage/>}/>

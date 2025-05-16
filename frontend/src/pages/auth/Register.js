@@ -46,6 +46,7 @@ const Register = () => {
           confirm_password: formData.confirmPassword,
           role: "mom",
         });
+
         if (res.status === 201) {
           localStorage.setItem("token", res.data.token);
           localStorage.setItem("userName", res.data.userName);
@@ -53,8 +54,8 @@ const Register = () => {
           localStorage.setItem("userId", res.data.userId);
           toast.success(res.data.message || "Registration successful...", { position: "top-center" });
           setTimeout(() => {
-            navigate("/profile-setup");
-          }, 3000);
+            navigate("/otp-verification");
+          }, 1000);
         }
       }
     } catch (error) {
@@ -106,7 +107,7 @@ const Register = () => {
           {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-400 transition duration-300">Sign Up</button>
+        <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-400 transition duration-300">Continue</button>
       </form>
     </div>
   );
