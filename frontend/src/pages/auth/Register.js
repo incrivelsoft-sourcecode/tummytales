@@ -40,7 +40,7 @@ const Register = () => {
     try {
       if (!validateForm()) return;
 
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/user/register-user`, {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
         user_name: formData.username,
         email: formData.email,
         password: formData.password,
