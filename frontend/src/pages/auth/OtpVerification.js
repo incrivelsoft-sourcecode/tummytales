@@ -14,7 +14,7 @@ const OtpVerification = () => {
       try {
         const email = localStorage.getItem("email");
         const response = await axios.get(
-          `${process.env.REACT_APP_BACKEND_URL}/get-latest-otp`,
+          `${process.env.REACT_APP_BACKEND_URL}/users/get-latest-otp`,
           { params: { email } }
         );
         if (response.status === 200 && response.data.otp) {
@@ -55,7 +55,7 @@ const OtpVerification = () => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/verify-otp`,
+        `${process.env.REACT_APP_BACKEND_URL}/users/verify-otp`,
         {
           email,
           otp: enteredOtp,
