@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const sendEmail = async (to, subject, otp, email) => {
-  const verifyUrl = `${process.env.FRONTEND_URL}/verify?email=${encodeURIComponent(email)}`;
+  const verifyUrl = `${process.env.FRONTEND_URL}/otp-verification?email=${encodeURIComponent(email)}`;
 
   const transporter = nodemailer.createTransport({
     service: "Gmail",
