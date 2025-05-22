@@ -6,7 +6,7 @@ const UserDetails = require('../model/User.js');
 //const redisClient = require("../config/redisClient");
 const sendEmail = require("../utils/sendEmail.js"); // Create this helper
 const crypto = require("crypto");
-
+const sendReferralEmail = require("../utils/sendReferralEmail.js");
 
 const createUser = async (req, res) => {
 	try {
@@ -326,51 +326,118 @@ const googleCallback = async (req, res) => {
 
 
 
-
+//supporters
 const referSupporter = async (req, res) => {
-	try {
-		const supporters = req.body.supporters;
+  try {
+    const referals = req.body; // Accept as array of referal objects directly
 
-		// Validate request body
-		if (!Array.isArray(supporters) || supporters.length === 0) {
-			return res.status(400).send({ error: "An array of supporters (email, permissions, role) is required." });
-		}
+    if (!Array.isArray(referals) || referals.length === 0) {
+      return res.status(400).send({ error: "An array of referals is required." });
+    }
 
-		// Validate each supporter
-		for (const supporter of supporters) {
-			const { email, permissions, role } = supporter;
-			if (!email || !permissions || !role) {
-				return res.status(400).send({ error: "Each supporter must have email, permissions, and role." });
-			}
-		}
+    const user = await UserDetails.findById(req.user.userId);
+    if (!user) return res.status(404).send({ error: "User not found." });
 
-		await Promise.all(supporters.map(supporter => 
-			UserDetails.findByIdAndUpdate(
-				req.user._id,
-				{ $push: { referal_emails: supporter.email } }, 
-				{ new: true, runValidators: true }
-			)
-		));
+    const newReferals = [];
+    const emailsToResend = [];
 
-		const referralName = req.user.user_name;
-		const referal_code = req.user.userId;
+    for (const ref of referals) {
+      const { referal_email, permissions, role, relation, first_name, last_name } = ref;
 
-		// Prepare request payload
-		const requestData = {
-			supporters,
-			referralName,
-			referal_code
-		};
+      if (!referal_email || !permissions || !role) {
+        return res.status(400).send({
+          error: "Each referal must include referal_email, permissions, and role.",
+        });
+      }
 
-		// Send referral request
-		const response = await axios.post(`${process.env.MAIL_SERVICE_URL}/mail/send-referal`, requestData);
+      const existingReferral = user.referals?.find(r => r.referal_email === referal_email);
 
-		return res.status(200).send(response.data);
-	} catch (error) {
-		console.error("Error in referSupporter:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
+      if (existingReferral) {
+        if (existingReferral.status === "accepted") continue;
+
+        // Prepare for resend
+        emailsToResend.push({
+          referal_email,
+          permissions,
+          role,
+          relation: existingReferral.relation || relation || "",
+          first_name: existingReferral.first_name || first_name || "",
+          last_name: existingReferral.last_name || last_name || "",
+        });
+
+        // Increment resend count
+        existingReferral.resentCount = (existingReferral.resentCount || 0) + 1;
+      } else {
+        // New referal entry
+        newReferals.push({
+          referal_email,
+          permissions,
+          role,
+          relation: relation || "",
+          first_name: first_name || "",
+          last_name: last_name || "",
+          referal_code: req.user.userId,
+          status: "pending",
+          sentAt: new Date(),
+          resentCount: 0,
+        });
+      }
+    }
+
+    if (newReferals.length > 0) {
+      user.referals.push(...newReferals);
+      await user.save();
+    }
+
+    const referralName = req.user.user_name;
+    const referal_code = req.user.userId;
+
+    const allToSend = [...newReferals, ...emailsToResend];
+
+    if (allToSend.length === 0) {
+      return res.status(200).json({ message: "No new or pending referrals to send." });
+    }
+
+    const results = await sendReferralEmail(allToSend, referralName, referal_code);
+
+    const response = results.map((result, index) => {
+      const { referal_email } = allToSend[index];
+      return result.status === "fulfilled"
+        ? { referal_email, message: "Referral sent successfully" }
+        : { referal_email, error: result.reason?.message || "Failed to send" };
+    });
+
+    return res.status(200).json({ results: response });
+  } catch (error) {
+    console.error("Error in referSupporter:", error);
+    res.status(500).send({ error: "Internal server error." });
+  }
 };
+
+const getReferals = async (req, res) => {
+  try {
+    const userId = req.user.userId; // assuming auth middleware sets req.user.userId
+
+    const user = await UserDetails.findById(userId).select("referals");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Return referrals array as-is or format if needed
+    return res.status(200).json({ referals: user.referals });
+  } catch (error) {
+    console.error("Error fetching referals:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+
+
+
+
+
 
 
 const getReferedSupporters = async (req, res) => {
@@ -448,7 +515,8 @@ const deleteAllUsers = async (req, res) => {
 
 
 
-module.exports = {verifyOtp,getOtpByEmail, resendOtp , googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+module.exports = {verifyOtp,getOtpByEmail, resendOtp , googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser,
+	 referSupporter,getReferals, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
 
 
 

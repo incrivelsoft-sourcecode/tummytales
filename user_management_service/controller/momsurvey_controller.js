@@ -6,6 +6,8 @@ const User = require('../model/User')
 const createsurvey = async (req, res) => {
     try {
      const userId = req.user.id; 
+    // const userId = req.user.effectiveUserId;
+
       const {
        // user_name,
        // userId,
