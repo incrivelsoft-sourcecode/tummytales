@@ -191,7 +191,7 @@ const filteredData = Object.fromEntries(
     <div className="min-h-screen bg-[#fefdf7]">
       {/* Hero Section */}
       <div
-        className="relative h-[400px] w-full bg-cover bg-center flex items-center justify-center"
+        className="relative h-[200px] w-full bg-cover bg-center flex items-center justify-center"
         style={{
           backgroundImage:
             "url('/lovable-uploads/102dd82a-40c1-4d0a-bb35-06dce71e7ee4.png')",
