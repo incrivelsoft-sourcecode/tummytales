@@ -8,6 +8,7 @@ const HomePage = () => {
     console.log("HomePage mounted");
   }, [navigate]);
 
+  
   return (
     <div className="w-full">
       {/* Hero Section */}
