@@ -6,6 +6,8 @@ const User = require('../model/User')
 const createsurvey = async (req, res) => {
     try {
      const userId = req.user.id; 
+    // const userId = req.user.effectiveUserId;
+
       const {
        // user_name,
        // userId,
@@ -202,7 +204,7 @@ const createsurvey = async (req, res) => {
       await newSurvey.save();
       
 // ✅ Activate the user
-//await User.findByIdAndUpdate(userId, { isActive: true });
+await User.findByIdAndUpdate(userId, { isActive: true });
       res.status(200).json({ message: "Survey submitted successfully!", survey: newSurvey });
   
     } catch (error) {

@@ -1,14 +1,20 @@
 const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
-const { googleCallback, deleteUser, verifyOtp ,updatePassword,deleteAllUsers, getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers} = require('../controller/userController.js');
+const { googleCallback, deleteUser, resendOtp,verifyOtp ,getOtpByEmail,updatePassword,deleteAllUsers, 
+  getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter,
+  getReferals, deleteReferal,editReferal,
+  getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers,
+ } = require('../controller/userController.js');
 const passport = require("passport");
 
 const router = express.Router();
 
 router.post('/register-user', createUser);
-//router.post("/verify-otp",verifyOtp );
+router.post("/verify-otp",verifyOtp );
+router.get('/get-latest-otp', getOtpByEmail);
+router.post("/resend-otp", resendOtp);
 router.post('/login', loginUser);
-router.delete("/user/:id",deleteUser);
+router.delete("/userdel/:id",deleteUser);
 router.get("/all",getallusers)
 router.delete('/all',deleteAllUsers)
 
@@ -29,7 +35,11 @@ router.get("/google", (req, res, next) => {
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
 
 router.get('/', momAndSupporterMiddleware, getUser);
+//supporter apis
 router.post("/send-referels", momMiddleware, referSupporter);
+router.get("/referals", momMiddleware, getReferals);
+router.put("/edit-referals",momMiddleware,editReferal);
+router.delete("/deletereferals",momMiddleware,deleteReferal);
 router.get("/supporters", momMiddleware, getReferedSupporters)
 router.put("/supporter/:id", momMiddleware, editPermissionOfSuppoter);
 router.delete("/supporter/:id", momMiddleware, deleteSupporter);

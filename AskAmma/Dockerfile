@@ -1,20 +1,23 @@
-# Use the official Node.js image
-FROM node:18
+# Use NVIDIA PyTorch image with CUDA + Python preinstalled
+FROM nvcr.io/nvidia/pytorch:24.02-py3
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Install OS packages if needed (curl, git, etc.)
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies (including mongoose)
-RUN npm install
+# Upgrade pip and install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application files
+# Copy application code
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 7001
+# Expose FastAPI port
+EXPOSE 8000
 
-# Start the application
-CMD ["node", "server.js"]
+# Run the FastAPI app using uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

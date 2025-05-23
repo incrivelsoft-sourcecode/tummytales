@@ -32,37 +32,50 @@ const userSchema = new mongoose.Schema(
         ref: "UserDetails",
       },
     ],
-    referal_emails: [{
-      type: String,
-      default: [],
-    }],
-    referal_code: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserDetails",
-      default: null,
-    },
+    referals: [
+      {
+        first_name: { type: String, required: false },
+        last_name: { type: String, required: false },
+        referal_email: { type: String, required: true },
+        permissions: { type: [String], required: true },
+        role: { type: String, enum: ["supporter"], default: "supporter" },
+        relation: { type: String, default: "" },
+        status: {
+          type: String,
+          enum: ["pending", "accepted", "expired"],
+          default: "pending",
+        },
+        referal_code: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "UserDetails",
+          default: null,
+        },
+        sentAt: { type: Date, default: Date.now },
+        resentCount: { type: Number, default: 0 },
+      },
+    ],
     isActive: {
       type: Boolean,
-      default: true
+      default: false,
     },
     permissions: {
       type: [String],
       default: [],
     },
     // ✅ New fields for OTP verification
-    // status: {
-    //   type: String,
-    //   enum: ["unverified", "verified"],
-    //   default: "unverified",
-    // },
-    // otp: {
-    //   type: String,
-    //   default: null,
-    // },
-    // otpExpiresAt: {
-    //   type: Date,
-    //   default: null,
-    // },
+    status: {
+      type: String,
+      enum: ["unverified", "verified"],
+      default: "unverified",
+    },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

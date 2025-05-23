@@ -1,0 +1,17 @@
+APP_NAME=AskAmma API
+APP_ENV=development
+APP_PORT=8000
+
+MODEL_NAME=meta-llama/Meta-Llama-3-8B
+
+# Note: Replace this token with your actual HF token, keep it private!
+HUGGINGFACE_HUB_TOKEN=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Use 'auto' to let Hugging Face handle device mapping (use GPU if available)
+DEVICE_MAP=auto
+
+# Use float16 for optimized GPU memory usage (change to float32 for CPU-only)
+TORCH_DTYPE=float16
+
+
+FRONTEND_URL=http://localhost:3000
