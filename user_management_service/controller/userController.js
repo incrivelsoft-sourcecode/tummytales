@@ -432,7 +432,75 @@ const getReferals = async (req, res) => {
   }
 };
 
+const editReferal = async (req, res) => {
+  try {
+    const { referal_email, permissions, relation, first_name, last_name } = req.body;
+    const mom = await UserDetails.findById(req.user.userId);
 
+    if (!mom) return res.status(404).send({ error: "Mom not found" });
+
+    const referal = mom.referals.find(r => r.referal_email === referal_email);
+    if (!referal) return res.status(404).send({ error: "Referral not found" });
+
+    // Prevent email change
+    // if (req.body.referal_email !== referal.referal_email) return res.status(400).send({ error: "Email cannot be changed" });
+
+    // Update allowed fields
+    if (permissions) referal.permissions = permissions;
+    if (relation !== undefined) referal.relation = relation;
+    if (first_name !== undefined) referal.first_name = first_name;
+    if (last_name !== undefined) referal.last_name = last_name;
+
+    await mom.save();
+
+    // If already accepted, also update supporter’s permissions
+    if (referal.status === "accepted") {
+      const supporter = await UserDetails.findOne({ email: referal_email });
+      if (supporter) {
+        supporter.permissions = permissions;
+        await supporter.save();
+      }
+    }
+
+    return res.status(200).send({ message: "Referral updated successfully",referal });
+  } catch (err) {
+    console.error("Error in editReferal:", err);
+    res.status(500).send({ error: "Internal server error" });
+  }
+};
+
+const deleteReferal = async (req, res) => {
+  try {
+    const { referal_email } = req.body;
+    const mom = await UserDetails.findById(req.user.userId);
+
+    if (!mom) return res.status(404).send({ error: "Mom not found" });
+
+    // Check if referral exists
+    const referalIndex = mom.referals.findIndex(
+      r => r.referal_email === referal_email
+    );
+    if (referalIndex === -1)
+      return res.status(404).send({ error: "Referral not found" });
+
+    // Remove from mom's referals array
+    mom.referals.splice(referalIndex, 1);
+    await mom.save();
+
+    // Try deleting the supporter account
+    const supporter = await UserDetails.findOne({ email: referal_email });
+    if (supporter) {
+      await UserDetails.findByIdAndDelete(supporter._id);
+    }
+
+    return res
+      .status(200)
+      .send({ message: "Referral and supporter account deleted successfully" });
+  } catch (err) {
+    console.error("Error in deleteReferal:", err);
+    res.status(500).send({ error: "Internal server error" });
+  }
+};
 
 
 
@@ -516,7 +584,7 @@ const deleteAllUsers = async (req, res) => {
 
 
 module.exports = {verifyOtp,getOtpByEmail, resendOtp , googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser,
-	 referSupporter,getReferals, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+	 referSupporter,getReferals,editReferal,deleteReferal, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
 
 
 

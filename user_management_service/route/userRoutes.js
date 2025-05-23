@@ -2,7 +2,7 @@ const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
 const { googleCallback, deleteUser, resendOtp,verifyOtp ,getOtpByEmail,updatePassword,deleteAllUsers, 
   getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter,
-  getReferals, 
+  getReferals, deleteReferal,editReferal,
   getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers,
  } = require('../controller/userController.js');
 const passport = require("passport");
@@ -35,8 +35,11 @@ router.get("/google", (req, res, next) => {
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
 
 router.get('/', momAndSupporterMiddleware, getUser);
+//supporter apis
 router.post("/send-referels", momMiddleware, referSupporter);
 router.get("/referals", momMiddleware, getReferals);
+router.put("/edit-referals",momMiddleware,editReferal);
+router.delete("/deletereferals",momMiddleware,deleteReferal);
 router.get("/supporters", momMiddleware, getReferedSupporters)
 router.put("/supporter/:id", momMiddleware, editPermissionOfSuppoter);
 router.delete("/supporter/:id", momMiddleware, deleteSupporter);
