@@ -87,90 +87,84 @@ const ProfileSetup = () => {
  
  
  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-   
-    // List of required fields
-    const requiredFields = [
-      "first_name",
-      "last_name",
-      "dob",
-      "gender",
-      "nationality",
-      "Phonenumber",
-      "email",
-      "country",
-      "Addressline1",
-      "city",
-      "State",
-      "Zip_code"
-    ];
-   
-    const missingFields = requiredFields.filter(field => !formData[field]);
-   
-    if (missingFields.length > 0) {
-      toast.error(`Missing fields: ${missingFields.join(", ")}`);
-      return; // Stop execution if fields are missing
-    }
-   
-    try {
-      // Prepare the data to send with medications
-      const dataToSend = {
-        ...formData
-      };
-     
- 
-     // Filter out empty strings from formData
-const filteredData = Object.fromEntries(
-  Object.entries(dataToSend).filter(
-    ([_, value]) =>
-      value !== "" &&
-      value !== undefined &&
-      value !== null &&
-      !(Array.isArray(value) && value.length === 0)
-  )
-);
- 
-   
-      // const res = await axios.post(
-      //   `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-      //   { userId, ...filteredData }
-      // );
-   
-      const token = localStorage.getItem("token");
- 
-      const res = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
-        filteredData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
- 
-      if (res.status === 200) {
-        console.log(res.data);
-        const { survey } = res.data;
-        const { _id } = survey; // Now this will correctly extract the _id
-   
-        localStorage.setItem("profileData", JSON.stringify(filteredData));
-        localStorage.setItem("profileId", _id);
-        console.log("Saved profileId to localStorage:", localStorage.getItem("profileId"));
-   
-        toast.success("Profile submitted successfully!");
-   
-        setTimeout(() => {
-          navigate("/supporters");
-        }, 3000);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // List of required fields
+  const requiredFields = [
+    "first_name",
+    "last_name",
+    "dob",
+    "gender",
+    "nationality",
+    "Phonenumber",
+    "email",
+    "country",
+    "Addressline1",
+    "city",
+    "State",
+    "Zip_code"
+  ];
+
+  // Check for missing fields
+  const missingFields = requiredFields.filter(field => !formData[field]);
+  if (missingFields.length > 0) {
+    toast.error(`Missing fields: ${missingFields.join(", ")}`);
+    return; // Stop execution if fields are missing
+  }
+
+  try {
+    // Prepare data, filter empty/invalid values
+    const dataToSend = { ...formData };
+    const filteredData = Object.fromEntries(
+      Object.entries(dataToSend).filter(
+        ([_, value]) =>
+          value !== "" &&
+          value !== undefined &&
+          value !== null &&
+          !(Array.isArray(value) && value.length === 0)
+      )
+    );
+
+    const token = localStorage.getItem("token");
+
+    console.log("Sending data:", filteredData);
+    console.log("Using token:", token);
+
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/mom/survey`,
+      filteredData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.error("Error Response:", error.response?.data);
-     
-      const errorMessage = error.response?.data?.error || "Internal server error";
-      toast.error(errorMessage, { autoClose: 5000 });
+    );
+
+    if (res.status === 200) {
+      console.log("Response data:", res.data);
+      const { survey } = res.data;
+      const { _id } = survey;
+
+      localStorage.setItem("profileData", JSON.stringify(filteredData));
+      localStorage.setItem("profileId", _id);
+      console.log("Saved profileId to localStorage:", localStorage.getItem("profileId"));
+
+      toast.success("Profile submitted successfully!");
+
+      setTimeout(() => {
+        navigate("/supporters");
+      }, 3000);
     }
-  };
+  } catch (error) {
+    console.error("Error Response Data:", error.response?.data);
+    console.error("Full Error:", error);
+
+    const errorMessage = error.response?.data?.error || error.message || "Internal server error";
+    toast.error(errorMessage, { autoClose: 5000 });
+  }
+};
+
  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

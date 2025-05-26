@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
@@ -64,9 +63,13 @@ const Register = () => {
         }, 1000);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Internal server error", {
-        position: "top-center",
-      });
+      // Safe fallback to avoid toast crash bug
+      const message = error?.response?.data?.message || "Internal server error";
+      try {
+        toast.error(message, { position: "top-center" });
+      } catch (toastError) {
+        console.error("Toast error:", toastError);
+      }
     }
   };
 
@@ -152,5 +155,3 @@ const Register = () => {
 };
 
 export default Register;
-
-
