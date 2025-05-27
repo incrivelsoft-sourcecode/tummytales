@@ -39,36 +39,67 @@ const supporterMiddleware = (req, res, next) => {
 		res.status(401).json({ message: "Token is not valid" });
 	}
 };
+// const momAndSupporterMiddleware = (req, res, next) => {
+// 	const token = req.header("Authorization")?.split(" ")[1];
+// 	if (!token) {
+// 	  return res.status(401).json({ message: "No token, authorization denied" });
+// 	}
+  
+// 	try {
+// 	  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  
+// 	  if (decoded.role !== "supporter" && decoded.role !== "mom") {
+// 		return res.status(403).json({ message: "Access denied. Moms or Supporters only." });
+// 	  }
+  
+// 	  // 🔥 Normalize the user ID here
+// 	  req.user = {
+// 		id: decoded.userId, // ✅ normalize it as 'id'
+// 		role: decoded.role,
+// 		email: decoded.email,
+// 		name: decoded.user_name,
+// 		 permissions: user.permissions || [],
+// 		  // Mom's ID if supporter, else own ID
+//       effectiveUserId: decoded.role === "supporter" && decoded.referal_code ? decoded.referal_code : user._id,
+// 	  };
+  
+// 	  next();
+// 	} catch (err) {
+// 	  res.status(401).json({ message: "Token is not valid" });
+// 	}
+//   };
+  
 const momAndSupporterMiddleware = (req, res, next) => {
-	const token = req.header("Authorization")?.split(" ")[1];
-	if (!token) {
-	  return res.status(401).json({ message: "No token, authorization denied" });
-	}
-  
-	try {
-	  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  
-	  if (decoded.role !== "supporter" && decoded.role !== "mom") {
-		return res.status(403).json({ message: "Access denied. Moms or Supporters only." });
-	  }
-  
-	  // 🔥 Normalize the user ID here
-	  req.user = {
-		id: decoded.userId, // ✅ normalize it as 'id'
-		role: decoded.role,
-		email: decoded.email,
-		name: decoded.user_name,
-		 permissions: user.permissions || [],
-		  // Mom's ID if supporter, else own ID
-      effectiveUserId: decoded.role === "supporter" && decoded.referal_code ? decoded.referal_code : user._id,
-	  };
-  
-	  next();
-	} catch (err) {
-	  res.status(401).json({ message: "Token is not valid" });
-	}
-  };
-  
+  const token = req.header("Authorization")?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "No token, authorization denied" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role !== "supporter" && decoded.role !== "mom") {
+      return res.status(403).json({ message: "Access denied. Moms or Supporters only." });
+    }
+
+    req.user = {
+      id: decoded.userId, // normalized id
+      role: decoded.role,
+      email: decoded.email || null,
+      name: decoded.user_name || null,
+      permissions: decoded.permissions || [],
+      effectiveUserId:
+        decoded.role === "supporter" && decoded.referal_code
+          ? decoded.referal_code
+          : decoded.userId,
+    };
+
+    next();
+  } catch (err) {
+    res.status(401).json({ message: "Token is not valid" });
+  }
+};
+
 
 
 const authorizeMommiddleware = async (req, res, next) => {

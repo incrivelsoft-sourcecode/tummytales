@@ -86,6 +86,61 @@ const createUser = async (req, res) => {
   };
 
 
+//   const verifyOtp = async (req, res) => {
+// 	try {
+// 	  const { email, otp } = req.body;
+  
+// 	  if (!email || !otp) {
+// 		return res.status(400).json({ message: "Email and OTP are required." });
+// 	  }
+  
+// 	  const user = await User.findOne({ email });
+  
+// 	  if (!user) {
+// 		return res.status(404).json({ message: "User not found." });
+// 	  }
+  
+// 	  if (user.status === "verified") {
+// 		return res.status(400).json({ message: "User is already verified." });
+// 	  }
+  
+// 	  if (user.otp !== otp) {
+// 		return res.status(400).json({ message: "Invalid OTP." });
+// 	  }
+  
+// 	  if (user.otpExpiresAt < new Date()) {
+// 		return res.status(400).json({ message: "OTP has expired." });
+// 	  }
+  
+// 	  // Mark user as verified
+// 	  user.status = "verified";
+// 	  user.otp = undefined;
+// 	  user.otpExpiresAt = undefined;
+// 	  await user.save();
+  
+// 	  // Optionally issue a token now
+// 	  const token = jwt.sign(
+// 		{ userId: user._id, role: user.role },
+// 		process.env.JWT_SECRET || "your_secret_key",
+// 		{ expiresIn: "1h" }
+// 	  );
+  
+// 	  return res.status(200).json({
+// 		message: "Email verified successfully. You can proceed with your profile now.",
+// 		token,
+// 		userId: user._id,
+// 		userName: user.user_name,
+// 		email: user.email,
+// 		role: user.role,
+// 		permissions: user.permissions
+// 	  });
+  
+// 	} catch (err) {
+// 	  return res.status(500).json({ message: err.message });
+// 	}
+//   };
+  
+
   const verifyOtp = async (req, res) => {
 	try {
 	  const { email, otp } = req.body;
@@ -118,9 +173,22 @@ const createUser = async (req, res) => {
 	  user.otpExpiresAt = undefined;
 	  await user.save();
   
+	   // ✅ Build payload for token
+    const payload = {
+      userId: user._id,
+      role: user.role,
+	   effectiveUserId: user.role === "supporter" && user.referal_code
+        ? user.referal_code           // mom's ID if supporter
+        : user._id                   // self if mom
+    };
+
+    // Include referal_code for supporter so effectiveUserId can be derived
+    if (user.role === "supporter" && user.referal_code) {
+      payload.referal_code = user.referal_code;
+    }
 	  // Optionally issue a token now
 	  const token = jwt.sign(
-		{ userId: user._id, role: user.role },
+		payload,
 		process.env.JWT_SECRET || "your_secret_key",
 		{ expiresIn: "1h" }
 	  );
