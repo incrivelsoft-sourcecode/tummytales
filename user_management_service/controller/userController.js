@@ -38,13 +38,24 @@ const createUser = async (req, res) => {
 		return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
 	  }
   
-	  // Validate referal code
-	  if (role === "supporter") {
-		const existingMom = await User.findById(referal_code);
-		if (!existingMom) {
-		  return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
-		}
+	if (role === "supporter") {
+	  const existingMom = await UserDetails.findById(referal_code);
+	  if (!existingMom) {
+		return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
 	  }
+	
+	  // ✅ Check if the supporter was referred by the mom
+      const referredEmailFound = existingMom.referals.some(
+        ref => ref.referal_email === email && ref.status === "pending"
+      );
+
+      if (!referredEmailFound) {
+        return res.status(403).json({
+          message: "You are not authorized to register. This email was not referred by the mom."
+        });
+      }
+    }
+
   
 	  // Generate 6-digit OTP
 	  const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -84,62 +95,6 @@ const createUser = async (req, res) => {
 	  return res.status(500).json({ message: err.message });
 	}
   };
-
-
-//   const verifyOtp = async (req, res) => {
-// 	try {
-// 	  const { email, otp } = req.body;
-  
-// 	  if (!email || !otp) {
-// 		return res.status(400).json({ message: "Email and OTP are required." });
-// 	  }
-  
-// 	  const user = await User.findOne({ email });
-  
-// 	  if (!user) {
-// 		return res.status(404).json({ message: "User not found." });
-// 	  }
-  
-// 	  if (user.status === "verified") {
-// 		return res.status(400).json({ message: "User is already verified." });
-// 	  }
-  
-// 	  if (user.otp !== otp) {
-// 		return res.status(400).json({ message: "Invalid OTP." });
-// 	  }
-  
-// 	  if (user.otpExpiresAt < new Date()) {
-// 		return res.status(400).json({ message: "OTP has expired." });
-// 	  }
-  
-// 	  // Mark user as verified
-// 	  user.status = "verified";
-// 	  user.otp = undefined;
-// 	  user.otpExpiresAt = undefined;
-// 	  await user.save();
-  
-// 	  // Optionally issue a token now
-// 	  const token = jwt.sign(
-// 		{ userId: user._id, role: user.role },
-// 		process.env.JWT_SECRET || "your_secret_key",
-// 		{ expiresIn: "1h" }
-// 	  );
-  
-// 	  return res.status(200).json({
-// 		message: "Email verified successfully. You can proceed with your profile now.",
-// 		token,
-// 		userId: user._id,
-// 		userName: user.user_name,
-// 		email: user.email,
-// 		role: user.role,
-// 		permissions: user.permissions
-// 	  });
-  
-// 	} catch (err) {
-// 	  return res.status(500).json({ message: err.message });
-// 	}
-//   };
-  
 
   const verifyOtp = async (req, res) => {
 	try {

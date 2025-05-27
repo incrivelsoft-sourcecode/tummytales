@@ -95,7 +95,7 @@ const SelectRole = () => {
       
       setError("");
       
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
         email: registrationData.email,
         password: registrationData.password,
         confirm_password: registrationData.confirmPassword,
@@ -105,21 +105,31 @@ const SelectRole = () => {
         permissions: queryParams.permissions
       });
       
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-          localStorage.setItem("userName", response.data.userName);
-          localStorage.setItem("role", response.data.role);
-          localStorage.setItem("userId", response.data.userId);
-        navigate("/dashboard");
+       if (res.status === 201)  {
+        //localStorage.setItem("token", response.data.token);
+        localStorage.setItem("email", registrationData.email);
+        localStorage.setItem("referalCode", queryParams.referal_code);
+        localStorage.setItem(
+          "permissions",
+          JSON.stringify(queryParams.permissions)
+        );
+        localStorage.setItem("role", res.data.user.role);
+        localStorage.setItem("status", res.data.user.status);
+        localStorage.setItem("userId", res.data.user.userId);
       } else {
-        setError("Registration successful. Please login.");
+        setError("Registration successful. Check your email for OTP.");
         setShowRegistrationModal(false);
-        navigate("/login");
       }
-    } catch (error) {
-      console.error("Registration error:", error);
-      setError(error.response?.data?.error || "Registration failed. Please try again.");
-    }
+       setTimeout(() => {
+        navigate("/otp-verification");
+      }, 1000);
+    }catch (error) {
+  console.error("Registration error:", error);
+  // If backend sends error message in error.response.data.message, use it
+  const backendMessage = error.res?.data?.message;
+  setError(backendMessage || "Registration failed. Please try again.");
+}
+
   };
 
   return (
