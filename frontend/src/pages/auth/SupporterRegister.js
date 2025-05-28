@@ -126,7 +126,7 @@ const SelectRole = () => {
     }catch (error) {
   console.error("Registration error:", error);
   // If backend sends error message in error.response.data.message, use it
-  const backendMessage = error.res?.data?.message;
+  const backendMessage = error.response?.data?.message;
   setError(backendMessage || "Registration failed. Please try again.");
 }
 

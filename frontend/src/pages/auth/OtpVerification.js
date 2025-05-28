@@ -9,7 +9,7 @@ const OtpVerification = () => {
   const [showTimer, setShowTimer] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  
     const fetchOtp = async () => {
       try {
         const email = localStorage.getItem("email");
@@ -26,7 +26,8 @@ const OtpVerification = () => {
       }
     };
 
-    fetchOtp();
+  useEffect(() => {
+    fetchOtp(); 
   }, []);
 
   useEffect(() => {
@@ -96,6 +97,7 @@ const OtpVerification = () => {
         toast.success("OTP resent successfully!", { position: "top-center" });
         setTimer(30);
         setShowTimer(true);
+        fetchOtp();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to resend OTP", {
