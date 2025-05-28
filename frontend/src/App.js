@@ -31,6 +31,9 @@ import MandatoryHealthCare from "./pages/auth/MandatoryHealthCare";
 import CulturalPractices from "./pages/auth/CulturalPractices";
 import OtpVerification from "./pages/auth/OtpVerification";
 
+// Import your SupporterList component here
+import SupporterList from "./pages/auth/SupporterList"; // Adjust path as needed
+
 function App() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -69,6 +72,8 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />} />
           <Route path="/supporters" element={<SupportersPage />} />
+          {/* New route for your SupporterList */}
+                   <Route path="/supporter-list" element={<SupporterList />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
           <Route path="/otp-verification" element={<OtpVerification />} />
           <Route path="/thali" element={<Thali />} />

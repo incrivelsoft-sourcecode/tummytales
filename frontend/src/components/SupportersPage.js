@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
- 
+
 const SupportersManagement = () => {
   const [supporters, setSupporters] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -17,11 +17,14 @@ const SupportersManagement = () => {
   const [hasSupporters, setHasSupporters] = useState(true);
   const token = useMemo(() => localStorage.getItem("token"), []);
   const navigate = useNavigate();
- 
+
+  // New state for success message
+  const [successMessage, setSuccessMessage] = useState("");
+
   useEffect(() => {
     fetchSupporters();
   }, []);
- 
+
   const fetchSupporters = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/users/supporters`, {
@@ -33,48 +36,56 @@ const SupportersManagement = () => {
       console.error('Error fetching supporters:', error);
     }
   };
- 
- const handleAddSupporter = async () => {
-  try {
-    const { referal_email, permissions, first_name, last_name, relation } = newSupporter;
- 
-    if (!referal_email || permissions.length === 0) {
-      alert('Please fill referral email and select at least one permission');
-      return;
+
+  const handleAddSupporter = async () => {
+    try {
+      const { referal_email, permissions, first_name, last_name, relation } = newSupporter;
+
+      if (!referal_email || permissions.length === 0) {
+        alert('Please fill referral email and select at least one permission');
+        return;
+      }
+
+      const referralPayload = [{
+        referal_email,
+        permissions,
+        role: "supporter", // You must assign role explicitly
+        first_name,
+        last_name,
+        relation
+      }];
+
+      await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/users/send-referels`,
+        referralPayload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setShowAddModal(false);
+      setNewSupporter({ permissions: [], first_name: '', last_name: '', referal_email: '', relation: '' });
+      fetchSupporters();
+
+      // Show success and navigate
+      setSuccessMessage("Supporter added successfully!");
+      setTimeout(() => {
+        setSuccessMessage("");
+        navigate("/supporter-list");
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error adding supporter:', error);
+      alert('Failed to add supporter: ' + (error.response?.data?.error || error.message));
     }
- 
-    const referralPayload = [{
-      referal_email,
-      permissions,
-      role: "supporter", // You must assign role explicitly
-      first_name,
-      last_name,
-      relation
-    }];
- 
-    await axios.post(
-      `${process.env.REACT_APP_BACKEND_URL}/users/send-referels`,
-      referralPayload,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
- 
-    setShowAddModal(false);
-    setNewSupporter({ permissions: [], first_name: '', last_name: '', referal_email: '', relation: '' });
-    fetchSupporters();
-  } catch (error) {
-    console.error('Error adding supporter:', error);
-    alert('Failed to add supporter: ' + (error.response?.data?.error || error.message));
-  }
-};
- 
- 
+  };
+
+
   const handleEditSupporter = async () => {
     try {
       if (!currentSupporter.permissions || currentSupporter.permissions.length === 0) {
         alert('Please select at least one permission');
         return;
       }
- 
+
       await axios.put(
         `${process.env.REACT_APP_BACKEND_URL}/users/supporter/${currentSupporter._id}`,
         { permissions: currentSupporter.permissions },
@@ -83,12 +94,20 @@ const SupportersManagement = () => {
       setShowEditModal(false);
       setCurrentSupporter(null);
       fetchSupporters();
+
+      // Show success and navigate
+      setSuccessMessage("Supporter updated successfully!");
+      setTimeout(() => {
+        setSuccessMessage("");
+        navigate("/supporterlist");
+      }, 1500);
+
     } catch (error) {
       console.error('Error updating supporter:', error);
       alert('Failed to update supporter: ' + (error.response?.data?.error || error.message));
     }
   };
- 
+
   const handleDeleteSupporter = async (id) => {
     if (window.confirm('Are you sure you want to remove this supporter?')) {
       try {
@@ -102,35 +121,32 @@ const SupportersManagement = () => {
       }
     }
   };
- 
+
   const openEditModal = (supporter) => {
     setCurrentSupporter({ ...supporter });
     setShowEditModal(true);
   };
- 
- const togglePermission = (permission, isEdit = false) => {
+
+  const togglePermission = (permission, isEdit = false) => {
     if (isEdit) {
-      // Changed: directly use permission labels in currentSupporter.permissions
       const updatedPermissions = currentSupporter.permissions.includes(permission)
         ? currentSupporter.permissions.filter(p => p !== permission)
         : [...currentSupporter.permissions, permission];
       setCurrentSupporter({ ...currentSupporter, permissions: updatedPermissions });
     } else {
-      // Changed: directly use permission labels in newSupporter.permissions
       const updatedPermissions = newSupporter.permissions.includes(permission)
         ? newSupporter.permissions.filter(p => p !== permission)
         : [...newSupporter.permissions, permission];
       setNewSupporter({ ...newSupporter, permissions: updatedPermissions });
     }
   };
- 
-  // Changed: permissionOptions now just uses labels (no IDs)
+
   const permissionOptions = [
     { label: 'View Pregnancy Map' },
     { label: 'View Mom Network' },
     { label: 'View Resources' }
   ];
- 
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -139,7 +155,7 @@ const SupportersManagement = () => {
           Choose who can join you on your journey. You control what they can
           track, and you can update access whenever you need.
         </p>
- 
+
         <div className="mb-8">
           <p className="font-medium mb-3">
             Do you have someone supporting you through your pregnancy?
@@ -171,7 +187,7 @@ const SupportersManagement = () => {
             </button>
           </div>
         </div>
- 
+
         {hasSupporters && (
           <>
             {supporters.length > 0 ? (
@@ -207,7 +223,7 @@ const SupportersManagement = () => {
                 No supporters added yet.
               </p>
             )}
- 
+
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center mt-4 text-gray-600 hover:text-gray-900"
@@ -229,13 +245,20 @@ const SupportersManagement = () => {
           </>
         )}
       </div>
- 
+
+      {/* Success message popup */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded shadow-lg z-50">
+          {successMessage}
+        </div>
+      )}
+
       {/* Add Supporter Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Add Supporter</h2>
- 
+
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">First Name</label>
               <input
@@ -251,7 +274,7 @@ const SupportersManagement = () => {
                 placeholder="Enter first name"
               />
             </div>
- 
+
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">Last Name</label>
               <input
@@ -267,7 +290,7 @@ const SupportersManagement = () => {
                 placeholder="Enter last name"
               />
             </div>
- 
+
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">Email</label>
               <input
@@ -283,7 +306,7 @@ const SupportersManagement = () => {
                 placeholder="Enter referal email"
               />
             </div>
- 
+
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">Relation</label>
               <input
@@ -296,36 +319,37 @@ const SupportersManagement = () => {
                 placeholder="Enter relation"
               />
             </div>
- 
+
             <div className="mb-4">
-              <p className="font-medium mb-2">Permissions</p>
-              {permissionOptions.map((option) => (
-                <label
-                  key={option.label}
-                  className="flex items-center mb-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    className="mr-2"
-                    // Changed: use option.label instead of option.id
-                    checked={newSupporter.permissions.includes(option.label)}
-                    onChange={() => togglePermission(option.label)} // Changed
-                  />
-                  {option.label}
-                </label>
-              ))}
+              <p className="mb-2 font-semibold">Permissions:</p>
+              <div className="flex flex-wrap">
+                {permissionOptions.map(({ label }) => (
+                  <label
+                    key={label}
+                    className="mr-4 mb-2 flex items-center cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={newSupporter.permissions.includes(label)}
+                      onChange={() => togglePermission(label)}
+                      className="mr-1"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
             </div>
- 
-            <div className="flex justify-end space-x-4">
+
+            <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="bg-gray-200 px-4 py-2 rounded"
+                className="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddSupporter}
-                className="bg-green-500 text-white px-4 py-2 rounded"
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
               >
                 Save
               </button>
@@ -333,61 +357,46 @@ const SupportersManagement = () => {
           </div>
         </div>
       )}
- 
+
       {/* Edit Supporter Modal */}
       {showEditModal && currentSupporter && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              Edit Supporter Permissions
-            </h2>
-            <p className="mb-4 font-semibold">{currentSupporter.email}</p>
- 
+            <h2 className="text-xl font-bold mb-4">Edit Supporter Permissions</h2>
+
             <div className="mb-4">
-              <p className="font-medium mb-2">Permissions</p>
-              {permissionOptions.map((option) => (
-                <label
-                  key={option.label}
-                  className="flex items-center mb-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    className="mr-2"
-                    // Changed: use option.label instead of option.id
-                    checked={currentSupporter.permissions.includes(
-                      option.label
-                    )}
-                    onChange={() => togglePermission(option.label, true)} // Changed
-                  />
-                  {option.label}
-                </label>
-              ))}
+              <p className="mb-2 font-semibold">Permissions:</p>
+              <div className="flex flex-wrap">
+                {permissionOptions.map(({ label }) => (
+                  <label
+                    key={label}
+                    className="mr-4 mb-2 flex items-center cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={currentSupporter.permissions.includes(label)}
+                      onChange={() => togglePermission(label, true)}
+                      className="mr-1"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
             </div>
- 
-            <div className="flex justify-between">
+
+            <div className="flex justify-end space-x-3">
               <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setCurrentSupporter(null);
-                }}
-                className="bg-gray-200 px-4 py-2 rounded"
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 border border-gray-400 rounded hover:bg-gray-100"
               >
                 Cancel
               </button>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleDeleteSupporter(currentSupporter._id)}
-                  className="bg-red-600 text-white px-4 py-2 rounded"
-                >
-                  Remove
-                </button>
-                <button
-                  onClick={handleEditSupporter}
-                  className="bg-green-500 text-white px-4 py-2 rounded"
-                >
-                  Save
-                </button>
-              </div>
+              <button
+                onClick={handleEditSupporter}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -395,7 +404,5 @@ const SupportersManagement = () => {
     </div>
   );
 };
- 
+
 export default SupportersManagement;
- 
- 
