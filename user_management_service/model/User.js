@@ -26,12 +26,11 @@ const userSchema = new mongoose.Schema(
       enum: ["supporter", "mom"],
       default: "mom",
     },
-    mom_referals: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "UserDetails",
-      },
-    ],
+   referal_code: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "UserDetails",
+          default: null,
+        },
     referals: [
       {
         first_name: { type: String, required: false },

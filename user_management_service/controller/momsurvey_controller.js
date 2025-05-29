@@ -219,6 +219,7 @@ const getbyid_momsurvey = async(req,res)=>{
         const {id}=req.params;
        // const { userId } = req.query;
         const userId = req.user.id;
+        //const userId = req.user.effectiveUserId || req.user.id;
         if (!userId) {
           return res.status(400).json({ error: "User Id is required" });
       }
@@ -238,6 +239,7 @@ const getAllSurveys = async (req, res) => {
   try {
    // const { userId } = req.query; // Accessing userId from the query string
     const userId = req.user.id;
+    //const userId = req.user.effectiveUserId || req.user.id;
     if (!userId) {
       return res.status(400).json({ error: "userId is required" });
     }
