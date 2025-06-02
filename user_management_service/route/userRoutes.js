@@ -1,6 +1,6 @@
 const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
-const { googleCallback, deleteUser, resendOtp,verifyOtp ,getOtpByEmail,updatePassword,deleteAllUsers, 
+const { googleCallback,facebookCallback, deleteUser, resendOtp,verifyOtp ,getOtpByEmail,updatePassword,deleteAllUsers, 
   getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter,
   getReferals, deleteReferal,editReferal,
   getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers,
@@ -33,6 +33,27 @@ router.get("/google", (req, res, next) => {
   });
   
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
+
+// GET /users/facebook
+router.get("/facebook", (req, res, next) => {
+  const { user_name, role, referal_code, permissions = [] } = req.query;
+
+  // Encode user details in the state parameter
+  const state = JSON.stringify({ user_name, role, referal_code, permissions });
+
+  passport.authenticate("facebook", {
+    scope: ["email"],
+    state: encodeURIComponent(state),
+  })(req, res, next);
+});
+
+// GET /users/facebook/callback
+router.get(
+  "/facebook/callback",
+  passport.authenticate("facebook", { failureRedirect: "/facebook" }),
+  facebookCallback
+);
+
 
 router.get('/', momAndSupporterMiddleware, getUser);
 //supporter apis

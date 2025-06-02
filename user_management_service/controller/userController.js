@@ -288,6 +288,41 @@ const googleCallback = async (req, res) => {
 	}
 };
 
+const facebookCallback = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(400).send({ error: "Authentication failed. No user found." });
+    }
+
+    const user = req.user;
+
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      user_name: user.user_name,
+      role: user.role,
+      permissions: user.permissions || [],
+      effectiveUserId:
+        user.role === "supporter" && user.referal_code
+          ? user.referal_code
+          : user._id,
+    };
+
+    if (user.role === "supporter" && user.referal_code) {
+      payload.referal_code = user.referal_code;
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+  } catch (error) {
+    console.error("Error in facebookCallback:", error);
+    res.status(500).send({ error: "Internal server error..." });
+  }
+};
+
 //supporters
 const referSupporter = async (req, res) => {
   try {
@@ -619,7 +654,7 @@ const deleteUser = async (req, res) => {
 };
 
 
-module.exports = {verifyOtp,getOtpByEmail, resendOtp , googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser,
+module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser,
 	 referSupporter,getReferals,editReferal,deleteReferal, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
 
 

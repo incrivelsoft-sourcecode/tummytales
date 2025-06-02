@@ -21,16 +21,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    facebookId: {
+      type: String,
+      default: null,
+    },
     role: {
       type: String,
       enum: ["supporter", "mom"],
       default: "mom",
     },
-   referal_code: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "UserDetails",
-          default: null,
-        },
+    referal_code: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserDetails",
+      default: null,
+    },
     referals: [
       {
         first_name: { type: String, required: false },

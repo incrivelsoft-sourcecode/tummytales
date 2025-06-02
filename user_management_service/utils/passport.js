@@ -1,5 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
 const dotenv = require('dotenv');
 const User = require("../model/User.js");
 
@@ -82,6 +83,50 @@ passport.use(
   )
 );
 
+// ✅ FACEBOOK STRATEGY
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: process.env.FACEBOOK_APP_ID,
+      clientSecret: process.env.FACEBOOK_APP_SECRET,
+      callbackURL: `${process.env.USER_SERVICE_URL}/users/facebook/callback`,
+      profileFields: ["id", "emails", "name"],
+      passReqToCallback: true,
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
+        const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
+        const { user_name, role, referal_code, permissions = [] } = state;
+
+        const email = profile.emails && profile.emails[0] && profile.emails[0].value;
+
+        if (!email) {
+          return done(new Error("No email found in Facebook profile"), null);
+        }
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+          user = new User({
+            facebookId: profile.id,
+            email,
+            user_name,
+            role,
+            referal_code,
+            permissions,
+          });
+        } else {
+          user.facebookId = profile.id;
+        }
+
+        await user.save();
+        return done(null, user);
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
+);
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
   try {
