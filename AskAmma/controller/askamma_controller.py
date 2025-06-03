@@ -6,4 +6,7 @@ router = APIRouter()
 
 @router.post("/ask")
 def ask_amma(query: AskAmmaQuery):
-    return generate_response(query.dict())
+    try:
+        return {"response": generate_response(query.dict())}
+    except Exception as e:
+        return {"error": str(e)}

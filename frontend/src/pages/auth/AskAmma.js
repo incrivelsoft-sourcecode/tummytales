@@ -39,7 +39,7 @@ const AskAmmaPage = () => {
         question: message,
       });
 
-      const aiResponse = res.data.most_common;
+      const aiResponse = res.data.response;
 
       setChatLog((prev) => [
         ...prev,

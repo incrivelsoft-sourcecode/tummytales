@@ -1,54 +1,33 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-from langchain.prompts import PromptTemplate
-from langchain_huggingface import HuggingFacePipeline
-from collections import Counter
-from dotenv import load_dotenv
-from huggingface_hub import login
-import torch
 import os
 import time
+import httpx
+from collections import Counter
+from langchain.prompts import PromptTemplate
+from dotenv import load_dotenv
+import subprocess
+import signal
 
 # Load .env variables
 load_dotenv()
 
-hf_token = os.getenv("HUGGINGFACE_HUB_TOKEN")
-if hf_token:
-    login(token=hf_token)
-else:
-    print("HuggingFace token not found in environment.")
+# Ollama configuration
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
-# Model config from env
-model_name = os.getenv("LLAMA_MODEL", "meta-llama/Meta-Llama-3-8B")
-torch_dtype = torch.float16 if os.getenv("TORCH_DTYPE") == "float16" else torch.float32
-
-# Force GPU if available
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-device_map = {"": 0} if device.startswith("cuda") else "cpu"
-
-print("Using device:", device)
-
-# Load model/tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch_dtype,
-    device_map=device_map
-)
-
-# Build HuggingFace pipeline
-hf_pipe = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer,
-    device=0 if torch.cuda.is_available() else -1,
-    torch_dtype=torch_dtype,
-    return_full_text=False,
-    max_new_tokens=256,
-    do_sample=True,
-    temperature=0.4,
-    top_k=150,
-    top_p=0.75
-)
+# Function to start the Ollama process
+def ensure_ollama_model_loaded():
+    try:
+        response = httpx.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={"model": OLLAMA_MODEL, "prompt": "ping", "stream": False},
+            timeout=60.0
+        )
+        if response.status_code == 200:
+            print("Ollama model is ready.")
+        else:
+            print("Ollama responded but did not start the model. Try running it manually.")
+    except Exception as e:
+        print(f"Ensure Ollama is running: {e}")
 
 # Prompt template
 prompt_template = PromptTemplate(
@@ -86,23 +65,46 @@ Answer:
 """
 )
 
-# Response generator with retry
+# Function to generate a single response from Ollama
+def generate_with_ollama(prompt, temperature=0.4, max_tokens=256):
+    try:
+        response = httpx.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "stream": False
+            },
+            timeout=60.0
+        )
+        result = response.json()
+        return result.get("response", "").strip()
+    except Exception as e:
+        print(f"[Ollama Error] {e}")
+        return "Error generating response."
+
+# Wrapper with retry and response consensus
 def generate_response(input_dict, max_retries=5):
+    ensure_ollama_model_loaded()
     print(f"Request Sent: {input_dict}")
-    final_prompt = prompt_template.format(**input_dict)
     
-    for attempt in range(max_retries):
+    final_prompt = prompt_template.format(**input_dict)
+    print(f"\n[Final Prompt]:\n{final_prompt}\n")
+
+    for attempt in range(1, max_retries + 1):
         try:
-            responses = [hf_pipe(final_prompt)[0]["generated_text"].strip() for _ in range(1)]
-            valid_responses = [r for r in responses if r.strip()]
-            
-            if valid_responses:
-                return Counter(valid_responses).most_common(1)[0][0]
+            response = generate_with_ollama(final_prompt)
+            if response and response.strip():
+                print(f"[Attempt {attempt}] Successful response.")
+                print(f"[Response]: {response}")
+                return response.strip()
             else:
-                print(f"[Attempt {attempt + 1}] Blank response. Retrying...")
+                print(f"[Attempt {attempt}] Blank response received. Retrying...")
                 time.sleep(1)
         except Exception as e:
-            print(f"[Attempt {attempt + 1}] Error: {e}")
+            print(f"[Attempt {attempt}] Error: {e}")
             time.sleep(1)
-    
+
     return "Unable to generate a valid response after multiple attempts."

@@ -5,6 +5,3 @@ uvicorn
 transformers
 torch
 langchain
-langchain-huggingface
-huggingface_hub
-hf_xet
