@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const axios = require("axios");
 const User = require('../model/User.js');
 const UserDetails = require('../model/User.js');
-//const redisClient = require("../config/redisClient");
 const sendEmail = require("../utils/sendEmail.js"); // Create this helper
 const crypto = require("crypto");
 const sendReferralEmail = require("../utils/sendReferralEmail.js");

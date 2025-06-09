@@ -2,10 +2,6 @@ const mongoose = require("mongoose");
 const UserDetails= require('./User')
 const surveySchema = new mongoose.Schema(
   {
-    // user_name: {
-    //  type: String,
-    //  required: true,
-    // },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserDetails", 
@@ -85,14 +81,6 @@ const surveySchema = new mongoose.Schema(
       },
 
       insuranceProvider: String,
-
-      // medications: [
-      //   {
-      //     name: { type: String, required: true },
-      //     dosage: String,
-      //     frequency: String,
-      //   },
-      // ],
       
   medication1: {
     name: String,
@@ -123,90 +111,11 @@ const surveySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const supporterSchema =new mongoose.Schema(
-  {
-  //  user_name: { 
-  //   type: String,
-  //   ref: "UserDetails",
-  //   required: true }, 
-  userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserDetails", 
-      required: true,
-    },
-    name:{
-      type:String,
-      required:true,
-    },
-    relationship:{
-      type:String,
-      required:true,
-    },
-    hasAccess:{
-      type:Boolean,
-      default:false,
-    },
-    accessPermissions:{
-      pregnancyTracker:{
-        type:Boolean,
-        defalut:false,
-      },
-      dailyJournal:{
-        type:Boolean,
-        defalut:false,
-      },
-      appointment:{
-        type:Boolean,
-        default:false,
-      },
-      babyNames:{
-        type:Boolean,
-        default:false,
-      },
-    },
-    referralPin:{
-        type:String,
-        unique:true,
-      },
-},{timestamps:true}
-);
-
-
-// 🔹 Pre-save hook to generate a unique referralPin
-supporterSchema.pre("save", function (next) {
-  if (!this.referralPin) {
-    this.referralPin = `SUPP-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-  }
-  next();
-});
-
 
 const Survey = mongoose.model("Survey", surveySchema);
 
-const SupporterSurvey =mongoose.model("SupporterSurvey",supporterSchema)
-module.exports = {Survey,SupporterSurvey};
+module.exports = {Survey};
 
 
 
 
-
-
-   /* healthCare: {
-      hasProvider: { type: Boolean, default: false },
-      prenatalServices: String,
-      healthcareSystem: String,
-      navigationExperience: String,
-      culturalChallenges: { type: Boolean, default: false },
-    },
-    lifestylePreferences: {
-      preferredLanguage: String,
-      dietaryPreferences: String,
-      physicalActivity: { type: Boolean, default: false },
-      primaryInfoSource: String,
-    },
-    experienceAndExpectations: {
-      expectations: String,
-      challenges: String,
-      wantsPersonalizedResources: { type: Boolean, default: false },
-      additionalComments: String,
-    },*/

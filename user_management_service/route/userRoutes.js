@@ -18,8 +18,6 @@ router.delete("/userdel/:id",deleteUser);
 router.get("/all",getallusers)
 router.delete('/all',deleteAllUsers)
 
-//router.get("/check/username", checkUsernameAvailability);
-
 router.get("/google", (req, res, next) => {
     const { user_name, role, referal_code, permissions = [] } = req.query;
   
@@ -30,8 +28,7 @@ router.get("/google", (req, res, next) => {
       scope: ["profile", "email"],
       state: encodeURIComponent(state), // ✅ Pass state to Google
     })(req, res, next);
-  });
-  
+  }); 
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
 
 // GET /users/facebook
