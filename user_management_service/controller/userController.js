@@ -127,6 +127,17 @@ const createUser = async (req, res) => {
 	  user.otpExpiresAt = undefined;
 	  await user.save();
   
+    // ✅ IF ROLE IS SUPPORTER: Update mom's referals list
+    if (user.role === "supporter" && user.referal_code) {
+      const mom = await UserDetails.findById(user.referal_code);
+      if (mom) {
+        const referalEntry = mom.referals.find(r => r.referal_email === user.email);
+        if (referalEntry && referalEntry.status === "pending") {
+          referalEntry.status = "accepted";
+          await mom.save();
+        }
+      }
+    }
 	   // ✅ Build payload for token
     const payload = {
       userId: user._id,
@@ -275,6 +286,11 @@ const googleCallback = async (req, res) => {
 		}
 
 		const user = req.user;
+     // ✅ Mark user as verified if not already
+    if (user.status !== "verified") {
+      user.status = "verified";
+      await user.save();
+    }
 		const token = jwt.sign(
 			{ userId: user._id, email: user.email, user_name: user.user_name, role: user.role, permissions: user.permissions },
 			process.env.JWT_SECRET,
@@ -294,6 +310,11 @@ const facebookCallback = async (req, res) => {
     }
 
     const user = req.user;
+      // ✅ Mark user as verified if not already
+    if (user.status !== "verified") {
+      user.status = "verified";
+      await user.save();
+    }
 
     const payload = {
       userId: user._id,
@@ -521,139 +542,10 @@ const deleteAllUsers = async (req, res) => {
 	}
 };
 
-//extra
-
-const getReferedSupporters = async (req, res) => {
-	try {
-		const referal_code = req.user.userId;
-		const referedSupporters = await UserDetails.find({ referal_code }).select("_id user_name email permissions referal_code");
-		res.status(200).send({ referedSupporters });
-	} catch (error) {
-		console.error("Error in getReferedSupporters:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
-}
-
-const editPermissionOfSuppoter = async(req, res) => {
-    try {
-        const { permissions } = req.body;
-        const {id} = req.params;
-        
-        // Fixed validation - should check if permissions exists AND has length > 0
-        if(!permissions || !(permissions.length > 0))
-        {
-            return res.status(400).send({error: "permission is required..."});
-        }
-        
-        const updateSupporter = await UserDetails.findByIdAndUpdate(id, {permissions}, {new: true, runValidators: true});
-        if(!updateSupporter)
-        {
-            return res.status(404).send({error: `Supporter not found with id: ${id}`});
-        }
-        res.status(200).send({message: "Supporter permissions have updated...", updatedSupporter: updateSupporter});
-    } catch (error) {
-        console.error("Error in editPermissionOfSuppoter:", error);
-        res.status(500).send({ error: "Internal server error." });
-    }
-}
-
-const deleteSupporter = async(req, res) => {
-	try {
-		const {id} = req.params;
-		const deleteSuppoter = await UserDetails.findOneAndDelete(id);
-		if(!deleteSuppoter)
-		{
-			return res.status(404).send({error: `Supporter not found with id: ${id}`});
-		}
-		res.status(200).send({message: "Requested, supporter have deleted.."})
-	} catch (error) {
-		console.error("Error in deleteSupporter:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
-}
-
-// Get all users
-const getAllUsers = async (req, res) => {
-	try {
-		const { page = 1, limit = 10 } = req.query;
-		const skip = (page - 1) * limit;
-		const users = await User.find().select('-password').skip(skip).limit(limit);
-		const totalUsers = await User.countDocuments();
-
-		res.status(200).send({ totalPages: Math.ceil(totalUsers / limit), currentPage: page, users });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
 
 
-// Get a user by ID
-const getUser = async (req, res) => {
-	try {
-		const user = await User.findById(req.user?.userId).select('-password');
-		if (!user) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		res.json(user);
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-// Update a user
-const updateUser = async (req, res) => {
-	const { first_name, last_name, email } = req.body;
-
-	try {
-		const updatedUser = await User.findByIdAndUpdate(
-			req.user?.userId,
-			{ first_name, last_name, email },
-			{ new: true }
-		).select('-password');
-		if (!updatedUser) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		res.json(updatedUser);
-	} catch (err) {
-		res.status(400).json({ message: err.message });
-	}
-};
-
-// UPDATE USER PASSWORD
-const updatePassword = async (req, res) => {
-	const { newPassword } = req.body;
-
-	try {
-		const user = await User.findById(req.user?.userId);
-		if (!user) {
-			return res.status(404).json({ message: "User not found" });
-		}
-
-		user.password = newPassword;
-		await user.save();
-
-		res.json({ message: "Password updated successfully" });
-	} catch (err) {
-		res.status(400).json({ message: err.message });
-	}
-};
-
-// Delete a user
-const deleteUser = async (req, res) => {
-	try {
-		const deletedUser = await User.findByIdAndDelete(req.params.id);
-		if (!deletedUser) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		
-		res.json({ message: 'User deleted successfully' });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-
-module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser,
-	 referSupporter,getReferals,editReferal,deleteReferal, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
+module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,
+  deleteAllUsers, getallusers, loginUser, createUser,
+	referSupporter,getReferals,editReferal,deleteReferal }
 
 

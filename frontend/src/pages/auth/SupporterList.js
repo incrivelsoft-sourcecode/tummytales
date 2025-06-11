@@ -144,10 +144,14 @@ const SupporterList = () => {
                         ? formData.permissions.join(", ")
                         : formData.permissions || ""
                     }
+                    // ✅ FIXED: Clean permissions array to remove empty strings
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        permissions: e.target.value.split(",").map((p) => p.trim()),
+                        permissions: e.target.value
+                          .split(",")
+                          .map((p) => p.trim())
+                          .filter((p) => p.length > 0), // <-- ADDED this to remove empty values
                       }))
                     }
                     className="border p-2 w-full"

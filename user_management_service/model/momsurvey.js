@@ -56,6 +56,7 @@ const surveySchema = new mongoose.Schema(
         details: {
           first_name: String,
           last_name: String,
+          medical_office_name: String,
           country: String,
           Addressline1: String,
           Addressline2: String,
@@ -70,6 +71,7 @@ const surveySchema = new mongoose.Schema(
         details: {
           first_name: String,
           last_name: String,
+          medical_office_name: String,
           country: String,
           Addressline1: String,
           Addressline2: String,

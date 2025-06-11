@@ -47,6 +47,7 @@ const createsurvey = async (req, res) => {
         hasPrimaryCarePhysician,
         primaryFirst_name,
         primaryLast_name,
+        primaryMedicalOffice_name,
         primaryCountry,
         primaryAddressline1,
         primaryAddressline2,
@@ -58,6 +59,7 @@ const createsurvey = async (req, res) => {
         hasOBGYN,
         obgynFirst_name,
         obgynLast_name,
+        obgynMedicalOffice_name,
         obgynCountry,
         obgynAddressline1,
         obgynAddressline2,
@@ -160,6 +162,7 @@ const createsurvey = async (req, res) => {
             details: hasPrimaryCarePhysician ? {
               first_name: primaryFirst_name,
               last_name: primaryLast_name,
+              medical_office_name:primaryMedicalOffice_name,
               country: primaryCountry,
               Addressline1: primaryAddressline1,
               Addressline2: primaryAddressline2,
@@ -174,6 +177,7 @@ const createsurvey = async (req, res) => {
             details: hasOBGYN ? {
               first_name: obgynFirst_name,
               last_name: obgynLast_name,
+              medical_office_name:obgynMedicalOffice_name,
               country: obgynCountry,
               Addressline1: obgynAddressline1,
               Addressline2: obgynAddressline2,
