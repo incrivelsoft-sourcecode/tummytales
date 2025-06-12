@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const UserDetails= require('./User')
+const UserDetails= require('../model/User')
 const surveySchema = new mongoose.Schema(
   {
     userId: {
@@ -113,10 +113,39 @@ const surveySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const SupporterProfile_Schema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserDetails", 
+      required: true,
+    },
+      first_name: String,
+      last_name: String,
+      dob: Date,
+      gender: String,
+      nationality: String,
+      Phonenumber: String,
+      email: String,
+      country: String,
+      Addressline1: String,
+      Addressline2: String,
+      city: String,
+      State: String,
+      Zip_code: String,
+  },
+  { timestamps: true }
+);
 
-const Survey = mongoose.model("Survey", surveySchema);
 
-module.exports = {Survey};
+// const Survey = mongoose.model("Survey", surveySchema);
+const MomProfile = mongoose.model("MomProfile", surveySchema);
+
+
+const SupporterProfile = mongoose.model("SupporterProfile",SupporterProfile_Schema);
+
+
+module.exports = {MomProfile,SupporterProfile};
 
 
 

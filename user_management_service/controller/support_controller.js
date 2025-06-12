@@ -4,6 +4,7 @@ const axios = require("axios");
 const UserDetails = require('../model/User.js');
 const crypto = require("crypto");
 const sendReferralEmail = require("../utils/sendReferralEmail.js");
+const {SupporterProfile} = require("../model/profile.js");
 
 //supporters
 const referSupporter = async (req, res) => {
@@ -182,7 +183,178 @@ const deleteReferal = async (req, res) => {
 };
 
 
+
+// Create profile
+const createSupporterProfile = async (req, res) => {
+  try {
+    const userId = req.user.id; // Supporter's own ID
+
+    const {
+      first_name,
+      last_name,
+      dob,
+      gender,
+      nationality,
+      Phonenumber,
+      email,
+      country,
+      Addressline1,
+      Addressline2,
+      city,
+      State,
+      Zip_code,
+    } = req.body;
+
+    const requiredFields = {
+      first_name,
+      last_name,
+      dob,
+      gender,
+      nationality,
+      Phonenumber,
+      email,
+      country,
+      Addressline1,
+      city,
+      State,
+      Zip_code,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value || value === "")
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
+    }
+
+    const profile = new SupporterProfile({
+      userId,
+      first_name,
+      last_name,
+      dob,
+      gender,
+      nationality,
+      Phonenumber,
+      email,
+      country,
+      Addressline1,
+      Addressline2,
+      city,
+      State,
+      Zip_code,
+    });
+await profile.save();
+    return res.status(201).json({ message: "Supporter profile created", profile });
+  } catch (error) {
+    console.error("Failed to create supporter profile:", error);
+    return res.status(500).json({ error: "Failed to create profile" });
+  }
+};
+
+// Get profile by ID (used for editing or viewing a single profile)
+const getSupporterProfileById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const profile = await SupporterProfile.findOne({ _id: id, userId });
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    return res.status(200).json({ message: "Profile retrieved", profile });
+  } catch (error) {
+    console.error("Failed to retrieve supporter profile:", error);
+    return res.status(500).json({ error: "Failed to retrieve profile" });
+  }
+};
+
+// Get all supporter profiles (for admin or future use)
+const getAllSupporterProfiles = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const profiles = await SupporterProfile.find({ userId });
+
+    if (!profiles || profiles.length === 0) {
+      return res.status(404).json({ message: "No profiles found for this user" });
+    }
+
+    return res.status(200).json({ success: true, profiles });
+  } catch (error) {
+    console.error("Failed to get supporter profiles:", error);
+    return res.status(500).json({ error: "Failed to retrieve profiles" });
+  }
+};
+
+// Update profile
+const updateSupporterProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const userId = req.user.id;
+
+    const existingProfile = await SupporterProfile.findOne({ _id: id });
+
+    if (!existingProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    if (existingProfile.userId.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized to update this profile" });
+    }
+
+    const updatedProfile = await SupporterProfile.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      profile: updatedProfile,
+    });
+  } catch (error) {
+    console.error("Failed to update profile:", error);
+    return res.status(500).json({ error: "Failed to update profile" });
+  }
+};
+
+// Delete profile
+const deleteSupporterProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const existingProfile = await SupporterProfile.findOne({ _id: id });
+
+    if (!existingProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    if (existingProfile.userId.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized to delete this profile" });
+    }
+
+    await SupporterProfile.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: "Profile deleted successfully" });
+  } catch (error) {
+    console.error("Failed to delete profile:", error);
+    return res.status(500).json({ error: "Failed to delete profile" });
+  }
+};
+
+
+
 module.exports = {
-     referSupporter,getReferals,editReferal,deleteReferal }
+     referSupporter,getReferals,editReferal,deleteReferal,
+     createSupporterProfile,
+  getSupporterProfileById,
+  getAllSupporterProfiles,
+  updateSupporterProfile,
+  deleteSupporterProfile}
 
 

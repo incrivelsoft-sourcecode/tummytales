@@ -1,5 +1,5 @@
 const express = require ('express');
-const {Survey} = require('../model/momsurvey');
+const {MomProfile} = require('../model/profile');
 const mongoose= require('mongoose');
 const User = require('../model/User')
 
@@ -114,7 +114,7 @@ const createsurvey = async (req, res) => {
         return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
       }
   
-      const newSurvey = new Survey({
+      const newSurvey = new MomProfile({
        // user_name,
         userId,
         generalDetails: {
@@ -227,7 +227,7 @@ const getbyid_momsurvey = async(req,res)=>{
         if (!userId) {
           return res.status(400).json({ error: "User Id is required" });
       }
-        const survey = await Survey.findOne({_id: id, userId } );
+        const survey = await MomProfile.findOne({_id: id, userId } );
         if(!survey){
             return res.status(404).json({error:'survey not found'});
         }
@@ -248,7 +248,7 @@ const getAllSurveys = async (req, res) => {
       return res.status(400).json({ error: "userId is required" });
     }
 
-    const surveys = await Survey.find({ userId });
+    const surveys = await MomProfile.find({ userId });
 
     if (!surveys || surveys.length === 0) {
       return res.status(404).json({ message: "No surveys found for this user" });
@@ -270,7 +270,7 @@ const update_momsurvey = async (req, res) => {
       return res.status(400).json({ error: "User Id is required for verification" });
     }
 
-    const existingSurvey = await Survey.findOne({ _id: id });
+    const existingSurvey = await MomProfile.findOne({ _id: id });
 
     if (!existingSurvey) {
       return res.status(404).json({ error: "Survey not found" });
@@ -288,7 +288,7 @@ const update_momsurvey = async (req, res) => {
       }
     }
 
-    const updatedSurvey = await Survey.findOneAndUpdate(
+    const updatedSurvey = await MomProfile.findOneAndUpdate(
       { _id: id },
       { $set: updateQuery },
       { new: true, runValidators: true }
@@ -311,13 +311,13 @@ const delete_momsurvey = async (req, res) => {
         const { id } = req.params;
 
         // Check if the survey exists
-        const existingSurvey = await Survey.findById(id);
+        const existingSurvey = await MomProfile.findById(id);
         if (!existingSurvey) {
             return res.status(404).json({ error: 'Survey not found' });
         }
 
         // Delete the survey
-        await Survey.findByIdAndDelete(id);
+        await MomProfile.findByIdAndDelete(id);
 
         return res.status(200).json({ message: 'Survey deleted successfully' });
     } catch (error) {
@@ -328,7 +328,7 @@ const delete_momsurvey = async (req, res) => {
 
 const deleteallsurveys = async(req,res)=>{
   try{
-    const result =await Survey.deleteMany({});
+    const result =await MomProfile.deleteMany({});
     res.json({message:'all surveys deleted successfully'});
   }catch(err){
     res.status(500).json({message:err.message});

@@ -10,7 +10,7 @@ const connectDB = require('./config/db.js');
 const userRouter  = require('./route/userRoutes.js');
 const momsurvey_router=require('./route/momsurvey_router.js');
 const booknow_router = require("./route/booknow_router.js");
-
+const supporter_router= require("./route/supporter_router.js")
 const port = process.env.DB_PORT || 5001;  
 
 dotenv.config();
@@ -43,6 +43,7 @@ app.use((err, req, res, next) => {
 app.use('/user/users', userRouter);
 app.use('/user/mom',momsurvey_router);
 app.use('/user/booknow',booknow_router)
+app.use('/user/supporter',supporter_router)
 
 
 
