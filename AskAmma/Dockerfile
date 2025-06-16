@@ -1,28 +1,25 @@
-FROM ollama/ollama:latest
+# Use a slim base image with Python
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install Python and dependencies
+# Install necessary dependencies
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip git curl && \
-    pip3 install --upgrade pip
+    apt-get install -y git curl && \
+    pip install --upgrade pip
 
 # Copy requirements and install
 COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copy all project files
 COPY . .
 
-# Set environment variables
+# Environment variables
 ENV PYTHONUNBUFFERED=1
-ENV OLLAMA_MODEL=llama3
-ENV OLLAMA_BASE_URL=http://localhost:11434
 
-# Expose ports
+# Expose FastAPI port
 EXPOSE 8000
-EXPOSE 11434
 
-# Pull the model and start services at runtime
-ENTRYPOINT []
-CMD ["sh", "-c", "ollama serve & sleep 5 && ollama pull $OLLAMA_MODEL && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Run FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

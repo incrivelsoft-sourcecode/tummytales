@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -16,10 +16,15 @@ const AskAmmaPage = () => {
   const [symptoms, setSymptoms] = useState("");
   const [allergies, setAllergies] = useState("");
   const [medications, setMedications] = useState("");
+  const [culture, setCulture] = useState("");
+  const [location, setLocation] = useState("");
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     setLoading(true);
+
+    const updatedChatLog = [...chatLog, { role: "user", content: message }];
+    setChatLog(updatedChatLog);
 
     try {
       const res = await axios.post(`${process.env.REACT_APP_ASK_AMMA_URL}/api/amma/ask`, {
@@ -34,17 +39,17 @@ const AskAmmaPage = () => {
         blood_test: "",
         urine_test: "",
         diabetes_test: "",
-        culture: "South Asian",
-        location: "New Jersey",
+        culture,
+        location,
         question: message,
+        chat_history: updatedChatLog,
       });
 
       const aiResponse = res.data.response;
 
-      setChatLog((prev) => [
+      setChatLog(prev => [
         ...prev,
-        { role: "user", content: message },
-        { role: "ai", content: aiResponse },
+        { role: "ai", content: aiResponse }
       ]);
 
       setMessage("");
@@ -132,6 +137,12 @@ const AskAmmaPage = () => {
 
             <label className="block text-sm font-medium text-gray-700 mb-1">Medications</label>
             <input type="text" className="w-full p-2 border rounded mb-4" value={medications} onChange={(e) => setMedications(e.target.value)} />
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Culture</label>
+            <input type="text" className="w-full p-2 border rounded mb-4" value={culture} onChange={(e) => setCulture(e.target.value)} />
+
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <input type="text" className="w-full p-2 border rounded mb-4" value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
         )}
       </aside>

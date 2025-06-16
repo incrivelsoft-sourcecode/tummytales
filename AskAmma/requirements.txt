@@ -1,7 +1,9 @@
-accelerate
-python-dotenv
 fastapi
 uvicorn
-transformers
-torch
+python-dotenv
 langchain
+langchain-core
+langchain-community
+langchain-openai
+crewai
+openai

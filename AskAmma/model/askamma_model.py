@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List, Dict, Optional
 
 class AskAmmaQuery(BaseModel):
     age: str
@@ -15,3 +16,4 @@ class AskAmmaQuery(BaseModel):
     culture: str
     location: str
     question: str
+    chat_history: Optional[List[Dict[str, str]]] = []
