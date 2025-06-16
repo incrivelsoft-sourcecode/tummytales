@@ -112,7 +112,7 @@ module.exports = { momAndSupporterMiddleware, supporterMiddleware, momMiddleware
 
 
 
-// old caused invaid token issue
+
 // const momAndSupporterMiddleware = (req, res, next) => {
 // 	const token = req.header("Authorization")?.split(" ")[1];
 // 	if (!token) {
