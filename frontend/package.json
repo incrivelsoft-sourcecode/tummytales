@@ -9,9 +9,13 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.1",
     "date-fns": "^4.1.0",
+<<<<<<< Updated upstream
     "framer-motion": "^12.4.10",
     "jwt-decode": "^4.0.0",
     "jwt-token": "^1.0.9",
+=======
+    "framer-motion": "^12.15.0",
+>>>>>>> Stashed changes
     "lucide-react": "^0.479.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
