@@ -25,6 +25,8 @@ EXPOSE 3000
 # Start the production server
 CMD ["serve", "-s", "build", "-l", "3000"]
 
+
+
 # # Stage 1: Build the React (or Vite) app
 # FROM node:18 AS build
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
-
+import { FaFacebook } from "react-icons/fa";
 const SelectRole = () => {
   const navigate = useNavigate();
   const [showMotherUsernameInput, setShowMotherUsernameInput] = useState(false);
@@ -17,9 +17,25 @@ const SelectRole = () => {
     }
   };
 
+   const handleMotherFacebookAuth = () => {
+    if (showMotherUsernameInput && motherUsername.trim()) {
+      window.location.href = `${process.env.REACT_APP_BACKEND_URL}/users/facebook?role=mom&user_name=${motherUsername}`;
+    } else {
+      setShowMotherUsernameInput(true);
+    }
+  };
+
   const handleSupporterGoogleAuth = () => {
     if (showSupporterUsernameInput && supporterUsername.trim()) {
       window.location.href = `${process.env.REACT_APP_BACKEND_URL}/users/google?role=supporter&referral_code=67c044e3b9b8c82ca2345506&user_name=${supporterUsername}`;
+    } else {
+      setShowSupporterUsernameInput(true);
+    }
+  };
+
+  const handleSupporterFacebookAuth = () => {
+    if (showSupporterUsernameInput && supporterUsername.trim()) {
+      window.location.href = `${process.env.REACT_APP_BACKEND_URL}/users/facebook?role=supporter&referral_code=67c044e3b9b8c82ca2345506&user_name=${supporterUsername}`;
     } else {
       setShowSupporterUsernameInput(true);
     }
@@ -50,13 +66,23 @@ const SelectRole = () => {
             </button>
 
             {!showMotherUsernameInput ? (
-              <div 
-                className="flex items-center justify-center w-full border border-gray-300 rounded-lg p-2 mt-4 cursor-pointer hover:bg-gray-100"
-                onClick={handleMotherGoogleAuth}
-              >
-                <FcGoogle className="text-2xl" />
-                <span className="ml-2 text-gray-700">Sign up with Google</span>
-              </div>
+              <>
+                <div 
+                  className="flex items-center justify-center w-full border border-gray-300 rounded-lg p-2 mt-4 cursor-pointer hover:bg-gray-100"
+                  onClick={handleMotherGoogleAuth}
+                >
+                  <FcGoogle className="text-2xl" />
+                  <span className="ml-2 text-gray-700">Sign up with Google</span>
+                </div>
+
+                <div 
+                  className="flex items-center justify-center w-full border border-gray-300 rounded-lg p-2 mt-2 cursor-pointer hover:bg-gray-100"
+                  onClick={handleMotherFacebookAuth}
+                >
+                  <FaFacebook className="text-2xl text-blue-600" />
+                  <span className="ml-2 text-gray-700">Sign up with Facebook</span>
+                </div>
+              </>
             ) : (
               <div className="mt-4 w-full">
                 <input
@@ -71,7 +97,14 @@ const SelectRole = () => {
                   onClick={handleMotherGoogleAuth}
                   disabled={!motherUsername.trim()}
                 >
-                  Register
+                  Register with Google
+                </button>
+                <button 
+                  className="w-full bg-blue-700 text-white font-semibold py-2 rounded-full mt-2 hover:bg-blue-800 transition"
+                  onClick={handleMotherFacebookAuth}
+                  disabled={!motherUsername.trim()}
+                >
+                  Register with Facebook
                 </button>
               </div>
             )}

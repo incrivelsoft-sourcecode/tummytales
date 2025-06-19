@@ -1,0 +1,42 @@
+[
+  {
+    "text": "Iron is particularly important during pregnancy. Pregnant women need about 27 mg of iron daily. Good sources include lean red meat, poultry, fish, iron-fortified cereals, beans, and spinach.",
+    "metadata": {
+      "nutrient": "iron",
+      "trimester": "all",
+      "importance": "high"
+    }
+  },
+  {
+    "text": "Folate is crucial for preventing neural tube defects. Pregnant women should consume 600-800 mcg of folate daily. Sources include leafy greens, fortified cereals, beans, and citrus fruits.",
+    "metadata": {
+      "nutrient": "folate",
+      "trimester": "first",
+      "importance": "high"
+    }
+  },
+  {
+    "text": "Calcium is essential for developing the baby's bones and teeth. Pregnant women need 1,000 mg of calcium daily. Sources include dairy products, fortified plant milks, leafy greens, and calcium-set tofu.",
+    "metadata": {
+      "nutrient": "calcium",
+      "trimester": "all",
+      "importance": "high"
+    }
+  },
+  {
+    "text": "Protein needs increase during pregnancy. Aim for 75-100g daily. Good sources include lean meats, poultry, fish, eggs, dairy, legumes, and tofu.",
+    "metadata": {
+      "nutrient": "protein",
+      "trimester": "all",
+      "importance": "high"
+    }
+  },
+  {
+    "text": "Omega-3 fatty acids support the baby's brain and eye development. Sources include fatty fish (salmon, sardines), walnuts, chia seeds, and flaxseeds.",
+    "metadata": {
+      "nutrient": "omega-3",
+      "trimester": "all",
+      "importance": "medium"
+    }
+  }
+]
