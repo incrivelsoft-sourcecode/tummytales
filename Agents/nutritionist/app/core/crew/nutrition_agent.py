@@ -12,6 +12,9 @@ from app.core.meal.meal_model import MealPlanRequest
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Add this debug line right after the import:
+logger.info(f"DEBUG: Imported meal_planning_service type: {type(meal_planning_service)}")
+
 def clean_meal_response(response_text: str) -> str:
     """Clean up meal response formatting to ensure proper bullet points"""
     
@@ -82,8 +85,21 @@ async def generate_meal_plan_async(meal_type: str, trimester: str,
         if not meal_planning_service.initialized:
             await meal_planning_service.initialize()
         
-        # Generate the meal - now returns markdown directly
-        meal_markdown = await meal_planning_service.generate_meal(request)
+        # DEBUG: Check what methods are available
+        logger.info(f"DEBUG: Available methods on meal_planning_service: {dir(meal_planning_service)}")
+        logger.info(f"DEBUG: Has generate_meal: {hasattr(meal_planning_service, 'generate_meal')}")
+        logger.info(f"DEBUG: Type of meal_planning_service: {type(meal_planning_service)}")
+        
+        # Try to call the method with different possible names
+        if hasattr(meal_planning_service, 'generate_meal'):
+            meal_markdown = await meal_planning_service.generate_meal(request)
+        elif hasattr(meal_planning_service, 'generate_meal_plan'):
+            meal_markdown = await meal_planning_service.generate_meal_plan(request)
+        elif hasattr(meal_planning_service, 'generate'):
+            meal_markdown = await meal_planning_service.generate(request)
+        else:
+            logger.error("DEBUG: No suitable method found!")
+            return "Error: Could not find meal generation method"
         
         # Clean up the formatting before returning
         cleaned_meal_str = clean_meal_response(meal_markdown)

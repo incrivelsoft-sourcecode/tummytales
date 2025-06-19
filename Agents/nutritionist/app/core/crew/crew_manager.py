@@ -145,7 +145,7 @@ class CrewManager:
         logger.info(f"Processing query: '{query}'")
         
         # Determine task type based on query
-        meal_keywords = ['recipe', 'suggest', 'breakfast', 'lunch', 'dinner', 'food', 'cook', 'dish', 'meal']
+        meal_keywords = ['recipe', 'suggest', 'breakfast', 'lunch', 'dinner', 'snacks', 'dessert', 'food', 'cook', 'dish', 'meal']
         nutrition_keywords = ['nutrients', 'important', 'what are', 'which', 'vitamins', 'minerals']
         
         has_meal_keywords = any(word in query.lower() for word in meal_keywords)
@@ -172,7 +172,7 @@ class CrewManager:
             try:
                 # Extract meal type from query
                 meal_type = 'breakfast'  # default
-                for m_type in ['breakfast', 'lunch', 'dinner', 'snack']:
+                for m_type in ['dessert', 'breakfast', 'lunch', 'dinner', 'snack']:
                     if m_type in query.lower():
                         meal_type = m_type
                         break

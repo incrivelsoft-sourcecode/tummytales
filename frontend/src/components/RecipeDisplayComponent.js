@@ -3,10 +3,132 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RecipeCustomizationPanel from './RecipeCustomizationPanel';
 
-const RecipeDisplayComponent = ({ recipe, mealId, onCustomize }) => {
-  const [servingsCount, setServingsCount] = useState(recipe.servings || 1);
+
+
+const parseMarkdownRecipe = (markdownText) => {
+  if (!markdownText || typeof markdownText !== 'string') {
+    return null;
+  }
+
+  console.log("=== DEBUGGING MARKDOWN PARSING ===");
+  console.log("Raw markdown:", markdownText.substring(0, 500) + "...");
+
+  const lines = markdownText.split('\n');
+  const recipe = {
+    title: '',
+    ingredients: [],
+    instructions: '',
+    nutritionalValues: {},
+    'Pregnancy-Safe Notes': '',
+    'Substitution Options': ''
+  };
+
+  let currentSection = '';
+  let instructionText = '';
+  let notesText = '';
+  let substitutionText = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Extract title (starts with #)
+    if (line.startsWith('# ') && !recipe.title) {
+      recipe.title = line.substring(2).trim();
+      continue;
+    }
+    
+    // Detect sections
+    if (line.startsWith('## Ingredients')) {
+      currentSection = 'ingredients';
+      console.log("Found ingredients section");
+      continue;
+    } else if (line.startsWith('## Instructions')) {
+      currentSection = 'instructions';
+      console.log("Found instructions section");
+      continue;
+    } else if (line.startsWith('## Nutritional Values')) {
+      currentSection = 'nutrition';
+      continue;
+    } else if (line.startsWith('## Pregnancy-Safe Notes')) {
+      currentSection = 'pregnancy-notes';
+      continue;
+    } else if (line.startsWith('## Substitution Options')) {
+      currentSection = 'substitution';
+      continue;
+    }
+    
+    // Debug ingredients parsing
+    if (currentSection === 'ingredients') {
+      console.log(`Ingredients line: "${line}"`);
+      
+      if (!line.trim()) {
+        console.log("Skipping empty line");
+        continue;
+      }
+      
+      if (line.match(/^\*\*.*:\*\*$/)) {
+        console.log("Skipping bold header:", line);
+        continue;
+      }
+      
+      if (line.startsWith('### ')) {
+        console.log("Skipping ### header:", line);
+        continue;
+      }
+      
+      if (line.match(/^\*.*:\*\*$/)) {
+        console.log("Skipping section header:", line);
+        continue;
+      }
+      
+      if (line.startsWith('* ')) {
+        console.log("Adding ingredient:", line.substring(2).trim());
+        recipe.ingredients.push(line.substring(2).trim());
+      } else {
+        console.log("Not processing line:", line);
+      }
+    }
+    
+    // Rest of parsing logic...
+    else if (currentSection === 'instructions' && line.match(/^\d+\./)) {
+      const cleanedLine = line.replace(/\*\*(.*?)\*\*/g, '$1');
+      instructionText += cleanedLine + '\n';
+    } else if (currentSection === 'nutrition' && line.startsWith('- **')) {
+      const match = line.match(/- \*\*(.+?):\*\* (.+)/);
+      if (match) {
+        recipe.nutritionalValues[match[1]] = match[2];
+      }
+    } else if (currentSection === 'pregnancy-notes' && line.startsWith('• ')) {
+      const cleanedNote = line.substring(2).trim().replace(/\*\*(.*?)\*\*/g, '$1');
+      notesText += cleanedNote + '\n';
+    } else if (currentSection === 'substitution' && line.startsWith('• ')) {
+      const cleanedOption = line.substring(2).trim().replace(/\*\*(.*?)\*\*/g, '$1');
+      substitutionText += cleanedOption + '\n';
+    }
+  }
+  
+  recipe.instructions = instructionText.trim();
+  recipe['Pregnancy-Safe Notes'] = notesText.trim();
+  recipe['Substitution Options'] = substitutionText.trim();
+  
+  console.log("Final ingredients:", recipe.ingredients);
+  console.log("=== END DEBUG ===");
+  
+  return recipe;
+};
+
+const RecipeDisplayComponent = ({ recipe: rawRecipe, mealId, onCustomize }) => {
+  const [servingsCount, setServingsCount] = useState(2);
   const [showCustomizationPanel, setShowCustomizationPanel] = useState(false);
   const [activeSection, setActiveSection] = useState('ingredients');
+  
+  // Parse the recipe if it's markdown text
+  const recipe = React.useMemo(() => {
+    if (typeof rawRecipe === 'string') {
+      return parseMarkdownRecipe(rawRecipe);
+    }
+    return rawRecipe;
+  }, [rawRecipe]);
   
   if (!recipe) return null;
 
@@ -285,14 +407,28 @@ const RecipeDisplayComponent = ({ recipe, mealId, onCustomize }) => {
                   <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
                     <span>✅</span> Pregnancy-Safe Notes
                   </h4>
-                  <p className="text-green-700">{recipe["Pregnancy-Safe Notes"]}</p>
+                  <div className="text-green-700">
+                    {recipe["Pregnancy-Safe Notes"] && recipe["Pregnancy-Safe Notes"].split('\n').filter(note => note.trim()).map((note, index) => (
+                      <div key={index} className="mb-2 flex items-center gap-2">
+                        <span className="text-green-600 flex-shrink-0">•</span>
+                        <span>{note.replace(/^[•\-*]\s*/, '').trim()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
                   <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                     <span>💡</span> Substitution Options
                   </h4>
-                  <p className="text-blue-700">{recipe["Substitution Options"]}</p>
+                  <div className="text-blue-700">
+                    {recipe["Substitution Options"] && recipe["Substitution Options"].split('\n').filter(option => option.trim()).map((option, index) => (
+                      <div key={index} className="mb-2 flex items-center gap-2">
+                        <span className="text-blue-600 flex-shrink-0">•</span>
+                        <span>{option.replace(/^[•\-*]\s*/, '').trim()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}

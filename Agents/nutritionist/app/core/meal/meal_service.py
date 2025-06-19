@@ -2,6 +2,7 @@ import logging
 import json
 import re
 from typing import Dict, List, Any, Optional
+import time
 
 from app.core.knowledge.rag_service import rag_service
 from app.services.llm import llm_service
@@ -40,6 +41,8 @@ class MealPlanningService:
             logger.error(f"Error initializing meal planning service: {str(e)}")
             raise
     
+    
+
     async def generate_meal(self, request: MealPlanRequest) -> str:
         """
         Generate a personalized meal plan based on user preferences
@@ -54,9 +57,18 @@ class MealPlanningService:
             await self.initialize()
             
         try:
-            # Retrieve nutritional guidance for the specific meal type and trimester
+            total_start = time.time()
+            logger.info(f"🚀 Starting meal generation for {request.meal_type}")
+            
+            # RAG Query Timing
+            rag_start = time.time()
             nutrition_query = f"{request.meal_type} nutrition for {request.trimester} trimester pregnancy"
             nutrition_result = await rag_service.query(nutrition_query, request.trimester)
+            rag_time = time.time() - rag_start
+            logger.info(f"⏱️ RAG Query took: {rag_time:.2f} seconds")
+            
+            # Prompt Building Timing
+            prompt_start = time.time()
             
             # Extract dietary preferences
             dietary = ", ".join(request.preferences.get("dietary", []))
@@ -79,12 +91,27 @@ class MealPlanningService:
                 is_regeneration=is_regeneration
             )
             
-            # Generate the meal using LLM - now returns markdown directly
+            prompt_time = time.time() - prompt_start
+            logger.info(f"⏱️ Prompt Building took: {prompt_time:.2f} seconds")
+            logger.info(f"⏱️ Prompt length: {len(prompt)} characters")
+            
+            # Recipe Generation Timing
+            recipe_start = time.time()
             logger.info(f"Generating {request.meal_type} recipe for {request.trimester} trimester")
-            meal_markdown = await llm_service.generate_text(prompt, temperature=0.3)
+            
+            # SPEED OPTIMIZATION: Reduce max_tokens for faster generation
+            meal_markdown = await llm_service.generate_text(prompt, temperature=0.1, max_tokens=1800)
+            
+            recipe_time = time.time() - recipe_start
+            logger.info(f"⏱️ Recipe Generation (Claude API) took: {recipe_time:.2f} seconds")
             
             # Return the markdown directly - no JSON parsing needed
             logger.info(f"Generated markdown recipe: {len(meal_markdown)} characters")
+            
+            total_time = time.time() - total_start
+            logger.info(f"⏱️ 🎯 TOTAL MEAL GENERATION: {total_time:.2f} seconds")
+            logger.info(f"⏱️ 📊 BREAKDOWN: RAG={rag_time:.1f}s, Prompt={prompt_time:.1f}s, Claude={recipe_time:.1f}s")
+            
             return meal_markdown
             
         except Exception as e:
@@ -97,7 +124,7 @@ class MealPlanningService:
                 cuisine,
                 allergies,
                 nutritional_focus
-            )
+        )
 
     def _create_fallback_markdown(self, meal_type, trimester, dietary, cuisine, allergies, nutritional_focus):
         """Create a fallback markdown recipe when generation fails"""
@@ -680,109 +707,168 @@ class MealPlanningService:
                 # Return None to indicate failure, so we can use a fallback
                 return None
     
+    # def _build_meal_generation_prompt(self, meal_type, trimester, dietary, cuisine, 
+    #                             allergies, nutritional_focus, nutritional_guidance,
+    #                             is_regeneration=False):
+    #     """Build a prompt for meal generation"""
+        
+    #     # Add a hint for regeneration if needed
+    #     regeneration_hint = ""
+    #     if is_regeneration:
+    #         regeneration_hint = "\nIMPORTANT: Create a completely different recipe than you might have created before with these same parameters. Be creative and offer a distinct alternative."
+        
+    #     # Updated prompt to generate markdown directly
+    #     prompt = """You are a professional chef and pregnancy nutrition expert specialized in creating delicious, healthy, and detailed meal plans.
+
+    # TASK:
+    # Create a {meal_type} recipe for a woman in her {trimester} trimester of pregnancy.{regeneration_hint}
+
+    # NUTRITIONAL GUIDANCE:
+    # {nutritional_guidance}
+
+    # DIETARY PREFERENCES:
+    # Dietary restrictions: {dietary}
+    # Preferred cuisine: {cuisine}
+    # Allergies to avoid: {allergies}
+    # Nutritional focus: {nutritional_focus}
+
+    # CRITICAL RECIPE NAMING:
+    # - Recipe name must be SPECIFIC and DESCRIPTIVE, not generic
+    # - Use specific ingredients and cooking method in the name
+    # - Examples of GOOD names: "Punjabi-Style Spinach and Chickpea Stuffed Paratha", "Mediterranean Quinoa Bowl with Roasted Vegetables and Tahini Drizzle"
+    # - Examples of BAD names: "High Iron Breakfast", "Healthy Lunch", "Nutritious {meal_type}"
+    # - For {cuisine} cuisine: Incorporate traditional dish names and cooking styles
+
+    # CONTENT REQUIREMENTS:
+    # 1. Create a HIGHLY DETAILED recipe with specific, descriptive title
+    # 2. Include exact measurements and detailed cooking instructions
+    # 3. Calculate accurate nutritional values for the specific ingredients used
+    # 4. Include specific "Pregnancy-Safe Notes" explaining benefits for {trimester} trimester
+    # 5. Provide practical "Substitution Options" for dietary needs
+    # 6. Ensure cultural authenticity for {cuisine} cuisine preferences
+
+    # OUTPUT FORMAT:
+    # You must respond in EXACT markdown format as shown below. Do NOT use JSON.
+
+    # # [Specific Recipe Name Here - Be Creative and Descriptive]
+    # **Servings:** [number]
+
+    # ## Ingredients
+    # * [ingredient 1 with exact measurements]
+    # * [ingredient 2 with exact measurements]
+    # * [continue with all ingredients]
+
+    # ## Instructions
+    # 1. [First step with detailed instructions]
+    # 2. [Second step with detailed instructions]
+    # [continue with numbered steps]
+
+    # ## Nutritional Values
+    # - **Calories:** [calculated number] kcal per serving
+    # - **Protein:** [calculated number] g
+    # - **Carbohydrates:** [calculated number] g
+    # - **Fat:** [calculated number] g
+    # - **Fiber:** [calculated number] g
+    # - **Calcium:** [calculated number] mg
+    # - **Iron:** [calculated number] mg
+
+    # ## Pregnancy-Safe Notes
+    # * [Specific benefit for {trimester} trimester]
+    # * [Safety consideration]
+    # * [Nutritional benefit explanation]
+    # * [Additional pregnancy-specific note]
+
+    # ## Substitution Options
+    # * [Substitution for dietary restriction]
+    # * [Alternative for allergy concern]
+    # * [Cultural variation option]
+    # * [Nutritional enhancement option]
+
+    # FORMATTING RULES:
+    # - Use exactly one # for the recipe title
+    # - Use ## for section headers
+    # - Use * for ingredient lists and notes
+    # - Use numbers for instruction steps
+    # - Use - for nutritional values
+    # - Each bullet point in notes should be on a separate line
+    # - Calculate nutritional values based on actual ingredients used
+    # - Make the recipe name creative and specific to the dish you're creating
+
+    # EXAMPLE GOOD RECIPE NAMES:
+    # - "Kashmiri-Style Saffron and Almond Quinoa Porridge with Dried Fruits"
+    # - "Bengali Fish Curry with Sweet Potato and Baby Spinach"
+    # - "Gujarati-Inspired Dhokla Breakfast Bowl with Mint Chutney Drizzle"
+    # - "Punjabi Methi Paratha with Homemade Yogurt and Pickled Vegetables"
+    # """.format(
+    #         meal_type=meal_type,
+    #         trimester=trimester,
+    #         dietary=dietary if dietary else "None",
+    #         cuisine=cuisine if cuisine else "Any",
+    #         allergies=allergies if allergies else "None",
+    #         nutritional_focus=nutritional_focus if nutritional_focus else "Balanced nutrition",
+    #         nutritional_guidance=nutritional_guidance,
+    #         regeneration_hint=regeneration_hint
+    #     )
+        
+    #     return prompt
+
     def _build_meal_generation_prompt(self, meal_type, trimester, dietary, cuisine, 
                                 allergies, nutritional_focus, nutritional_guidance,
                                 is_regeneration=False):
-        """Build a prompt for meal generation"""
+        """Build an optimized prompt for meal generation"""
         
-        # Add a hint for regeneration if needed
-        regeneration_hint = ""
-        if is_regeneration:
-            regeneration_hint = "\nIMPORTANT: Create a completely different recipe than you might have created before with these same parameters. Be creative and offer a distinct alternative."
+        # Regeneration hint (keep concise)
+        regeneration_hint = "\nCreate a completely different recipe than previous attempts." if is_regeneration else ""
         
-        # Updated prompt to generate markdown directly
-        prompt = """You are a professional chef and pregnancy nutrition expert specialized in creating delicious, healthy, and detailed meal plans.
+        # Limit RAG guidance to essential info only
+        essential_guidance = nutritional_guidance[:400] + "..." if len(nutritional_guidance) > 400 else nutritional_guidance
+        
+        prompt = f"""Create a detailed {cuisine} {meal_type} recipe for {trimester} trimester pregnancy.{regeneration_hint}
 
-    TASK:
-    Create a {meal_type} recipe for a woman in her {trimester} trimester of pregnancy.{regeneration_hint}
+    REQUIREMENTS:
+    - Dietary: {dietary or 'None'}
+    - Avoid: {allergies or 'None'}  
+    - Focus: {nutritional_focus or 'Balanced nutrition'}
 
-    NUTRITIONAL GUIDANCE:
-    {nutritional_guidance}
+    NUTRITION GUIDANCE:
+    {essential_guidance}
 
-    DIETARY PREFERENCES:
-    Dietary restrictions: {dietary}
-    Preferred cuisine: {cuisine}
-    Allergies to avoid: {allergies}
-    Nutritional focus: {nutritional_focus}
+    OUTPUT FORMAT - Return markdown exactly like this:
 
-    CRITICAL RECIPE NAMING:
-    - Recipe name must be SPECIFIC and DESCRIPTIVE, not generic
-    - Use specific ingredients and cooking method in the name
-    - Examples of GOOD names: "Punjabi-Style Spinach and Chickpea Stuffed Paratha", "Mediterranean Quinoa Bowl with Roasted Vegetables and Tahini Drizzle"
-    - Examples of BAD names: "High Iron Breakfast", "Healthy Lunch", "Nutritious {meal_type}"
-    - For {cuisine} cuisine: Incorporate traditional dish names and cooking styles
-
-    CONTENT REQUIREMENTS:
-    1. Create a HIGHLY DETAILED recipe with specific, descriptive title
-    2. Include exact measurements and detailed cooking instructions
-    3. Calculate accurate nutritional values for the specific ingredients used
-    4. Include specific "Pregnancy-Safe Notes" explaining benefits for {trimester} trimester
-    5. Provide practical "Substitution Options" for dietary needs
-    6. Ensure cultural authenticity for {cuisine} cuisine preferences
-
-    OUTPUT FORMAT:
-    You must respond in EXACT markdown format as shown below. Do NOT use JSON.
-
-    # [Specific Recipe Name Here - Be Creative and Descriptive]
-    **Servings:** [number]
+    # [Specific Traditional Dish Name with Key Ingredients]
+    **Servings:** 2
 
     ## Ingredients
-    * [ingredient 1 with exact measurements]
-    * [ingredient 2 with exact measurements]
-    * [continue with all ingredients]
+    * [ingredient with exact measurements]
+    * [continue...]
 
     ## Instructions
-    1. [First step with detailed instructions]
-    2. [Second step with detailed instructions]
-    [continue with numbered steps]
+    1. [detailed step with timing]
+    2. [continue...]
 
     ## Nutritional Values
-    - **Calories:** [calculated number] kcal per serving
-    - **Protein:** [calculated number] g
-    - **Carbohydrates:** [calculated number] g
-    - **Fat:** [calculated number] g
-    - **Fiber:** [calculated number] g
-    - **Calcium:** [calculated number] mg
-    - **Iron:** [calculated number] mg
+    - **Calories:** [number] kcal per serving
+    - **Protein:** [number] g
+    - **Carbohydrates:** [number] g
+    - **Fat:** [number] g
+    - **Fiber:** [number] g
+    - **Calcium:** [number] mg
+    - **Iron:** [number] mg
 
     ## Pregnancy-Safe Notes
-    * [Specific benefit for {trimester} trimester]
-    * [Safety consideration]
-    * [Nutritional benefit explanation]
-    * [Additional pregnancy-specific note]
+    - [Specific {trimester} trimester benefit]
+    - [Safety consideration]
+    - [Nutritional benefit]
+    - [Additional note]
 
     ## Substitution Options
-    * [Substitution for dietary restriction]
-    * [Alternative for allergy concern]
-    * [Cultural variation option]
-    * [Nutritional enhancement option]
+    - [Dietary alternative]
+    - [Allergy substitute]
+    - [Cultural variation]
+    - [Nutritional enhancement]
 
-    FORMATTING RULES:
-    - Use exactly one # for the recipe title
-    - Use ## for section headers
-    - Use * for ingredient lists and notes
-    - Use numbers for instruction steps
-    - Use - for nutritional values
-    - Each bullet point in notes should be on a separate line
-    - Calculate nutritional values based on actual ingredients used
-    - Make the recipe name creative and specific to the dish you're creating
-
-    EXAMPLE GOOD RECIPE NAMES:
-    - "Kashmiri-Style Saffron and Almond Quinoa Porridge with Dried Fruits"
-    - "Bengali Fish Curry with Sweet Potato and Baby Spinach"
-    - "Gujarati-Inspired Dhokla Breakfast Bowl with Mint Chutney Drizzle"
-    - "Punjabi Methi Paratha with Homemade Yogurt and Pickled Vegetables"
-    """.format(
-            meal_type=meal_type,
-            trimester=trimester,
-            dietary=dietary if dietary else "None",
-            cuisine=cuisine if cuisine else "Any",
-            allergies=allergies if allergies else "None",
-            nutritional_focus=nutritional_focus if nutritional_focus else "Balanced nutrition",
-            nutritional_guidance=nutritional_guidance,
-            regeneration_hint=regeneration_hint
-        )
-        
+    CRITICAL: Recipe name must be specific and traditional (e.g., "Punjabi-Style Palak Paneer with Cumin Rice", not "Healthy Spinach Dish").
+    """
         return prompt
     
     def _create_fallback_recipe(self, meal_type, trimester, dietary, cuisine, allergies, nutritional_focus):

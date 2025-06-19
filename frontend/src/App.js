@@ -1,9 +1,5 @@
 import React, { useEffect } from "react";
-<<<<<<< Updated upstream
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-=======
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
->>>>>>> Stashed changes
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -31,22 +27,15 @@ import UrineTest from "./pages/auth/UrineTest";
 import DatingViability from "./pages/auth/DatingViability";
 import GeneticScreening from "./pages/auth/GeneticScreening";
 import NuchalTranslucency from "./pages/auth/NuchalTranslucency";
-<<<<<<< Updated upstream
 import MandatoryHealthCare from "./pages/auth/MandatoryHealthCare";
 import CulturalPractices from "./pages/auth/CulturalPractices";
 import OtpVerification from "./pages/auth/OtpVerification";
-=======
 import Nutrition from "./pages/auth/Nutrition";
 import RecipeCustomizationTest from './components/RecipeCustomizationTest';
 import ErrorBoundary from './components/ErrorBoundary';
 
-
-function App() {
-  // Removed unused activeTab and setActiveTab state
->>>>>>> Stashed changes
-
 // Import your SupporterList component here
-import SupporterList from "./pages/auth/SupporterList"; // Adjust path as needed
+import SupporterList from "./pages/auth/SupporterList";
 
 function App() {
   useEffect(() => {
@@ -86,10 +75,8 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />} />
           <Route path="/supporters" element={<SupportersPage />} />
-          {/* New route for your SupporterList */}
-                   <Route path="/supporter-list" element={<SupporterList />} />
+          <Route path="/supporter-list" element={<SupporterList />} />
           <Route path="/mom-supporter-network" element={<ThreadAndChatDiscussionPage />} />
-<<<<<<< Updated upstream
           <Route path="/otp-verification" element={<OtpVerification />} />
           <Route path="/thali" element={<Thali />} />
           <Route path="/mom-network" element={<MomNetworkPage />} />
@@ -103,26 +90,12 @@ function App() {
           <Route path="/nuchal-translucency" element={<NuchalTranslucency />} />
           <Route path="/mandatoryhealthcare" element={<MandatoryHealthCare />} />
           <Route path="/culturalpractices" element={<CulturalPractices />} />
-=======
-          <Route path="/ask-ai" element={<AskAI />} />  {/* ✅ Add AI Chat Page */}
-          <Route path="/thali" element={<Thali/>}/>
-          <Route path="/mom-network" element={<MomNetworkPage/>}/>
-          <Route path="/ask-amma" element={<AskAmmaPage/>}/>
-          <Route path="/daily-meal-plan" element={<DailyMealPlan/>}/>
-          <Route path="/essential-tests" element={<EssentialTests/>}/>
-          <Route path="/blood-test" element={<BloodTest/>}/>
-          <Route path="/urine-test" element={<UrineTest/>}/>
-          <Route path="/dating-viability" element={<DatingViability/>}/>
-          <Route path="/genetic-screening" element={<GeneticScreening/>}/>
-          <Route path="/nuchal-translucency" element={<NuchalTranslucency/>}/>
-          <Route path="/nutrition" element={<Nutrition/>}/>
+          <Route path="/nutrition" element={<Nutrition />} />
           <Route path="/test-customization" element={
             <ErrorBoundary>
               <RecipeCustomizationTest />
             </ErrorBoundary>
           } />
-          {/* Handle unknown routes */}
->>>>>>> Stashed changes
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
@@ -133,7 +106,6 @@ function App() {
   );
 }
 
-<<<<<<< Updated upstream
 // Wrap App with Router
 const RootApp = () => (
   <Router>
@@ -142,6 +114,3 @@ const RootApp = () => (
 );
 
 export default RootApp;
-=======
-export default App;
->>>>>>> Stashed changes
