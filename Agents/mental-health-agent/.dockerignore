@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+README.md
+.git
+.gitignore
+*.md
+test
+tests
+coverage
+karma.conf.js
+*.zip
+Makefile
+LICENSE
+questions.json
