@@ -3,433 +3,10 @@ const jwt = require('jsonwebtoken');
 const axios = require("axios");
 const User = require('../model/User.js');
 const UserDetails = require('../model/User.js');
-//const redisClient = require("../config/redisClient");
 const sendEmail = require("../utils/sendEmail.js"); // Create this helper
 const crypto = require("crypto");
-
-
-
-const createUser = async (req, res) => {
-	try {
-		const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
-
-		// Validate role
-		if (!["mom", "supporter"].includes(role)) {
-			return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
-		}
-
-		// Check if user already exists (single DB query)
-		const existingUser = await User.findOne({ $or: [{ email }, { user_name }] });
-		if (existingUser) {
-			return res.status(400).json({ message: "Email or username already in use." });
-		}
-
-		// Validate passwords
-		if (confirm_password !== password) {
-			return res.status(400).json({ message: "Passwords do not match." });
-		}
-
-		// Validate required fields dynamically
-		const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
-		const missingFields = Object.entries(requiredFields)
-			.filter(([_, value]) => !value)
-			.map(([key]) => key);
-
-		if (missingFields.length > 0) {
-			return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
-		}
-
-		// If role is "supporter", validate referal_code
-		if (role === "supporter") {
-			const existingMom = await User.findById(referal_code);
-			if (!existingMom) {
-				return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
-			}
-		}
-
-		// Create new user
-		const user = new User({ user_name, email, password, role, referal_code: role === "supporter" ? referal_code : null, permissions });
-
-		// Save user
-		await user.save();
-
-		const token = jwt.sign(
-			{ userId: user._id, role: user.role },
-			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
-			{ expiresIn: "1h" } // Token expires in 1 hour
-		);
-		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-
-
-
-const loginUser = async (req, res) => {
-	const { emailOrUsername, password } = req.body;
-
-	try {
-		const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
-
-		if (!user) {
-			return res.status(404).json({ message: 'Invalid email or password' });
-		}
-
-		const isMatch = await bcrypt.compare(password, user.password);
-
-		if (!isMatch) {
-			return res.status(400).json({ message: 'Invalid email or password' });
-		}
-
-		const token = jwt.sign(
-			{ userId: user._id, email: user.email, user_name: user.user_name, role: user.role, permissions: user.permissions },
-			process.env.JWT_SECRET,
-			{ expiresIn: '1d' }
-		);
-
-		res.json({ message: "Login successfull", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-// Get all users
-const getAllUsers = async (req, res) => {
-	try {
-		const { page = 1, limit = 10 } = req.query;
-		const skip = (page - 1) * limit;
-		const users = await User.find().select('-password').skip(skip).limit(limit);
-		const totalUsers = await User.countDocuments();
-
-		res.status(200).send({ totalPages: Math.ceil(totalUsers / limit), currentPage: page, users });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-
-// Get a user by ID
-const getUser = async (req, res) => {
-	try {
-		const user = await User.findById(req.user?.userId).select('-password');
-		if (!user) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		res.json(user);
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-// Update a user
-const updateUser = async (req, res) => {
-	const { first_name, last_name, email } = req.body;
-
-	try {
-		const updatedUser = await User.findByIdAndUpdate(
-			req.user?.userId,
-			{ first_name, last_name, email },
-			{ new: true }
-		).select('-password');
-		if (!updatedUser) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		res.json(updatedUser);
-	} catch (err) {
-		res.status(400).json({ message: err.message });
-	}
-};
-
-// UPDATE USER PASSWORD
-const updatePassword = async (req, res) => {
-	const { newPassword } = req.body;
-
-	try {
-		const user = await User.findById(req.user?.userId);
-		if (!user) {
-			return res.status(404).json({ message: "User not found" });
-		}
-
-		user.password = newPassword;
-		await user.save();
-
-		res.json({ message: "Password updated successfully" });
-	} catch (err) {
-		res.status(400).json({ message: err.message });
-	}
-};
-
-// Delete a user
-const deleteUser = async (req, res) => {
-	try {
-		const deletedUser = await User.findByIdAndDelete(req.params.id);
-		if (!deletedUser) {
-			return res.status(404).json({ message: 'User not found' });
-		}
-		
-		res.json({ message: 'User deleted successfully' });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-const googleCallback = async (req, res) => {
-	try {
-		if (!req.user) {
-			return res.status(400).send({ error: "Authentication failed. No user found." });
-		}
-
-		const user = req.user;
-		const token = jwt.sign(
-			{ userId: user._id, email: user.email, user_name: user.user_name, role: user.role, permissions: user.permissions },
-			process.env.JWT_SECRET,
-			{ expiresIn: '1d' }
-		);
-		res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
-	} catch (error) {
-		console.error("Error in googleCallback:", error);
-		res.status(500).send({ error: "Internal server error..." });
-	}
-};
-
-
-
-
-
-const referSupporter = async (req, res) => {
-	try {
-		const supporters = req.body.supporters;
-
-		// Validate request body
-		if (!Array.isArray(supporters) || supporters.length === 0) {
-			return res.status(400).send({ error: "An array of supporters (email, permissions, role) is required." });
-		}
-
-		// Validate each supporter
-		for (const supporter of supporters) {
-			const { email, permissions, role } = supporter;
-			if (!email || !permissions || !role) {
-				return res.status(400).send({ error: "Each supporter must have email, permissions, and role." });
-			}
-		}
-
-		await Promise.all(supporters.map(supporter => 
-			UserDetails.findByIdAndUpdate(
-				req.user._id,
-				{ $push: { referal_emails: supporter.email } }, 
-				{ new: true, runValidators: true }
-			)
-		));
-
-		const referralName = req.user.user_name;
-		const referal_code = req.user.userId;
-
-		// Prepare request payload
-		const requestData = {
-			supporters,
-			referralName,
-			referal_code
-		};
-
-		// Send referral request
-		const response = await axios.post(`${process.env.MAIL_SERVICE_URL}/mail/send-referal`, requestData);
-
-		return res.status(200).send(response.data);
-	} catch (error) {
-		console.error("Error in referSupporter:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
-};
-
-
-const getReferedSupporters = async (req, res) => {
-	try {
-		const referal_code = req.user.userId;
-		const referedSupporters = await UserDetails.find({ referal_code }).select("_id user_name email permissions referal_code");
-		res.status(200).send({ referedSupporters });
-	} catch (error) {
-		console.error("Error in getReferedSupporters:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
-}
-
-const editPermissionOfSuppoter = async(req, res) => {
-    try {
-        const { permissions } = req.body;
-        const {id} = req.params;
-        
-        // Fixed validation - should check if permissions exists AND has length > 0
-        if(!permissions || !(permissions.length > 0))
-        {
-            return res.status(400).send({error: "permission is required..."});
-        }
-        
-        const updateSupporter = await UserDetails.findByIdAndUpdate(id, {permissions}, {new: true, runValidators: true});
-        if(!updateSupporter)
-        {
-            return res.status(404).send({error: `Supporter not found with id: ${id}`});
-        }
-        res.status(200).send({message: "Supporter permissions have updated...", updatedSupporter: updateSupporter});
-    } catch (error) {
-        console.error("Error in editPermissionOfSuppoter:", error);
-        res.status(500).send({ error: "Internal server error." });
-    }
-}
-
-const deleteSupporter = async(req, res) => {
-	try {
-		const {id} = req.params;
-		const deleteSuppoter = await UserDetails.findOneAndDelete(id);
-		if(!deleteSuppoter)
-		{
-			return res.status(404).send({error: `Supporter not found with id: ${id}`});
-		}
-		res.status(200).send({message: "Requested, supporter have deleted.."})
-	} catch (error) {
-		console.error("Error in deleteSupporter:", error);
-		res.status(500).send({ error: "Internal server error." });
-	}
-}
-
-
-
-const getallusers = async (req,res)=>{
-	try{
-		const users = await User.find();
-
-		return res.status(200).json({ success:true,users})
-
-	}catch(error){
-		console.error('Failed to get allusers',error);
-		return res.status(505).json({error:"Failed to retrive users"})
-	}
-}
-
-// Delete all users
-const deleteAllUsers = async (req, res) => {
-	try {
-		const result = await User.deleteMany({});
-		res.json({ message: 'All users deleted successfully', deletedCount: result.deletedCount });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
-};
-
-
-
-module.exports = { googleCallback,deleteAllUsers, deleteUser, getallusers,updatePassword, getUser, getAllUsers, loginUser, createUser, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter }
-
-
-
-
-
-
-
-
-// const createUser = async (req, res) => {
-// 	try {
-// 		const { user_name, email, password, confirm_password, role, referal_code, permissions = [] } = req.body;
-
-// 		// Validate role
-// 		if (!["mom", "supporter"].includes(role)) {
-// 			return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
-// 		}
-
-// 		// Check if user already exists (single DB query)
-// 		const existingUser = await User.findOne({ $or: [{ email }, { user_name }] });
-// 		if (existingUser) {
-// 			return res.status(400).json({ message: "Email or username already in use." });
-// 		}
-
-// 		// Validate passwords
-// 		if (confirm_password !== password) {
-// 			return res.status(400).json({ message: "Passwords do not match." });
-// 		}
-
-// 		// Validate required fields dynamically
-// 		const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
-// 		const missingFields = Object.entries(requiredFields)
-// 			.filter(([_, value]) => !value)
-// 			.map(([key]) => key);
-
-// 		if (missingFields.length > 0) {
-// 			return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
-// 		}
-
-// 		// If role is "supporter", validate referal_code
-// 		if (role === "supporter") {
-// 			const existingMom = await User.findById(referal_code);
-// 			if (!existingMom) {
-// 				return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
-// 			}
-// 		}
-
-// 		// Create new user
-// 		const user = new User({ user_name, email, password, role, referal_code: role === "supporter" ? referal_code : null, permissions });
-
-// 		// Save user
-// 		await user.save();
-
-// 		const token = jwt.sign(
-// 			{ userId: user._id, role: user.role },
-// 			process.env.JWT_SECRET || "your_secret_key", // Replace with environment variable
-// 			{ expiresIn: "1h" } // Token expires in 1 hour
-// 		);
-// 		res.status(201).json({ message: "User created successfully!", token, userId: user._id, userName: user.user_name, email: user.email, role: user.role, permissions: user.permissions });
-// 	} catch (err) {
-// 		res.status(500).json({ message: err.message });
-// 	}
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// const checkUsernameAvailability = async (req, res) => {
-// 	const { user_name } = req.query;
-
-// 	if (!user_name || user_name.length < 3) {
-// 	  return res.status(400).json({ message: "Invalid username" });
-// 	}
-
-// 	try {
-// 	  // ✅ Use `await` instead of callback-based `get`
-// 	  const cachedUsername = await redisClient.get(`username:${user_name}`);
-
-// 	  if (cachedUsername !== null) {
-// 		return res.status(200).json({ available: false, message: "Username already taken" });
-// 	  }
-
-// 	  // If not in Redis, check MongoDB
-// 	  const existingUser = await User.findOne({ user_name });
-
-// 	  if (existingUser) {
-// 		await redisClient.set(`username:${user_name}`, "true", { EX: 3600 }); // Store in Redis for 1 hour
-// 		return res.status(200).json({ available: false, message: "Username already taken" });
-// 	  }
-
-// 	  res.status(200).json({ available: true, message: "Username available" });
-// 	} catch (err) {
-// 	  console.log("❌ Error in checkUsernameAvailability:", err);
-// 	  res.status(500).json({ message: "Server error" });
-// 	}
-//   };
-
-
-
-
-/*main tom
+const sendReferralEmail = require("../utils/sendReferralEmail.js");
+const sendResetEmail= require("../utils/sendResetEmail.js")
 
 const createUser = async (req, res) => {
 	try {
@@ -450,7 +27,14 @@ const createUser = async (req, res) => {
 	  if (confirm_password !== password) {
 		return res.status(400).json({ message: "Passwords do not match." });
 	  }
-  
+    // Strong password validation using regex
+	  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+	  if (!strongPasswordRegex.test(password)) {
+		return res.status(400).json({
+		  message:
+			"Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
+		});
+	  }
 	  // Validate required fields
 	  const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
 	  const missingFields = Object.entries(requiredFields)
@@ -461,13 +45,24 @@ const createUser = async (req, res) => {
 		return res.status(400).json({ message: `Missing fields: ${missingFields.join(", ")}` });
 	  }
   
-	  // Validate referal code
-	  if (role === "supporter") {
-		const existingMom = await User.findById(referal_code);
-		if (!existingMom) {
-		  return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
-		}
+	if (role === "supporter") {
+	  const existingMom = await UserDetails.findById(referal_code);
+	  if (!existingMom) {
+		return res.status(404).json({ message: `Invalid referral code: ${referal_code}` });
 	  }
+	
+	  // ✅ Check if the supporter was referred by the mom
+      const referredEmailFound = existingMom.referals.some(
+        ref => ref.referal_email === email && ref.status === "pending"
+      );
+
+      if (!referredEmailFound) {
+        return res.status(403).json({
+          message: "You are not authorized to register. This email was not referred by the mom."
+        });
+      }
+    }
+
   
 	  // Generate 6-digit OTP
 	  const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -489,7 +84,9 @@ const createUser = async (req, res) => {
 	  await user.save();
   
 	  // Send OTP email
-	  await sendEmail(email, `Your OTP Code`, `Your OTP for verification is: ${otp}`);
+	//  await sendEmail(email, `Your OTP Code`, `Your OTP for verification is: ${otp}`);
+	await sendEmail(email, `Your OTP Code`, otp, email);
+
 	  return res.status(201).json({
 		message: "User created. OTP sent to email for verification.",
 		user: {
@@ -505,7 +102,6 @@ const createUser = async (req, res) => {
 	  return res.status(500).json({ message: err.message });
 	}
   };
-
 
   const verifyOtp = async (req, res) => {
 	try {
@@ -539,9 +135,33 @@ const createUser = async (req, res) => {
 	  user.otpExpiresAt = undefined;
 	  await user.save();
   
+    // ✅ IF ROLE IS SUPPORTER: Update mom's referals list
+    if (user.role === "supporter" && user.referal_code) {
+      const mom = await UserDetails.findById(user.referal_code);
+      if (mom) {
+        const referalEntry = mom.referals.find(r => r.referal_email === user.email);
+        if (referalEntry && referalEntry.status === "pending") {
+          referalEntry.status = "accepted";
+          await mom.save();
+        }
+      }
+    }
+	   // ✅ Build payload for token
+    const payload = {
+      userId: user._id,
+      role: user.role,
+	   effectiveUserId: user.role === "supporter" && user.referal_code
+        ? user.referal_code           // mom's ID if supporter
+        : user._id                   // self if mom
+    };
+
+    // Include referal_code for supporter so effectiveUserId can be derived
+    if (user.role === "supporter" && user.referal_code) {
+      payload.referal_code = user.referal_code;
+    }
 	  // Optionally issue a token now
 	  const token = jwt.sign(
-		{ userId: user._id, role: user.role },
+		payload,
 		process.env.JWT_SECRET || "your_secret_key",
 		{ expiresIn: "1h" }
 	  );
@@ -561,4 +181,434 @@ const createUser = async (req, res) => {
 	}
   };
   
-  */
+const getOtpByEmail = async (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ message: "Email required" });
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  if (user.status === "verified") {
+    return res.status(400).json({ message: "User is already verified" });
+  }
+
+  if (user.otpExpiresAt < new Date()) {
+    return res.status(400).json({ message: "OTP expired" });
+  }
+
+  return res.status(200).json({ otp: user.otp });
+};
+
+const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.status === "verified") {
+      return res.status(400).json({ message: "User is already verified." });
+    }
+
+    // Generate new OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    user.otp = newOtp;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+
+    // Send new OTP to email
+    await sendEmail(email, `Your New OTP Code`, newOtp, email);
+
+    return res.status(200).json({ message: "New OTP sent to your email." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+const loginUser = async (req, res) => {
+	const { emailOrUsername, password } = req.body;
+
+	try {
+		const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
+
+		if (!user) {
+			return res.status(404).json({ message: 'Invalid email or password' });
+		}
+
+		const isMatch = await bcrypt.compare(password, user.password);
+
+		if (!isMatch) {
+			return res.status(400).json({ message: 'Invalid email or password' });
+		}
+  if (user.status !== "verified") {
+      return res.status(403).json({ message: "Email not verified. Please verify OTP." });
+    }
+
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      user_name: user.user_name,
+      role: user.role,
+      permissions: user.permissions || [],
+      effectiveUserId:
+        user.role === "supporter" && user.referal_code
+          ? user.referal_code
+          : user._id,
+    };
+
+    if (user.role === "supporter" && user.referal_code) {
+      payload.referal_code = user.referal_code;
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+
+    res.json({
+      message: "Login successful",
+      token,
+      userId: user._id,
+      userName: user.user_name,
+      email: user.email,
+      role: user.role,
+      permissions: user.permissions,
+    });
+	} catch (err) {
+		res.status(500).json({ message: err.message });
+	}
+};
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetToken = jwt.sign(
+      { user_id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    await sendResetEmail(user.email, user.user_name, resetLink);
+
+    return res.json({ message: "Reset link sent to email." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { token } = req.query;
+  const { password, confirmPassword } = req.body;
+
+  if (!token) return res.status(400).json({ message: 'Token is required' });
+  if (password !== confirmPassword)
+    return res.status(400).json({ message: 'Passwords do not match' });
+
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  if (!strongPasswordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        'Password must be 8+ chars, with uppercase, lowercase, and number.',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded.user_id, email: decoded.email });
+    if (!user) return res.status(404).json({ message: 'Invalid or expired token' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    await user.save();
+
+    return res.json({ message: 'Password reset successful.' });
+  } catch (err) {
+    return res.status(400).json({ message: 'Invalid or expired token.' });
+  }
+};
+
+
+const googleCallback = async (req, res) => {
+	try {
+		if (!req.user) {
+			return res.status(400).send({ error: "Authentication failed. No user found." });
+		}
+
+		const user = req.user;
+     // ✅ Mark user as verified if not already
+    if (user.status !== "verified") {
+      user.status = "verified";
+      await user.save();
+    }
+		const token = jwt.sign(
+			{ userId: user._id, email: user.email, user_name: user.user_name, role: user.role, permissions: user.permissions },
+			process.env.JWT_SECRET,
+			{ expiresIn: '1d' }
+		);
+		res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+	} catch (error) {
+		console.error("Error in googleCallback:", error);
+		res.status(500).send({ error: "Internal server error..." });
+	}
+};
+
+const facebookCallback = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(400).send({ error: "Authentication failed. No user found." });
+    }
+
+    const user = req.user;
+      // ✅ Mark user as verified if not already
+    if (user.status !== "verified") {
+      user.status = "verified";
+      await user.save();
+    }
+
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      user_name: user.user_name,
+      role: user.role,
+      permissions: user.permissions || [],
+      effectiveUserId:
+        user.role === "supporter" && user.referal_code
+          ? user.referal_code
+          : user._id,
+    };
+
+    if (user.role === "supporter" && user.referal_code) {
+      payload.referal_code = user.referal_code;
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+  } catch (error) {
+    console.error("Error in facebookCallback:", error);
+    res.status(500).send({ error: "Internal server error..." });
+  }
+};
+
+//supporters
+const referSupporter = async (req, res) => {
+  try {
+    const referals = req.body; // Accept as array of referal objects directly
+
+    if (!Array.isArray(referals) || referals.length === 0) {
+      return res.status(400).send({ error: "An array of referals is required." });
+    }
+
+    const user = await UserDetails.findById(req.user.userId);
+    if (!user) return res.status(404).send({ error: "User not found." });
+
+    const newReferals = [];
+    const emailsToResend = [];
+
+    for (const ref of referals) {
+      const { referal_email, permissions, role, relation, first_name, last_name } = ref;
+
+      if (!referal_email || !permissions || !role) {
+        return res.status(400).send({
+          error: "Each referal must include referal_email, permissions, and role.",
+        });
+      }
+
+      const existingReferral = user.referals?.find(r => r.referal_email === referal_email);
+
+      if (existingReferral) {
+        if (existingReferral.status === "accepted") continue;
+
+        // Prepare for resend
+        emailsToResend.push({
+          referal_email,
+          permissions,
+          role,
+          relation: existingReferral.relation || relation || "",
+          first_name: existingReferral.first_name || first_name || "",
+          last_name: existingReferral.last_name || last_name || "",
+        });
+
+        // Increment resend count
+        existingReferral.resentCount = (existingReferral.resentCount || 0) + 1;
+      } else {
+        // New referal entry
+        newReferals.push({
+          referal_email,
+          permissions,
+          role,
+          relation: relation || "",
+          first_name: first_name || "",
+          last_name: last_name || "",
+          referal_code: req.user.userId,
+          status: "pending",
+          sentAt: new Date(),
+          resentCount: 0,
+        });
+      }
+    }
+
+    if (newReferals.length > 0) {
+      user.referals.push(...newReferals);
+      await user.save();
+    }
+
+    const referralName = req.user.user_name;
+    const referal_code = req.user.userId;
+
+    const allToSend = [...newReferals, ...emailsToResend];
+
+    if (allToSend.length === 0) {
+      return res.status(200).json({ message: "No new or pending referrals to send." });
+    }
+
+    const results = await sendReferralEmail(allToSend, referralName, referal_code);
+
+    const response = results.map((result, index) => {
+      const { referal_email } = allToSend[index];
+      return result.status === "fulfilled"
+        ? { referal_email, message: "Referral sent successfully" }
+        : { referal_email, error: result.reason?.message || "Failed to send" };
+    });
+
+    return res.status(200).json({ results: response });
+  } catch (error) {
+    console.error("Error in referSupporter:", error);
+    res.status(500).send({ error: "Internal server error." });
+  }
+};
+
+const getReferals = async (req, res) => {
+  try {
+    const userId = req.user.userId; // assuming auth middleware sets req.user.userId
+
+    const user = await UserDetails.findById(userId).select("referals");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Return referrals array as-is or format if needed
+    return res.status(200).json({ referals: user.referals });
+  } catch (error) {
+    console.error("Error fetching referals:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const editReferal = async (req, res) => {
+  try {
+    const { referal_email, permissions, relation, first_name, last_name } = req.body;
+    const mom = await UserDetails.findById(req.user.userId);
+
+    if (!mom) return res.status(404).send({ error: "Mom not found" });
+
+    const referal = mom.referals.find(r => r.referal_email === referal_email);
+    if (!referal) return res.status(404).send({ error: "Referral not found" });
+
+    // Prevent email change
+    // if (req.body.referal_email !== referal.referal_email) return res.status(400).send({ error: "Email cannot be changed" });
+
+    // Update allowed fields
+    if (permissions) referal.permissions = permissions;
+    if (relation !== undefined) referal.relation = relation;
+    if (first_name !== undefined) referal.first_name = first_name;
+    if (last_name !== undefined) referal.last_name = last_name;
+
+    await mom.save();
+
+    // If already accepted, also update supporter’s permissions
+    if (referal.status === "accepted") {
+      const supporter = await UserDetails.findOne({ email: referal_email });
+      if (supporter) {
+        supporter.permissions = permissions;
+        await supporter.save();
+      }
+    }
+
+    return res.status(200).send({ message: "Referral updated successfully",referal });
+  } catch (err) {
+    console.error("Error in editReferal:", err);
+    res.status(500).send({ error: "Internal server error" });
+  }
+};
+
+const deleteReferal = async (req, res) => {
+  try {
+    const { referal_email } = req.body;
+    const mom = await UserDetails.findById(req.user.userId);
+
+    if (!mom) return res.status(404).send({ error: "Mom not found" });
+
+    // Check if referral exists
+    const referalIndex = mom.referals.findIndex(
+      r => r.referal_email === referal_email
+    );
+    if (referalIndex === -1)
+      return res.status(404).send({ error: "Referral not found" });
+
+    // Remove from mom's referals array
+    mom.referals.splice(referalIndex, 1);
+    await mom.save();
+
+    // Try deleting the supporter account
+    const supporter = await UserDetails.findOne({ email: referal_email });
+    if (supporter) {
+      await UserDetails.findByIdAndDelete(supporter._id);
+    }
+
+    return res
+      .status(200)
+      .send({ message: "Referral and supporter account deleted successfully" });
+  } catch (err) {
+    console.error("Error in deleteReferal:", err);
+    res.status(500).send({ error: "Internal server error" });
+  }
+};
+
+//used for testing be
+const getallusers = async (req,res)=>{
+	try{
+		const users = await User.find();
+
+		return res.status(200).json({ success:true,users})
+
+	}catch(error){
+		console.error('Failed to get allusers',error);
+		return res.status(505).json({error:"Failed to retrive users"})
+	}
+}
+
+// Delete all users
+const deleteAllUsers = async (req, res) => {
+	try {
+		const result = await User.deleteMany({});
+		res.json({ message: 'All users deleted successfully', deletedCount: result.deletedCount });
+	} catch (err) {
+		res.status(500).json({ message: err.message });
+	}
+};
+
+
+
+module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,
+  deleteAllUsers,forgotPassword,resetPassword, getallusers, loginUser, createUser,
+	referSupporter,getReferals,editReferal,deleteReferal }
+
+

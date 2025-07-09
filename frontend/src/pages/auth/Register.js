@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -11,11 +11,11 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
-  const navigate = useNavigate();
 
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,36 +37,41 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (validateForm()) {
-        console.log("Form submitted successfully", formData);
-        const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
-          user_name: formData.username,
-          email: formData.email,
-          password: formData.password,
-          confirm_password: formData.confirmPassword,
-          role: "mom",
+      if (!validateForm()) return;
+
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/users/register-user`, {
+        user_name: formData.username,
+        email: formData.email,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
+        role: "mom",
+      });
+
+      if (res.status === 201) {
+        // Save necessary info only (no token)
+        localStorage.setItem("userId", res.data.user.userId);
+        localStorage.setItem("email", res.data.user.email);
+        localStorage.setItem("role", res.data.user.role);
+        localStorage.setItem("status", res.data.user.status);
+
+        toast.success(res.data.message || "Registration successful. Check your email for OTP.", {
+          position: "top-center",
         });
-        if (res.status === 201) {
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("userName", res.data.userName);
-          localStorage.setItem("role", res.data.role);
-          localStorage.setItem("userId", res.data.userId);
-          toast.success(res.data.message || "Registration successful...", { position: "top-center" });
-          setTimeout(() => {
-            navigate("/profile-setup");
-          }, 3000);
-        }
+
+        setTimeout(() => {
+          navigate("/otp-verification");
+        }, 1000);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Internal server error", { position: "top-center" });
+      // Safe fallback to avoid toast crash bug
+      const message = error?.response?.data?.message || "Internal server error";
+      try {
+        toast.error(message, { position: "top-center" });
+      } catch (toastError) {
+        console.error("Toast error:", toastError);
+      }
     }
   };
-
-  useEffect(() => {
-    if (localStorage.getItem("token")) {
-      navigate("/");
-    }
-  }, []);
 
   return (
     <div className="max-w-md mx-auto mt-12 p-8 bg-white shadow-lg rounded-lg text-center">
@@ -74,21 +79,42 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-gray-600">Username</label>
-          <input type="text" name="username" value={formData.username} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500"
+          />
           {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-600">Email</label>
-          <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500"
+          />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-600">Create Password</label>
           <div className="relative">
-            <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
-            <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 cursor-pointer text-gray-600">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500"
+            />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 cursor-pointer text-gray-600"
+            >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
@@ -98,15 +124,31 @@ const Register = () => {
         <div>
           <label className="block text-sm font-semibold text-gray-600">Confirm Password</label>
           <div className="relative">
-            <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500" />
-            <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3 cursor-pointer text-gray-600">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-500"
+            />
+            <span
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-3 cursor-pointer text-gray-600"
+            >
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
           </div>
-          {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && (
+            <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
+          )}
         </div>
 
-        <button type="submit" className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-400 transition duration-300">Sign Up</button>
+        <button
+          type="submit"
+          className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-400 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-400 transition duration-300"
+        >
+          Continue
+        </button>
       </form>
     </div>
   );

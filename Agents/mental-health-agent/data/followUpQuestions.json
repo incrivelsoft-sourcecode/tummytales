@@ -1,0 +1,27 @@
+[
+  {
+    "serialNumber": 1,
+    "question": "Do you feel that you have enough support from family or friends?",
+    "opts": ["Yes, I do", "Not really", "Sometimes"]
+  },
+  {
+    "serialNumber": 2,
+    "question": "Are you currently experiencing financial or housing stress?",
+    "opts": ["Yes, I am", "No, I am not", "Sometimes, I get worried"]
+  },
+  {
+    "serialNumber": 3,
+    "question": "Do you feel safe in your home and relationships?",
+    "opts": ["Yes, I do", "No, I do not", "Sometimes"]
+  },
+  {
+    "serialNumber": 4,
+    "question": "Do you have a history of anxiety, depression, or trauma?",
+    "opts": ["Yes, I do", "No, I do not", "I am not sure"]
+  },
+  {
+    "serialNumber": 5,
+    "question": "Would you like to speak to someone about how you’re feeling?",
+    "opts": ["Yes, I would like to", "No, not right now", "I am not sure"]
+  }
+]

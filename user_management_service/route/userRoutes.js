@@ -1,18 +1,22 @@
 const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
-const { googleCallback, deleteUser, verifyOtp ,updatePassword,deleteAllUsers, getUser, getAllUsers, loginUser, createUser, checkUsernameAvailability, referSupporter, getReferedSupporters, editPermissionOfSuppoter, deleteSupporter, getallusers} = require('../controller/userController.js');
+const { googleCallback,facebookCallback,resendOtp,verifyOtp ,getOtpByEmail,deleteAllUsers, 
+  getUser, getAllUsers, loginUser, createUser, referSupporter,
+  getReferals,resetPassword,forgotPassword, deleteReferal,editReferal, getallusers,
+ } = require('../controller/userController.js');
 const passport = require("passport");
 
 const router = express.Router();
 
 router.post('/register-user', createUser);
-//router.post("/verify-otp",verifyOtp );
+router.post("/verify-otp",verifyOtp );
+router.get('/get-latest-otp', getOtpByEmail);
+router.post("/resend-otp", resendOtp);
 router.post('/login', loginUser);
-router.delete("/user/:id",deleteUser);
 router.get("/all",getallusers)
 router.delete('/all',deleteAllUsers)
-
-//router.get("/check/username", checkUsernameAvailability);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 router.get("/google", (req, res, next) => {
     const { user_name, role, referal_code, permissions = [] } = req.query;
@@ -24,17 +28,35 @@ router.get("/google", (req, res, next) => {
       scope: ["profile", "email"],
       state: encodeURIComponent(state), // ✅ Pass state to Google
     })(req, res, next);
-  });
-  
+  }); 
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
 
-router.get('/', momAndSupporterMiddleware, getUser);
+// GET /users/facebook
+router.get("/facebook", (req, res, next) => {
+  const { user_name, role, referal_code, permissions = [] } = req.query;
+
+  // Encode user details in the state parameter
+  const state = JSON.stringify({ user_name, role, referal_code, permissions });
+
+  passport.authenticate("facebook", {
+    scope: ["email"],
+    state: encodeURIComponent(state),
+  })(req, res, next);
+});
+
+// GET /users/facebook/callback
+router.get(
+  "/facebook/callback",
+  passport.authenticate("facebook", { failureRedirect: "/facebook" }),
+  facebookCallback
+);
+
+
+//supporter apis
 router.post("/send-referels", momMiddleware, referSupporter);
-router.get("/supporters", momMiddleware, getReferedSupporters)
-router.put("/supporter/:id", momMiddleware, editPermissionOfSuppoter);
-router.delete("/supporter/:id", momMiddleware, deleteSupporter);
-
-
+router.get("/referals", momMiddleware, getReferals);
+router.put("/edit-referals",momMiddleware,editReferal);
+router.delete("/deletereferals",momMiddleware,deleteReferal);
 
 
 module.exports = router;

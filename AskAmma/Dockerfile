@@ -1,20 +1,25 @@
-# Use the official Node.js image
-FROM node:18
+# Use a slim base image with Python
+FROM python:3.10-slim
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y git curl && \
+    pip install --upgrade pip
 
-# Install dependencies (including mongoose)
-RUN npm install
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-# Copy the rest of the application files
+# Copy all project files
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 7001
+# Environment variables
+ENV PYTHONUNBUFFERED=1
 
-# Start the application
-CMD ["node", "server.js"]
+# Expose FastAPI port
+EXPOSE 8000
+
+# Run FastAPI server
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

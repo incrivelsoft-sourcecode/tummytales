@@ -8,6 +8,7 @@ const HomePage = () => {
     console.log("HomePage mounted");
   }, [navigate]);
 
+  
   return (
     <div className="w-full">
       {/* Hero Section */}
@@ -186,9 +187,9 @@ const HomePage = () => {
           <li>Daily Food Recommendations</li>
           <li>AI-generated responses</li>
         </ul>
-        <div className="relative mt-6 border-2 border-red-500 p-4 w-52 flex items-center justify-center rounded-lg bg-transparent">
+        <div className="relative mt-6 border-2 border-[#a8ab71] p-4 w-52 flex items-center justify-center rounded-lg bg-transparent">
           <span className="bg-[#d4d482] text-[#5a5a30] py-1 px-8 rounded-md font-bold text-lg">$4.99</span>
-          <span className="absolute top-2 right-2 text-red-500 text-xl">⚠</span>
+          {/* <span className="absolute top-2 right-2 text-red-500 text-xl">⚠</span> */}
         </div>
       </div>
     </div>
@@ -207,9 +208,9 @@ const HomePage = () => {
           <li>Communicate with OB/GYN’s</li>
           <li>Curated TUMMY Box</li>
         </ul>
-        <div className="relative mt-6 border-2 border-red-500 p-4 w-52 flex items-center justify-center rounded-lg bg-transparent">
+        <div className="relative mt-6 border-2 border-[#a8ab71] p-4 w-52 flex items-center justify-center rounded-lg bg-transparent">
           <span className="bg-[#d4d482] text-[#5a5a30] py-1 px-8 rounded-md font-bold text-lg">$8.99</span>
-          <span className="absolute top-2 right-2 text-red-500 text-xl">⚠</span>
+          {/* <span className="absolute top-2 right-2 text-red-500 text-xl">⚠</span> */}
         </div>
       </div>
     </div>
@@ -221,7 +222,7 @@ const HomePage = () => {
     >
       <div className="absolute inset-0 bg-black bg-opacity-30"></div>
       <div className="relative text-center text-white">
-        <h2 className="text-3xl font-bold mb-2">Subscribe to Our Newsletter</h2>
+        <h2 className="text-3xl font-bold mb-2">Subscribe to Our NewsLetter</h2>
         <p className="mb-4">Sign up with your email address to receive news and updates.</p>
         <div className="flex justify-center items-center">
           <input
