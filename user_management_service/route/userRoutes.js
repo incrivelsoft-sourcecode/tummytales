@@ -2,7 +2,7 @@ const express = require('express');
 const {momAndSupporterMiddleware, momMiddleware} = require('../middleware/authMiddleware.js');
 const { googleCallback,facebookCallback,resendOtp,verifyOtp ,getOtpByEmail,deleteAllUsers, 
   getUser, getAllUsers, loginUser, createUser, referSupporter,
-  getReferals, deleteReferal,editReferal, getallusers,
+  getReferals,resetPassword,forgotPassword, deleteReferal,editReferal, getallusers,
  } = require('../controller/userController.js');
 const passport = require("passport");
 
@@ -15,6 +15,8 @@ router.post("/resend-otp", resendOtp);
 router.post('/login', loginUser);
 router.get("/all",getallusers)
 router.delete('/all',deleteAllUsers)
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 router.get("/google", (req, res, next) => {
     const { user_name, role, referal_code, permissions = [] } = req.query;

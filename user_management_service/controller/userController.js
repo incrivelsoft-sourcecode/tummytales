@@ -6,6 +6,7 @@ const UserDetails = require('../model/User.js');
 const sendEmail = require("../utils/sendEmail.js"); // Create this helper
 const crypto = require("crypto");
 const sendReferralEmail = require("../utils/sendReferralEmail.js");
+const sendResetEmail= require("../utils/sendResetEmail.js")
 
 const createUser = async (req, res) => {
 	try {
@@ -26,7 +27,14 @@ const createUser = async (req, res) => {
 	  if (confirm_password !== password) {
 		return res.status(400).json({ message: "Passwords do not match." });
 	  }
-  
+    // Strong password validation using regex
+	  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+	  if (!strongPasswordRegex.test(password)) {
+		return res.status(400).json({
+		  message:
+			"Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.",
+		});
+	  }
 	  // Validate required fields
 	  const requiredFields = { user_name, email, password, ...(role === "supporter" && { referal_code, permissions }) };
 	  const missingFields = Object.entries(requiredFields)
@@ -278,6 +286,61 @@ const loginUser = async (req, res) => {
 		res.status(500).json({ message: err.message });
 	}
 };
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetToken = jwt.sign(
+      { user_id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    await sendResetEmail(user.email, user.user_name, resetLink);
+
+    return res.json({ message: "Reset link sent to email." });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { token } = req.query;
+  const { password, confirmPassword } = req.body;
+
+  if (!token) return res.status(400).json({ message: 'Token is required' });
+  if (password !== confirmPassword)
+    return res.status(400).json({ message: 'Passwords do not match' });
+
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  if (!strongPasswordRegex.test(password)) {
+    return res.status(400).json({
+      message:
+        'Password must be 8+ chars, with uppercase, lowercase, and number.',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded.user_id, email: decoded.email });
+    if (!user) return res.status(404).json({ message: 'Invalid or expired token' });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    await user.save();
+
+    return res.json({ message: 'Password reset successful.' });
+  } catch (err) {
+    return res.status(400).json({ message: 'Invalid or expired token.' });
+  }
+};
+
 
 const googleCallback = async (req, res) => {
 	try {
@@ -545,7 +608,7 @@ const deleteAllUsers = async (req, res) => {
 
 
 module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,
-  deleteAllUsers, getallusers, loginUser, createUser,
+  deleteAllUsers,forgotPassword,resetPassword, getallusers, loginUser, createUser,
 	referSupporter,getReferals,editReferal,deleteReferal }
 
 
