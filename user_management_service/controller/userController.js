@@ -102,190 +102,151 @@ const createUser = async (req, res) => {
 	  return res.status(500).json({ message: err.message });
 	}
   };
+// ✅ 2. Login + Send MFA OTP
+const loginUser = async (req, res) => {
+  const { emailOrUsername, password } = req.body;
 
-  const verifyOtp = async (req, res) => {
-	try {
-	  const { email, otp } = req.body;
-  
-	  if (!email || !otp) {
-		return res.status(400).json({ message: "Email and OTP are required." });
-	  }
-  
-	  const user = await User.findOne({ email });
-  
-	  if (!user) {
-		return res.status(404).json({ message: "User not found." });
-	  }
-  
-	  if (user.status === "verified") {
-		return res.status(400).json({ message: "User is already verified." });
-	  }
-  
-	  if (user.otp !== otp) {
-		return res.status(400).json({ message: "Invalid OTP." });
-	  }
-  
-	  if (user.otpExpiresAt < new Date()) {
-		return res.status(400).json({ message: "OTP has expired." });
-	  }
-  
-	  // Mark user as verified
-	  user.status = "verified";
-	  user.otp = undefined;
-	  user.otpExpiresAt = undefined;
-	  await user.save();
-  
-    // ✅ IF ROLE IS SUPPORTER: Update mom's referals list
-    if (user.role === "supporter" && user.referal_code) {
-      const mom = await UserDetails.findById(user.referal_code);
-      if (mom) {
-        const referalEntry = mom.referals.find(r => r.referal_email === user.email);
-        if (referalEntry && referalEntry.status === "pending") {
-          referalEntry.status = "accepted";
+  try {
+    const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
+    if (!user) return res.status(404).json({ message: 'Invalid email or password' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
+
+    if (user.status !== "verified") {
+      return res.status(403).json({ message: "Email not verified. Please verify OTP." });
+    }
+
+    // Send MFA OTP
+    const mfaOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const mfaOtpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.mfaOtp = mfaOtp;
+    user.mfaOtpExpiresAt = mfaOtpExpiresAt;
+    await user.save();
+
+    await sendEmail(user.email, `Your Login OTP Code`, mfaOtp, user.email);
+
+    res.status(200).json({
+      message: "OTP sent for login verification.",
+      email: user.email,
+      role: user.role,
+      userId: user._id
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ 3. Verify OTP (Signup or MFA)
+const verifyOtp = async (req, res) => {
+  const { email, otp, mode } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    // MFA
+    if (mode === 'login') {
+      if (user.mfaOtp !== otp || user.mfaOtpExpiresAt < new Date()) {
+        return res.status(400).json({ message: "Invalid or expired OTP." });
+      }
+      user.mfaOtp = undefined;
+      user.mfaOtpExpiresAt = undefined;
+      await user.save();
+    } else {
+      // Signup verification
+      if (user.status === "verified") {
+        return res.status(400).json({ message: "Already verified." });
+      }
+      if (user.otp !== otp || user.otpExpiresAt < new Date()) {
+        return res.status(400).json({ message: "Invalid or expired OTP." });
+      }
+      user.status = "verified";
+      user.otp = undefined;
+      user.otpExpiresAt = undefined;
+      await user.save();
+
+      if (user.role === "supporter" && user.referal_code) {
+        const mom = await User.findById(user.referal_code);
+        const referral = mom?.referals?.find(r => r.referal_email === user.email);
+        if (referral && referral.status === "pending") {
+          referral.status = "accepted";
           await mom.save();
         }
       }
     }
-	   // ✅ Build payload for token
-    const payload = {
-      userId: user._id,
-      role: user.role,
-	   effectiveUserId: user.role === "supporter" && user.referal_code
-        ? user.referal_code           // mom's ID if supporter
-        : user._id                   // self if mom
-    };
-
-    // Include referal_code for supporter so effectiveUserId can be derived
-    if (user.role === "supporter" && user.referal_code) {
-      payload.referal_code = user.referal_code;
-    }
-	  // Optionally issue a token now
-	  const token = jwt.sign(
-		payload,
-		process.env.JWT_SECRET || "your_secret_key",
-		{ expiresIn: "1h" }
-	  );
-  
-	  return res.status(200).json({
-		message: "Email verified successfully. You can proceed with your profile now.",
-		token,
-		userId: user._id,
-		userName: user.user_name,
-		email: user.email,
-		role: user.role,
-		permissions: user.permissions
-	  });
-  
-	} catch (err) {
-	  return res.status(500).json({ message: err.message });
-	}
-  };
-  
-const getOtpByEmail = async (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ message: "Email required" });
-
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  if (user.status === "verified") {
-    return res.status(400).json({ message: "User is already verified" });
-  }
-
-  if (user.otpExpiresAt < new Date()) {
-    return res.status(400).json({ message: "OTP expired" });
-  }
-
-  return res.status(200).json({ otp: user.otp });
-};
-
-const resendOtp = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required." });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    if (user.status === "verified") {
-      return res.status(400).json({ message: "User is already verified." });
-    }
-
-    // Generate new OTP
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-
-    user.otp = newOtp;
-    user.otpExpiresAt = otpExpiresAt;
-    await user.save();
-
-    // Send new OTP to email
-    await sendEmail(email, `Your New OTP Code`, newOtp, email);
-
-    return res.status(200).json({ message: "New OTP sent to your email." });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-const loginUser = async (req, res) => {
-	const { emailOrUsername, password } = req.body;
-
-	try {
-		const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
-
-		if (!user) {
-			return res.status(404).json({ message: 'Invalid email or password' });
-		}
-
-		const isMatch = await bcrypt.compare(password, user.password);
-
-		if (!isMatch) {
-			return res.status(400).json({ message: 'Invalid email or password' });
-		}
-  if (user.status !== "verified") {
-      return res.status(403).json({ message: "Email not verified. Please verify OTP." });
-    }
 
     const payload = {
       userId: user._id,
-      email: user.email,
-      user_name: user.user_name,
       role: user.role,
-      permissions: user.permissions || [],
-      effectiveUserId:
-        user.role === "supporter" && user.referal_code
-          ? user.referal_code
-          : user._id,
+      effectiveUserId: user.role === "supporter" && user.referal_code ? user.referal_code : user._id,
     };
+    if (user.role === "supporter") payload.referal_code = user.referal_code;
 
-    if (user.role === "supporter" && user.referal_code) {
-      payload.referal_code = user.referal_code;
-    }
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
-
-    res.json({
-      message: "Login successful",
+    return res.status(200).json({
+      message: "OTP verified successfully.",
       token,
       userId: user._id,
       userName: user.user_name,
       email: user.email,
       role: user.role,
-      permissions: user.permissions,
+      permissions: user.permissions
     });
-	} catch (err) {
-		res.status(500).json({ message: err.message });
-	}
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
+
+// ✅ 4. Unified Resend OTP
+const resendOtp = async (req, res) => {
+  const { email, mode } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    if (mode === 'login') {
+      user.mfaOtp = otp;
+      user.mfaOtpExpiresAt = otpExpires;
+    } else {
+      if (user.status === "verified") {
+        return res.status(400).json({ message: "User already verified." });
+      }
+      user.otp = otp;
+      user.otpExpiresAt = otpExpires;
+    }
+
+    await user.save();
+    await sendEmail(email, `Your OTP Code`, otp, email);
+    return res.status(200).json({ message: "OTP resent." });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// ✅ 5. Unified Get OTP
+const getOtpByEmail = async (req, res) => {
+  const { email, mode } = req.query;
+  const user = await User.findOne({ email });
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const otpField = mode === 'login' ? user.mfaOtp : user.otp;
+  const expiry = mode === 'login' ? user.mfaOtpExpiresAt : user.otpExpiresAt;
+
+  if (!otpField || expiry < new Date()) {
+    return res.status(400).json({ message: "OTP expired or missing" });
+  }
+
+  return res.status(200).json({ otp: otpField });
+};
+
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -610,5 +571,191 @@ const deleteAllUsers = async (req, res) => {
 module.exports = {verifyOtp,getOtpByEmail, resendOtp ,facebookCallback, googleCallback,
   deleteAllUsers,forgotPassword,resetPassword, getallusers, loginUser, createUser,
 	referSupporter,getReferals,editReferal,deleteReferal }
+
+
+  //   const verifyOtp = async (req, res) => {
+// 	try {
+// 	  const { email, otp } = req.body;
+  
+// 	  if (!email || !otp) {
+// 		return res.status(400).json({ message: "Email and OTP are required." });
+// 	  }
+  
+// 	  const user = await User.findOne({ email });
+  
+// 	  if (!user) {
+// 		return res.status(404).json({ message: "User not found." });
+// 	  }
+  
+// 	  if (user.status === "verified") {
+// 		return res.status(400).json({ message: "User is already verified." });
+// 	  }
+  
+// 	  if (user.otp !== otp) {
+// 		return res.status(400).json({ message: "Invalid OTP." });
+// 	  }
+  
+// 	  if (user.otpExpiresAt < new Date()) {
+// 		return res.status(400).json({ message: "OTP has expired." });
+// 	  }
+  
+// 	  // Mark user as verified
+// 	  user.status = "verified";
+// 	  user.otp = undefined;
+// 	  user.otpExpiresAt = undefined;
+// 	  await user.save();
+  
+//     // ✅ IF ROLE IS SUPPORTER: Update mom's referals list
+//     if (user.role === "supporter" && user.referal_code) {
+//       const mom = await UserDetails.findById(user.referal_code);
+//       if (mom) {
+//         const referalEntry = mom.referals.find(r => r.referal_email === user.email);
+//         if (referalEntry && referalEntry.status === "pending") {
+//           referalEntry.status = "accepted";
+//           await mom.save();
+//         }
+//       }
+//     }
+// 	   // ✅ Build payload for token
+//     const payload = {
+//       userId: user._id,
+//       role: user.role,
+// 	   effectiveUserId: user.role === "supporter" && user.referal_code
+//         ? user.referal_code           // mom's ID if supporter
+//         : user._id                   // self if mom
+//     };
+
+//     // Include referal_code for supporter so effectiveUserId can be derived
+//     if (user.role === "supporter" && user.referal_code) {
+//       payload.referal_code = user.referal_code;
+//     }
+// 	  // Optionally issue a token now
+// 	  const token = jwt.sign(
+// 		payload,
+// 		process.env.JWT_SECRET || "your_secret_key",
+// 		{ expiresIn: "1h" }
+// 	  );
+  
+// 	  return res.status(200).json({
+// 		message: "Email verified successfully. You can proceed with your profile now.",
+// 		token,
+// 		userId: user._id,
+// 		userName: user.user_name,
+// 		email: user.email,
+// 		role: user.role,
+// 		permissions: user.permissions
+// 	  });
+  
+// 	} catch (err) {
+// 	  return res.status(500).json({ message: err.message });
+// 	}
+//   };
+  
+// const getOtpByEmail = async (req, res) => {
+//   const { email } = req.query;
+//   if (!email) return res.status(400).json({ message: "Email required" });
+
+//   const user = await User.findOne({ email });
+//   if (!user) return res.status(404).json({ message: "User not found" });
+
+//   if (user.status === "verified") {
+//     return res.status(400).json({ message: "User is already verified" });
+//   }
+
+//   if (user.otpExpiresAt < new Date()) {
+//     return res.status(400).json({ message: "OTP expired" });
+//   }
+
+//   return res.status(200).json({ otp: user.otp });
+// };
+
+// const resendOtp = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     if (!email) {
+//       return res.status(400).json({ message: "Email is required." });
+//     }
+
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found." });
+//     }
+
+//     if (user.status === "verified") {
+//       return res.status(400).json({ message: "User is already verified." });
+//     }
+
+//     // Generate new OTP
+//     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+//     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+//     user.otp = newOtp;
+//     user.otpExpiresAt = otpExpiresAt;
+//     await user.save();
+
+//     // Send new OTP to email
+//     await sendEmail(email, `Your New OTP Code`, newOtp, email);
+
+//     return res.status(200).json({ message: "New OTP sent to your email." });
+//   } catch (err) {
+//     return res.status(500).json({ message: err.message });
+//   }
+// };
+
+// const loginUser = async (req, res) => {
+// 	const { emailOrUsername, password } = req.body;
+
+// 	try {
+// 		const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
+
+// 		if (!user) {
+// 			return res.status(404).json({ message: 'Invalid email or password' });
+// 		}
+
+// 		const isMatch = await bcrypt.compare(password, user.password);
+
+// 		if (!isMatch) {
+// 			return res.status(400).json({ message: 'Invalid email or password' });
+// 		}
+//   if (user.status !== "verified") {
+//       return res.status(403).json({ message: "Email not verified. Please verify OTP." });
+//     }
+
+//     const payload = {
+//       userId: user._id,
+//       email: user.email,
+//       user_name: user.user_name,
+//       role: user.role,
+//       permissions: user.permissions || [],
+//       effectiveUserId:
+//         user.role === "supporter" && user.referal_code
+//           ? user.referal_code
+//           : user._id,
+//     };
+
+//     if (user.role === "supporter" && user.referal_code) {
+//       payload.referal_code = user.referal_code;
+//     }
+
+//     const token = jwt.sign(payload, process.env.JWT_SECRET, {
+//       expiresIn: '1d',
+//     });
+
+//     res.json({
+//       message: "Login successful",
+//       token,
+//       userId: user._id,
+//       userName: user.user_name,
+//       email: user.email,
+//       role: user.role,
+//       permissions: user.permissions,
+//     });
+// 	} catch (err) {
+// 		res.status(500).json({ message: err.message });
+// 	}
+// };
+
 
 
