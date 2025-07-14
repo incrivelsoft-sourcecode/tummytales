@@ -1,5 +1,6 @@
+# filepath: content_agent/main.py
 import os
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File
 import pymupdf
 from pinecone import Pinecone
@@ -7,16 +8,17 @@ from pymongo import MongoClient
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
 load_dotenv()
+
 class ContentAPI:
     def __init__(self):
-        # Replace with your MongoDB connection string
         self.client = MongoClient(os.getenv("MONGODB_URL"))
-        # Access a specific database
         self.db = self.client.get_database("your_database_name")
-        # Access a specific collection within the database
         self.collection = self.db.get_collection("your_collection_name")
-        self.pc = Pinecone(api_key=os.getenv("PINECONE_KEY"))
+        self.pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+
+        # replace with the actual embedding model we use
         self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        self.hf_token = os.getenv("HF_API_KEY")
         self.initialized = False
         
     app = FastAPI()
@@ -27,30 +29,33 @@ class ContentAPI:
 
     @app.post("/file")
     async def upload_file(self, file: UploadFile = File(...)):
-        #run file thru pymupdf
         if not file.filename.endswith('.pdf'):
             return {"Error": "Only PDF files are supported."}
         file_content = await file.read()
-        txt = self.parse_pdf(file_content)
-        # store file text in mongodb
+        txt = await self.parse_pdf(file_content)
         self.collection.insert_one({"filename": file.filename, "text": txt})
-        #make vectors & store in pinecone
         self.vector_embeddings(file.filename, txt)
         return {"File parsed & uploaded!": file.filename}
 
     async def parse_pdf(self, file):
         txt = ""
-        for page in file:
+        pdf_document = pymupdf.open(stream=file, filetype="pdf")
+        for page in pdf_document:
             txt += page.get_text()
         return txt
 
     async def vector_embeddings(self, filename, text):
-        embedder = HuggingFaceEmbeddings(model_name = "sentence-transformers/all-MiniLM-L6-v2")
+        # replace with the actual embedding model we use
+        embedder = HuggingFaceEmbeddings(model_name=self.model_name)
         if not self.initialized:
             self.initialize() 
         embedding = embedder.embed_query(text)
+
+
+
         self.pc.create_index(filename, dimension=384)
         self.pc.Index(filename).upsert(vectors=[{"id": filename, "values": embedding}])
         return embedding
     
-ContentAPI()
+content_api = ContentAPI()
+app = content_api.app

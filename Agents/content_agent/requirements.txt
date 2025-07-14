@@ -1,0 +1,8 @@
+FastAPI
+pymongo
+pinecone
+langchain-community
+python-dotenv
+pymupdf
+uvicorn
+python-multipart
