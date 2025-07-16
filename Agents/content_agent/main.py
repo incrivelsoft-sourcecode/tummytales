@@ -7,21 +7,26 @@ from pinecone import Pinecone
 from pymongo import MongoClient
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import langchain_text_splitters
+import feedparser
 
-
+#embedding vector size 1024
 load_dotenv()
 
 class ContentAPI:
     def __init__(self):
         self.client = MongoClient(os.getenv("MONGODB_URL"))
         self.db = self.client.get_database("your_database_name")
-        self.collection = self.db.get_collection("your_collection_name")
+        self.collection = self.db.get_collection("content_base_knowledge")
+        self.rss_feeds = self.db.get_collection("rss_feeds")
         self.pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
         # replace with the actual embedding model we use
         self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
         self.hf_token = os.getenv("HF_API_KEY")
         self.initialized = False
+
+        #for news aggregation
+        #self.news_stories = [] #currently just returning each set of news stories as we parse the rss feed url
         
     app = FastAPI()
 
@@ -61,10 +66,26 @@ class ContentAPI:
         context = " ".join([" ".join(doc["text"]) for doc in docs])
 
         # Placeholder for LLM response (replace with actual LLM call)
+
         response = f"Context: {context}\n\nQuery: {query}\n\n[LLM response here]"
 
         return {"response": response}
 
+    #adds rss feed info to mongodb, returns news stories from url as a list
+    @app.post("/rss-url")
+    async def parse_rss(self, url):
+        feed = feedparser.parse(url)
+        self.rss_feeds.insert_one({"URL":url, "Title": feed.feed.title,"Description": feed.feed.description, "Feed":feed})
+        news_stories = []
+        for entry in feed.entries:
+            desc = {"Title": entry.title, "Link":entry.link, "Date":"", "Summary":""}
+            if hasattr(entry, "published"):
+                desc["Date"] = entry.published
+            if hasattr(entry, "summary"):
+                desc["Summary"] = entry.summary
+            news_stories.append(desc)
+        return {"news_stories": news_stories}
+            
     #helper methods
     async def parse_pdf(self, file):
         txt = ""
