@@ -78,6 +78,14 @@ const userSchema = new mongoose.Schema(
     otpExpiresAt: {
       type: Date,
       default: null,
+    }, // For MFA OTP (used during login)
+    mfaOtp: {
+      type: String,
+      default: null,
+    },
+    mfaOtpExpiresAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
