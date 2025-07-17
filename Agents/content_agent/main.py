@@ -37,7 +37,7 @@ class ContentAPI:
     "max_uses": 3,
     #add domains we trust later
     "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
-    #this is a placeholder, replace with actual info later
+    #this is a placeholder, replace with actual user info later
     "user_location": {
         "type": "approximate",
         "city": "San Francisco",
@@ -45,7 +45,6 @@ class ContentAPI:
         "country": "US",
         "timezone": "America/Los_Angeles"
     }
-        
     }]
     app = FastAPI()
 
@@ -106,13 +105,13 @@ class ContentAPI:
         return {"news_stories": news_stories}
             
     #searches internet based on query, returns relevant news
-    # to do: add a system prompt, parse llm response, add trusted domains & error handling
+    # to do: parse llm response, add trusted domains & error handling
     @app.post("/news-query/")
     async def get_relevant_news(query):
         resp = ContentAPI.claude.messages.create(
         model="claude-opus-4-20250514",
         max_tokens=1024,
-        system="",
+        system="You must find news related to this query online",
         messages=[
                 {
                     "role": "user",
