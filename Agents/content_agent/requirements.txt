@@ -9,3 +9,4 @@ python-multipart
 langchain
 langchain_text_splitters
 feedparser
+anthropic

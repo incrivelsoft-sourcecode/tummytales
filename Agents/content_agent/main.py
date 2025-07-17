@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import langchain_text_splitters
 import feedparser
+import anthropic
 
 #embedding vector size 1024
 load_dotenv()
@@ -28,6 +29,24 @@ class ContentAPI:
         #for news aggregation
         #self.news_stories = [] #currently just returning each set of news stories as we parse the rss feed url
         
+        #for online search/LLM
+        self.claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
+        self.allowed_tools = [{
+        "type": "web_search_20250305",
+        "name": "web_search",
+        "max_uses": 3,
+        #add domains we trust later
+        "allowed_domains": [],
+        #this is a placeholder, replace with actual info later
+        "user_location": {
+            "type": "approximate",
+            "city": "San Francisco",
+            "region": "California",
+            "country": "US",
+            "timezone": "America/Los_Angeles"
+        }
+        
+    }]
     app = FastAPI()
 
     #welcome message (test)
@@ -86,6 +105,25 @@ class ContentAPI:
             news_stories.append(desc)
         return {"news_stories": news_stories}
             
+    #searches internet based on query, returns relevant news
+    # to do: add a system prompt, parse llm response, add trusted domains
+    @app.post("/news-query")
+    async def get_relevant_news(self, query):
+        resp = self.claude.messages.create(
+            model="claude-opus-4-20250514",
+            max_tokens=1024,
+            system="",
+            messages=[
+                {
+                    "role": "user",
+                    "content": query
+                }
+            ],
+            tools=self.allowed_tools
+        )
+        # currently returns the raw llm response
+        return{"response": resp}
+
     #helper methods
     async def parse_pdf(self, file):
         txt = ""
