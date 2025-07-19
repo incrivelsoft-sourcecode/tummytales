@@ -1,0 +1,82 @@
+name: Nutritionist Lite Backend CI/CD (Release-1)
+
+on:
+  push:
+    branches:
+      - Release-1
+    paths:
+      - 'Agents/nutritionist-lite/**'
+      - '.github/workflows/nutritionist-lite-backend.yml'
+
+env:
+  IMAGE: nutritionist-lite-backend
+  REGISTRY_HOSTNAME: incrivel  # Docker Hub username/org
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    outputs:
+      docker_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}
+          tags: |
+            type=sha
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./Agents/nutritionist-lite
+          file: ./Agents/nutritionist-lite/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Extract Docker Tag
+        run: echo "TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
+
+      - name: Deploy Nutritionist Lite Backend to EC2 via AWS SSM
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=instanceIds,Values=${{ secrets.EC2_INSTANCE_ID }}" \
+            --parameters 'commands=[
+              "export ACR_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}",
+              "export ACR_PASSWORD=${{ secrets.DOCKERHUB_PASSWORD }}",
+              "echo $ACR_PASSWORD | docker login docker.io -u $ACR_USERNAME --password-stdin",
+              "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }} --force",
+              "docker stop nutritionist-lite-backend || true",
+              "docker rm nutritionist-lite-backend || true",
+              "docker run -d --pull=always --name nutritionist-lite-backend -p 6001:6001 --env-file /home/ubuntu/env/nutritionist-lite.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "docker image prune -af || true",
+              "docker system prune -af --volumes || true"
+            ]' \
+            --comment "Deploying Nutritionist Lite Backend via GitHub Actions"
