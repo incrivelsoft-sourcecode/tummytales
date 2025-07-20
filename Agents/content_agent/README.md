@@ -41,8 +41,12 @@ To build and run the Docker image for the FastAPI application, follow these step
    ```
 
 3. Access the API at `http://localhost:8000`.
+4. Access docs at `http://localhost:8000/docs`
 
 ## API Endpoints
 
 - `GET /`: Returns a welcome message.
 - `POST /file`: Uploads a PDF file, parses its content, and stores it in MongoDB and Pinecone.
+- `POST /request`: Content generation based on request with RAG using Pinecone
+- `POST /rss-url`: Returns news from rss feed and saves rss feed to MongoDB
+- `POST /news-query`: Claude gets online relevant news based on query

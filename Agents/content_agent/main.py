@@ -83,9 +83,20 @@ class ContentAPI:
         docs = ContentAPI.collection.find({"filename": {"$in": ids}})
         context = " ".join([" ".join(doc["text"]) for doc in docs])
 
-        # Placeholder for LLM response (replace with actual LLM call)
+        # LLM response
 
-        response = f"Context: {context}\n\nQuery: {query}\n\n[LLM response here]"
+        ask = f"Context: {context}\n\nQuery: {query}\n\n"
+        response = ContentAPI.claude.messages.create(
+        model="claude-opus-4-20250514",
+        max_tokens=1024,
+        system="Answer the query using the given context.",
+        messages=[
+                {
+                    "role": "user",
+                    "content": ask
+                }
+            ]
+        )
 
         return {"response": response}
 
@@ -111,7 +122,7 @@ class ContentAPI:
         resp = ContentAPI.claude.messages.create(
         model="claude-opus-4-20250514",
         max_tokens=1024,
-        system="You must find news related to this query online",
+        system="You must find news related to this query online. Only return the article url and a short summary.",
         messages=[
                 {
                     "role": "user",
