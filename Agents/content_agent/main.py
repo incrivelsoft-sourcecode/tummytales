@@ -28,7 +28,7 @@ class ContentAPI:
     initialized = False
 
     #for news aggregation
-    #news_stories = [] #currently just returning each set of news stories as we parse the rss feed url
+    #news_stories = [] #currently just returning each set of news stories as we get them
         
     #for online search/LLM
     claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
@@ -36,7 +36,7 @@ class ContentAPI:
     "type": "web_search_20250305",
     "name": "web_search",
     "max_uses": 3,
-    #add nore domains we trust later
+    #add more domains we trust later
     "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
     #this is a placeholder, replace with fetching actual user info later
     "user_location": {
@@ -134,7 +134,7 @@ class ContentAPI:
         resp = ContentAPI.claude.messages.create(
         model="claude-opus-4-20250514",
         max_tokens=1024,
-        system="You must find news related to this query online. Only return the article title, URL, and a short summary.",
+        system="You must find 5 news articles related to this query online. Only return the article title, URL, and a short summary.",
         messages=[
                 {
                     "role": "user",
