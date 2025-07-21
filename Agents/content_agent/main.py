@@ -9,6 +9,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 import langchain_text_splitters
 import feedparser
 import anthropic
+from fastapi.middleware.cors import CORSMiddleware
 
 #embedding vector size 1024
 load_dotenv()
@@ -35,9 +36,9 @@ class ContentAPI:
     "type": "web_search_20250305",
     "name": "web_search",
     "max_uses": 3,
-    #add domains we trust later
+    #add nore domains we trust later
     "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
-    #this is a placeholder, replace with actual user info later
+    #this is a placeholder, replace with fetching actual user info later
     "user_location": {
         "type": "approximate",
         "city": "San Francisco",
@@ -47,6 +48,17 @@ class ContentAPI:
     }
     }]
     app = FastAPI()
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:8000",
+            "https://tummytales.info",
+            "https://www.tummytales.info"
+        ],
+        allow_credentials=True,
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"]
+    )
 
     #welcome message (test)
     @app.get("/")
@@ -122,7 +134,7 @@ class ContentAPI:
         resp = ContentAPI.claude.messages.create(
         model="claude-opus-4-20250514",
         max_tokens=1024,
-        system="You must find news related to this query online. Only return the article url and a short summary.",
+        system="You must find news related to this query online. Only return the article title, URL, and a short summary.",
         messages=[
                 {
                     "role": "user",
