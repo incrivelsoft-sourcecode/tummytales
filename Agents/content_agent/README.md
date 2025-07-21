@@ -50,3 +50,6 @@ To build and run the Docker image for the FastAPI application, follow these step
 - `POST /request`: Content generation based on request with RAG using Pinecone
 - `POST /rss-url`: Returns news from rss feed and saves rss feed to MongoDB
 - `POST /news-query`: Claude gets online relevant news based on query
+
+## Testing
+Run tests with pytest test_main.py
