@@ -3,14 +3,13 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 
 class NutritionalValues(BaseModel):
-    """Model for nutritional values of a meal"""
-    Calories: str = Field(..., description="Calorie content with unit (e.g., '250 kcal')")
-    Protein: str = Field(..., description="Protein content with unit (e.g., '20 g')")
-    Carbohydrates: str = Field(..., description="Carbohydrate content with unit (e.g., '30 g')")
-    Fat: str = Field(..., description="Fat content with unit (e.g., '10 g')")
-    Fiber: str = Field(..., description="Fiber content with unit (e.g., '5 g')")
-    Calcium: str = Field(..., description="Calcium content with unit (e.g., '200 mg')")
-    Iron: str = Field(..., description="Iron content with unit (e.g., '3 mg')")
+    Calories: Optional[str] = Field(None, description="Calorie content")
+    Protein: Optional[str] = Field(None, description="Protein content") 
+    Carbohydrates: Optional[str] = Field(None, description="Carbohydrate content")
+    Fat: Optional[str] = Field(None, description="Fat content")
+    Fiber: Optional[str] = Field(None, description="Fiber content")
+    Calcium: Optional[str] = Field(None, description="Calcium content")
+    Iron: Optional[str] = Field(None, description="Iron content")
 
 class Meal(BaseModel):
     """Model for a complete meal recipe"""
