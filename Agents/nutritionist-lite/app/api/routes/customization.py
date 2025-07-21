@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 import logging
-
+from app.core.meal.meal_model import PortionAdjustRequest
 from app.core.meal.meal_service import meal_planning_service
 from app.core.meal.meal_model import (
     SpiceLevelRequest, CookingTimeRequest, CookingMethodRequest,
@@ -66,6 +66,22 @@ async def adjust_cooking_time(request: CookingTimeRequest):
         }
     except Exception as e:
         logger.error(f"Error adjusting cooking time: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/adjust-portions")
+async def adjust_portions_endpoint(request: PortionAdjustRequest):
+    """Adjust portion sizes"""
+    try:
+        result = await meal_planning_service.adjust_portions(request)
+        return {
+            "status": "success", 
+            "data": {
+                "_id": request.meal_id,
+                "meal": result.meal.model_dump()
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error adjusting portions: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/change-method")
