@@ -16,7 +16,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: ["http://54.163.147.226:3000", "http://localhost:3000", "https://tummytales.info","http://localhost:8080"] ,
+app.use(cors({ origin: ["http://54.163.147.226:8080", "http://localhost:3000", "https://tummytales.info","http://localhost:8080"] ,
    methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,}));
 
