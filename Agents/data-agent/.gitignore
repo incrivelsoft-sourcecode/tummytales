@@ -1,0 +1,16 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# VSCode settings
+.vscode/
+
+# Environment files
+.env
+
+# Demo/test files
+demo_shared.py
+demo_agent-collections.py
+
+# OS-specific files
+.DS_Store

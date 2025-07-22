@@ -1,0 +1,3 @@
+fetch user_id from users
+using user_id as reference, fetch userdetails from UserDetail collection
+using user_id as reference, fetch userdetails (specific to mental) from mental-health-UserDetail collection
