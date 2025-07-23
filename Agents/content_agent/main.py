@@ -14,11 +14,14 @@ from fastapi.middleware.cors import CORSMiddleware
 #embedding vector size 1024
 load_dotenv()
 
+#to do: only one collection for knowledge base, but saved article collections should be unique to users
+
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
     db = client.get_database("your_database_name")
     collection = db.get_collection("content_base_knowledge")
     rss_feeds = db.get_collection("rss_feeds")
+    saved_articles = db.get_collection("saved_news_articles")
     #pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
     pc = None
 
@@ -28,7 +31,7 @@ class ContentAPI:
     initialized = False
 
     #for news aggregation
-    #news_stories = [] #currently just returning each set of news stories as we get them
+    news_stories = [] #temp storage; only favorited articles are saved between sessions
         
     #for online search/LLM
     claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
@@ -109,7 +112,6 @@ class ContentAPI:
                 }
             ]
         )
-
         return {"response": response}
 
     #adds rss feed info to mongodb, returns news stories from url as a list
@@ -130,7 +132,7 @@ class ContentAPI:
         return {"news_stories": news_stories}
             
     #searches internet based on query, returns relevant news
-    # to do: parse llm response, add trusted domains & error handling
+    # to do: parse llm response, add more trusted domains, error handling
     @app.post("/news-query/")
     async def get_relevant_news(query):
         resp = ContentAPI.claude.messages.create(
@@ -145,8 +147,19 @@ class ContentAPI:
             ],
             tools=ContentAPI.allowed_tools
         )
-        # currently returns the raw llm response
+        #to do: make sure this is correct syntax!
+        for news in resp:
+            news_stories.append(news)
+        # currently returns the raw llm json response
         return{"response": resp}
+
+    # given desc of article, allow users to mark an article as saved
+    # to do: mark article as saved by id instead
+    @app.put("/mark-saved/")
+    async def mark_article_as_saved(desc: dict = Body(...)):
+        ContentAPI.saved_articles.insert_one(desc)
+        st = "Article",desc["Title"],"saved!"
+        return{"response": st}
 
     #helper methods
     async def parse_pdf(file):
