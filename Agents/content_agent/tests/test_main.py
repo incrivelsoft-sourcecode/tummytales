@@ -65,7 +65,7 @@ async def test_parse_rss():
                 {"title": "News 2", "link": "http://example.com/news2", "summary": "Summary 2"},
             ],
         }
-        response = client.post("/rss-url/", json={"url": rss_url})
+        response = client.post("/rss-url/", json={"rss_url": rss_url})
         assert response.status_code == 200
         assert response.json() == {
             "news_stories": [

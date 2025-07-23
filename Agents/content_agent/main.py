@@ -1,7 +1,7 @@
 # filepath: content_agent/main.py
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Request, Body
 import pymupdf
 from pinecone import Pinecone
 from pymongo import MongoClient
@@ -114,12 +114,14 @@ class ContentAPI:
 
     #adds rss feed info to mongodb, returns news stories from url as a list
     @app.post("/rss-url/")
-    async def parse_rss(url):
-        feed = feedparser.parse(url)
-        ContentAPI.rss_feeds.insert_one({"URL":url, "Title": feed.feed.title,"Description": feed.feed.description, "Feed":feed})
+    async def parse_rss(url: dict = Body(...)):
+        rss_url = url["rss_url"]
+        feed = feedparser.parse(rss_url)
+        feed_info = feed['feed']
+        ContentAPI.rss_feeds.insert_one({"URL": rss_url, "Title": feed_info["title"], "Description": feed_info["description"], "Feed": feed})
         news_stories = []
         for entry in feed.entries:
-            desc = {"Title": entry.title, "Link":entry.link, "Date":"", "Summary":""}
+            desc = {"Title": entry.title, "Link": entry.link, "Date": "", "Summary": ""}
             if hasattr(entry, "published"):
                 desc["Date"] = entry.published
             if hasattr(entry, "summary"):
