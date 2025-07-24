@@ -26,6 +26,7 @@ router.get("/google", (req, res, next) => {
   
     passport.authenticate("google", {
       scope: ["profile", "email"],
+      prompt: 'select_account',
       state: encodeURIComponent(state), // ✅ Pass state to Google
     })(req, res, next);
   }); 
@@ -40,6 +41,7 @@ router.get("/facebook", (req, res, next) => {
 
   passport.authenticate("facebook", {
     scope: ["email"],
+    prompt: 'select_account',
     state: encodeURIComponent(state),
   })(req, res, next);
 });

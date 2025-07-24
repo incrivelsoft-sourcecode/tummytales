@@ -91,6 +91,7 @@ const createUser = async (req, res) => {
 		message: "User created. OTP sent to email for verification.",
 		user: {
 		  userId: user._id,
+      user_name: user.user_name,
 		  email: user.email,
 		  role: user.role,
 		  status: user.status
@@ -246,8 +247,7 @@ const getOtpByEmail = async (req, res) => {
 
   return res.status(200).json({ otp: otpField });
 };
-
-
+//forgot password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -270,7 +270,7 @@ const forgotPassword = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
-
+//reset password
 const resetPassword = async (req, res) => {
   const { token } = req.query;
   const { password, confirmPassword } = req.body;
@@ -302,13 +302,12 @@ const resetPassword = async (req, res) => {
   }
 };
 
-
+//google oath
 const googleCallback = async (req, res) => {
 	try {
 		if (!req.user) {
 			return res.status(400).send({ error: "Authentication failed. No user found." });
 		}
-
 		const user = req.user;
      // ✅ Mark user as verified if not already
     if (user.status !== "verified") {
@@ -320,19 +319,26 @@ const googleCallback = async (req, res) => {
 			process.env.JWT_SECRET,
 			{ expiresIn: '1d' }
 		);
-		res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+    // ✅ Use req.isNewUser from strategy
+    const isNewUser = req.isNewUser;
+
+    const redirectPath = isNewUser
+      ? `${process.env.FRONTEND_URL}/welcome/?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`
+      : `${process.env.FRONTEND_URL}/calendar?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`;
+    return res.redirect(redirectPath);
+		//res.redirect(`${process.env.FRONTEND_URL}/welcome/?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
 	} catch (error) {
 		console.error("Error in googleCallback:", error);
 		res.status(500).send({ error: "Internal server error..." });
 	}
 };
-
+//fb oath
 const facebookCallback = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(400).send({ error: "Authentication failed. No user found." });
     }
-
+    const mode = req.query.state;
     const user = req.user;
       // ✅ Mark user as verified if not already
     if (user.status !== "verified") {
@@ -359,8 +365,14 @@ const facebookCallback = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '1d',
     });
+    
+   const isNewUser = req.isNewUser;
 
-    res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
+    const redirectPath = isNewUser
+      ? `${FRONTEND_URL}/welcome?token=${token}`
+      : `${FRONTEND_URL}/calendar?token=${token}`;
+     return res.redirect(redirectPath); 
+   // res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
   } catch (error) {
     console.error("Error in facebookCallback:", error);
     res.status(500).send({ error: "Internal server error..." });

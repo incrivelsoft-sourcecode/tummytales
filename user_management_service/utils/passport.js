@@ -13,6 +13,7 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: `${process.env.USER_SERVICE_URL}/users/google/callback`,
       passReqToCallback: true, // ✅ Allows access to req in callback
+    
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
@@ -29,13 +30,38 @@ passport.use(
         });
 
         console.log("Existing user:", user);
-
+        const isNewUser = !user; // <== Important Flag
         if (!user) {
           let existingMom = null;
           // Validate required fields
-        if (!user_name || !role) {
-          return done(new Error("user_name or role is missing."), null);
-        }
+          if (!role) {
+            return done(new Error("Role is required."), null);
+          }
+
+          // Auto-generate user_name if not provided
+          if (!user_name) {
+            const base = (
+              profile.displayName?.replace(/\s+/g, '').toLowerCase() ||
+              profile.emails?.[0]?.value.split('@')[0]
+            );
+
+            let tempUsername = base;
+            let counter = 0;
+            let exists = true;
+
+            while (exists) {
+              const existing = await User.findOne({ user_name: tempUsername });
+              if (!existing) {
+                exists = false;
+              } else {
+                counter += 1;
+                tempUsername = `${base}${String(counter).padStart(2, '0')}`;
+              }
+            }
+
+            user_name = tempUsername;
+          }
+
         if (!["mom", "supporter"].includes(role)) {
           return done(new Error("Invalid role. Must be 'mom' or 'supporter'."), null);
         }
@@ -74,7 +100,8 @@ passport.use(
             await existingMom.save();
           }
         }
-
+        // Attach isNewUser to req for redirect logic
+        req.isNewUser = isNewUser;
         done(null, user);
       } catch (err) {
         done(err, null);
@@ -96,15 +123,44 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
-        const { user_name, role, referal_code, permissions = [] } = state;
+        const { mode,user_name, role, referal_code, permissions = [] } = state;
 
         const email = profile.emails && profile.emails[0] && profile.emails[0].value;
-
+ 
         if (!email) {
           return done(new Error("No email found in Facebook profile"), null);
         }
-
+          // ✅ Require role
+        if (!role) {
+          return done(new Error("Role is required."), null);
+        }
         let user = await User.findOne({ email });
+
+        const isNewUser = !user;
+
+        // ✅ Auto-generate username if not provided
+        if (!user_name) {
+          const baseName = (
+            `${profile.name?.givenName || ""}${profile.name?.familyName || ""}`.toLowerCase()
+            || email.split('@')[0]
+          ).replace(/\s+/g, '');
+
+          let tempUsername = baseName;
+          let counter = 0;
+          let exists = true;
+
+          while (exists) {
+            const existing = await User.findOne({ user_name: tempUsername });
+            if (!existing) {
+              exists = false;
+            } else {
+              counter += 1;
+              tempUsername = `${baseName}${String(counter).padStart(2, '0')}`;
+            }
+          }
+
+          user_name = tempUsername;
+        }
 
         if (!user) {
           user = new User({
@@ -120,6 +176,7 @@ passport.use(
         }
 
         await user.save();
+        req.isNewUser = isNewUser;
         return done(null, user);
       } catch (err) {
         return done(err, null);
@@ -127,6 +184,7 @@ passport.use(
     }
   )
 );
+
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
   try {
