@@ -375,7 +375,8 @@ const facebookCallback = async (req, res) => {
    // res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
   } catch (error) {
     console.error("Error in facebookCallback:", error);
-    res.status(500).send({ error: "Internal server error..." });
+    res.status(500).send({ error: error.message, stack: error.stack });
+    // res.status(500).send({ error: "Internal server error..." });
   }
 };
 

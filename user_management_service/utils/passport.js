@@ -122,7 +122,14 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
+        //const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
+        let state = {};
+        try {
+          state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
+        } catch (err) {
+          console.error(" Failed to parse state:", req.query.state);
+        }
+
         const { mode, user_name, role, referal_code, permissions = [] } = state;
 
         const email = profile.emails && profile.emails[0] && profile.emails[0].value;
