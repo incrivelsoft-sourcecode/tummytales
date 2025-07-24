@@ -9,7 +9,6 @@ __pycache__/
 .env
 
 # Demo/test files
-notes.txt
 demo_shared.py
 demo_agent-collections.py
 
