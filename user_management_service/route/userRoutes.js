@@ -42,7 +42,8 @@ router.get("/facebook", (req, res, next) => {
   passport.authenticate("facebook", {
     scope: ["email"],
     prompt: 'select_account',
-    state: encodeURIComponent(state),
+     state,
+    //state: encodeURIComponent(state),
   })(req, res, next);
 });
 

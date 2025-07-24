@@ -181,7 +181,8 @@ passport.use(
         req.isNewUser = isNewUser;
         return done(null, user);
       } catch (err) {
-        return done(err, null);
+        //return done(err, null);
+        return done(new Error("Facebook login failed: " + err.message), null);
       }
     }
   )
