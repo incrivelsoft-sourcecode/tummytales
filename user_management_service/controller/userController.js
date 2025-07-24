@@ -369,8 +369,8 @@ const facebookCallback = async (req, res) => {
    const isNewUser = req.isNewUser;
 
     const redirectPath = isNewUser
-      ? `${FRONTEND_URL}/welcome?token=${token}`
-      : `${FRONTEND_URL}/calendar?token=${token}`;
+      ? `${process.env.FRONTEND_URL}/welcome/?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`
+      : `${process.env.FRONTEND_URL}/calendar?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`;
      return res.redirect(redirectPath); 
    // res.redirect(`${process.env.FRONTEND_URL}?token=${token}&userId=${user._id}&userName=${user.user_name}&role=${user.role}&permissions=${user.permissions}&email=${user.email}`);
   } catch (error) {
