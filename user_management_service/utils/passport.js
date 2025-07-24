@@ -123,14 +123,14 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         const state = JSON.parse(decodeURIComponent(req.query.state || "{}"));
-        const { mode,user_name, role, referal_code, permissions = [] } = state;
+        const { mode, user_name, role, referal_code, permissions = [] } = state;
 
         const email = profile.emails && profile.emails[0] && profile.emails[0].value;
- 
+
         if (!email) {
           return done(new Error("No email found in Facebook profile"), null);
         }
-          // ✅ Require role
+        // ✅ Require role
         if (!role) {
           return done(new Error("Role is required."), null);
         }
@@ -139,7 +139,9 @@ passport.use(
         const isNewUser = !user;
 
         // ✅ Auto-generate username if not provided
-        if (!user_name) {
+        let finalUsername = user_name;
+
+        if (!finalUsername) {
           const baseName = (
             `${profile.name?.givenName || ""}${profile.name?.familyName || ""}`.toLowerCase()
             || email.split('@')[0]
@@ -159,14 +161,14 @@ passport.use(
             }
           }
 
-          user_name = tempUsername;
+          finalUsername = tempUsername;
         }
 
         if (!user) {
           user = new User({
             facebookId: profile.id,
             email,
-            user_name,
+            user_name: finalUsername,
             role,
             referal_code,
             permissions,
