@@ -27,7 +27,8 @@ router.get("/google", (req, res, next) => {
     passport.authenticate("google", {
       scope: ["profile", "email"],
       prompt: 'select_account',
-      state: encodeURIComponent(state), // ✅ Pass state to Google
+      state,
+      //state: encodeURIComponent(state), // ✅ Pass state to Google
     })(req, res, next);
   }); 
 router.get("/google/callback", passport.authenticate("google", {failureRedirect: "/google"}), googleCallback);
