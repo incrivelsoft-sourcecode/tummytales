@@ -50,4 +50,7 @@ To build and run the Docker image for the FastAPI application, follow these step
 - `POST /request`: Content generation based on request with RAG using Pinecone
 
 ## Testing
-Run tests with pytest test_main.py
+Run tests with
+```
+pytest test_main.py
+```
