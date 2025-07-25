@@ -1,7 +1,5 @@
-# Use slim base image
 FROM python:3.10-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -9,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install required OS packages (especially for SSL/TLS)
+# Install essential OS packages (especially for MongoDB Atlas SSL)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
@@ -17,20 +15,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
+    netbase \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy app code
 COPY . .
 
-# Expose FastAPI port
 EXPOSE 6001
 
-# Start FastAPI server (adjust entry point if needed)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6001", "--reload"]
+
 
 
 
