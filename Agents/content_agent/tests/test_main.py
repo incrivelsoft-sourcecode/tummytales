@@ -16,43 +16,15 @@ app = content_api.app
 client = TestClient(app)
 
 @pytest.fixture
-def mock_parse_pdf():
-    with patch("Agents.content_agent.main.ContentAPI.parse_pdf", new_callable=AsyncMock) as mock:
-        mock.return_value = ["Sample parsed text"]
-        yield mock
-
-@pytest.fixture
 def mock_mongo_insert():
     with patch("Agents.content_agent.main.collection.insert_one") as mock:
         yield mock
 
-@pytest.fixture
-def mock_vector_embeddings():
-    with patch("Agents.content_agent.main.vector_embeddings", new_callable=AsyncMock) as mock:
-        yield mock
 
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"Hello": "This is the Content API!"}
-
-@pytest.mark.asyncio
-async def test_upload_file_valid_pdf(mock_parse_pdf, mock_mongo_insert, mock_vector_embeddings):
-    file_content = b"%PDF-1.4 Sample PDF content"
-    files = {"file": ("test.pdf", file_content, "application/pdf")}
-    response = client.post("/file/", files=files)
-    assert response.status_code == 200
-    assert response.json() == {"File parsed & uploaded!": "test.pdf"}
-    mock_parse_pdf.assert_called_once()
-    mock_mongo_insert.assert_called_once()
-    mock_vector_embeddings.assert_called_once()
-
-def test_upload_file_invalid_file_type():
-    file_content = b"Sample text content"
-    files = {"file": ("test.txt", file_content, "text/plain")}
-    response = client.post("/file/", files=files)
-    assert response.status_code == 200
-    assert response.json() == {"Error": "Only PDF files are supported."}
 
 @pytest.mark.asyncio
 async def test_parse_rss():
@@ -74,15 +46,4 @@ async def test_parse_rss():
             ]
         }
 
-@pytest.mark.asyncio
-async def test_generate_content():
-    query = "What is the impact of nutrition on pregnancy?"
-    with patch("Agents.content_agent.main.HuggingFaceEmbeddings.embed_query", return_value=[0.1, 0.2, 0.3]) as mock_embed_query, \
-         patch("Agents.content_agent.main.ContentAPI.pc.Index.query", return_value={"matches": [{"id": "doc1"}]}) as mock_pinecone_query, \
-         patch("Agents.content_agent.main.ContentAPI.claude.messages.create", return_value="Generated response") as mock_claude:
-        response = client.post("/request/", json={"query": query})
-        assert response.status_code == 200
-        assert response.json() == {"response": "Generated response"}
-        mock_embed_query.assert_called_once()
-        mock_pinecone_query.assert_called_once()
-        mock_claude.assert_called_once()
+# to do: add methods for testing saved news user feature

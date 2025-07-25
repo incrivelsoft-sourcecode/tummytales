@@ -34,7 +34,7 @@ def mock_vector_embeddings():
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"Hello": "This is the Content API!"}
+    assert response.json() == {"Hello": "This is the Content Generation API! (For Internal Use Only)"}
 
 @pytest.mark.asyncio
 async def test_upload_file_valid_pdf(mock_parse_pdf, mock_mongo_insert, mock_vector_embeddings):
