@@ -1,12 +1,8 @@
 # filepath: content_agent/main.py
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, Request, Body
-import pymupdf
-from pinecone import Pinecone
+from fastapi import FastAPI, Body
 from pymongo import MongoClient
-from langchain_community.embeddings import HuggingFaceEmbeddings
-import langchain_text_splitters
 import feedparser
 import anthropic
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,18 +22,9 @@ load_dotenv()
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
     db = client.get_database(os.getenv("MONGODB_DB_NAME"))
-    collection = db.get_collection("content_base_knowledge")
 
     #incorporate this into populating the News tab on the website
     rss_feeds = db.get_collection("rss_feeds")
-
-    #pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    pc = None
-
-    # replace with the actual embedding model we use
-    model_name = "sentence-transformers/all-MiniLM-L6-v2"
-    hf_token = os.getenv("HF_API_KEY")
-    initialized = False
 
     #for news aggregation
     news_stories = [] #temp storage; only favorited articles are saved between sessions
@@ -79,54 +66,6 @@ class ContentAPI:
     @app.get("/")
     def read_root():
         return {"Hello": "This is the Content Aggregation API!"}
-
-    #upload pdf for parsing
-    @app.post("/file/")
-    async def upload_file(file: UploadFile = File(...)):
-        if not file.filename.endswith('.pdf'):
-            return {"Error": "Only PDF files are supported."}
-        file_content = await file.read()
-        txts = await ContentAPI.parse_pdf(file_content)
-        ContentAPI.collection.insert_one({"filename": file.filename, "text": txts})
-        ContentAPI.vector_embeddings(file.filename, txts)
-        return {"File parsed & uploaded!": file.filename}
-    
-    #content generation with rag using pinecone & langchain
-    @app.post("/request/")
-    async def generate_content(request):
-        # Extract query from request
-        data = await request.json()
-        query = data.get("query")
-        if not query:
-            return {"error": "No query provided."}
-
-        # Retrieve relevant document chunks using LangChain
-        vector_store = LangChainPinecone(
-            api_key=os.getenv("PINECONE_API_KEY"),
-            environment=os.getenv("PINECONE_ENV"),
-            index_name=ContentAPI.collection.find_one(sort=[("_id", -1)])["filename"]
-        )
-
-        # Define the prompt template
-        prompt_template = PromptTemplate(
-            input_variables=["context", "query"],
-            template="Context: {context}\n\nQuery: {query}\n\n"
-        )
-
-        # Initialize the LLM
-        llm = Anthropic(api_key=os.getenv("CLAUDE_KEY"))
-
-        # Create the RetrievalQA chain
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            retriever=vector_store.as_retriever(),
-            prompt=prompt_template
-        )
-
-        # Generate the response
-        response = qa_chain.run(query)
-
-        return {"response": response}
 
     #adds rss feed info to mongodb, returns news stories from url as a list
     @app.post("/rss-url/")
@@ -174,27 +113,6 @@ class ContentAPI:
         self.user_saved_articles.insert_one(desc)
         st = "Article", desc["Title"], "saved!"
         return {"response": st}
-
-    #helper methods
-    async def parse_pdf(file):
-        txt = ""
-        pdf_document = pymupdf.open(stream=file, filetype="pdf")
-        for page in pdf_document:
-            txt += page.get_text()
-        #tries to split text into paragraphs, natural breaks, etc
-        text_splitter = langchain_text_splitters.RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-        txts = text_splitter.split_text(txt)
-        return txts
-
-    async def vector_embeddings(filename, texts):
-        # replace with the actual embedding model we use
-        embedder = HuggingFaceEmbeddings(model_name=ContentAPI.model_name)
-        embedding = []
-        for text in texts:
-            embedding.append(embedder.embed_query(text))
-        ContentAPI.pc.create_index(filename, dimension=384)
-        ContentAPI.pc.Index(filename).upsert(vectors=[{"id": filename, "values": embedding}])
-        return embedding
     
 content_api = ContentAPI(user_id = "sample_user_id")
 app = content_api.app
