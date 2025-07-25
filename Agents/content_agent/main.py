@@ -21,7 +21,7 @@ from user_info import UserDatabase
 #embedding vector should be size 1024
 load_dotenv()
 
-#to do: only one collection for knowledge base, but saved article collections should be unique to users
+#to do: split RAG content generation into its own agent API after discussion with Product team
 
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
@@ -78,7 +78,7 @@ class ContentAPI:
     #welcome message (test)
     @app.get("/")
     def read_root():
-        return {"Hello": "This is the Content API!"}
+        return {"Hello": "This is the Content Aggregation API!"}
 
     #upload pdf for parsing
     @app.post("/file/")
