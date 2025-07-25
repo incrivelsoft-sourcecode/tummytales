@@ -87,6 +87,7 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    saved_news: { type: String, required: false },
   },
   { timestamps: true }
 );
