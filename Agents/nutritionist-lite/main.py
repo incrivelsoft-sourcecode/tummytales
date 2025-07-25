@@ -7,7 +7,6 @@ import os
 import logging
 from datetime import datetime
 
-
 # Configure logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,6 +19,15 @@ from app.config.database import db
 
 # Import routes
 from app.api.routes import router
+
+print("=== IMPORT DEBUG ===")
+print(f"✅ Router imported successfully: {router}")
+print(f"✅ Router routes count: {len(router.routes)}")
+for route in router.routes:
+    if hasattr(route, 'path'):
+        print(f"  - Route in router: {route.path}")
+print("=== END IMPORT DEBUG ===")
+
 from app.core.knowledge.loader import knowledge_loader
 
 # Create FastAPI app
@@ -59,8 +67,16 @@ def health_check():
     }
 
 @app.on_event("startup")
-async def startup_db_client():
-    """Initialize database connection and load knowledge on startup"""
+async def startup_app():
+    """Combined startup function for database and debug routes"""
+    # Debug routes first
+    print("=== PRODUCTION ROUTES DEBUG ===")
+    for route in app.routes:
+        if hasattr(route, 'path'):
+            print(f"✅ Route loaded: {route.path} - Methods: {getattr(route, 'methods', 'N/A')}")
+    print("=== END PRODUCTION ROUTES DEBUG ===")
+    
+    # Initialize database connection
     try:
         mongo_uri = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
         db_name = os.getenv("MONGODB_DB_NAME", "tummytales")
