@@ -15,17 +15,22 @@ from langchain_community.vectorstores import Pinecone as LangChainPinecone
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import Anthropic
 
-#embedding vector size 1024
+#for user's saved articles
+from user_info import UserDatabase
+
+#embedding vector should be size 1024
 load_dotenv()
 
 #to do: only one collection for knowledge base, but saved article collections should be unique to users
 
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
-    db = client.get_database("your_database_name")
+    db = client.get_database(os.getenv("MONGODB_DB_NAME"))
     collection = db.get_collection("content_base_knowledge")
+
+    #incorporate this into populating the News tab on the website
     rss_feeds = db.get_collection("rss_feeds")
-    saved_articles = db.get_collection("saved_news_articles")
+
     #pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
     pc = None
 
@@ -66,6 +71,9 @@ class ContentAPI:
         allow_methods=["GET", "POST"],
         allow_headers=["*"]
     )
+
+    def __init__(self, user_id: str):
+        self.user_saved_articles = UserDatabase.get_user_saved_news(user_id)
 
     #welcome message (test)
     @app.get("/")
@@ -144,7 +152,7 @@ class ContentAPI:
         resp = ContentAPI.claude.messages.create(
         model="claude-opus-4-20250514",
         max_tokens=1024,
-        system="You must find 5 news articles related to this query online. Only return the article title, URL, and a short summary.",
+        system="You must find 5 news articles related to this query online. Only return the article title, URL, thumbnail image, and a short summary.",
         messages=[
                 {
                     "role": "user",
@@ -163,9 +171,9 @@ class ContentAPI:
     # to do: mark article as saved by id instead
     @app.put("/mark-saved/")
     async def mark_article_as_saved(desc: dict = Body(...)):
-        ContentAPI.saved_articles.insert_one(desc)
-        st = "Article",desc["Title"],"saved!"
-        return{"response": st}
+        self.user_saved_articles.insert_one(desc)
+        st = "Article", desc["Title"], "saved!"
+        return {"response": st}
 
     #helper methods
     async def parse_pdf(file):
@@ -184,12 +192,9 @@ class ContentAPI:
         embedding = []
         for text in texts:
             embedding.append(embedder.embed_query(text))
-
-
-
         ContentAPI.pc.create_index(filename, dimension=384)
         ContentAPI.pc.Index(filename).upsert(vectors=[{"id": filename, "values": embedding}])
         return embedding
     
-content_api = ContentAPI()
+content_api = ContentAPI(user_id = "sample_user_id")
 app = content_api.app
