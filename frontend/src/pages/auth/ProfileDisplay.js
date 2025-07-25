@@ -113,7 +113,6 @@ const ProfileForm = () => {
       if (res.data && res.data.survey) {
         const survey = res.data.survey;
 
-        // // Fallbacks for optional deeply nested objects
         // const primaryCareDetails =
         //   survey.healthCare?.primaryCare?.details || {};
         // const obgynDetails = survey.healthCare?.obgyn?.details || {};

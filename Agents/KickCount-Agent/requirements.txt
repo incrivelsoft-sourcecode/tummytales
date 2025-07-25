@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+motor
+pydantic
+python-dotenv
+langchain
+langchain-groq
+langchain-community
+python-jose
+langchain-pinecone
+openai
+pinecone
