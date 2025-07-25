@@ -10,6 +10,10 @@ import langchain_text_splitters
 import feedparser
 import anthropic
 from fastapi.middleware.cors import CORSMiddleware
+from langchain.chains import RetrievalQA
+from langchain_community.vectorstores import Pinecone as LangChainPinecone
+from langchain.prompts import PromptTemplate
+from langchain_community.llms import Anthropic
 
 #embedding vector size 1024
 load_dotenv()
@@ -88,30 +92,32 @@ class ContentAPI:
         if not query:
             return {"error": "No query provided."}
 
-        # Retrieve relevant document chunks from Pinecone
-        embedder = HuggingFaceEmbeddings(model_name=ContentAPI.model_name)
-        query_embedding = embedder.embed_query(query)
-        index_name = ContentAPI.collection.find_one(sort=[("_id", -1)])["filename"]
-        index = ContentAPI.pc.Index(index_name)
-        search_results = index.query(vector=query_embedding, top_k=3, include_values=False)
-        ids = [match["id"] for match in search_results["matches"]]
-        docs = ContentAPI.collection.find({"filename": {"$in": ids}})
-        context = " ".join([" ".join(doc["text"]) for doc in docs])
-
-        # LLM response
-
-        ask = f"Context: {context}\n\nQuery: {query}\n\n"
-        response = ContentAPI.claude.messages.create(
-        model="claude-opus-4-20250514",
-        max_tokens=1024,
-        system="Answer the query using the given context.",
-        messages=[
-                {
-                    "role": "user",
-                    "content": ask
-                }
-            ]
+        # Retrieve relevant document chunks using LangChain
+        vector_store = LangChainPinecone(
+            api_key=os.getenv("PINECONE_API_KEY"),
+            environment=os.getenv("PINECONE_ENV"),
+            index_name=ContentAPI.collection.find_one(sort=[("_id", -1)])["filename"]
         )
+
+        # Define the prompt template
+        prompt_template = PromptTemplate(
+            input_variables=["context", "query"],
+            template="Context: {context}\n\nQuery: {query}\n\n"
+        )
+
+        # Initialize the LLM
+        llm = Anthropic(api_key=os.getenv("CLAUDE_KEY"))
+
+        # Create the RetrievalQA chain
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            retriever=vector_store.as_retriever(),
+            prompt=prompt_template
+        )
+
+        # Generate the response
+        response = qa_chain.run(query)
+
         return {"response": response}
 
     #adds rss feed info to mongodb, returns news stories from url as a list
