@@ -66,6 +66,12 @@ def health_check():
         "message": "TummyTales Nutrition Agent is running"
     }
 
+# Add this right after your health endpoint in main.py
+@app.get("/api/test")
+def test_endpoint():
+    """Simple test to verify container is running our code"""
+    return {"status": "success", "message": "Container running latest code!", "timestamp": datetime.utcnow().isoformat()}
+
 @app.on_event("startup")
 async def startup_app():
     """Combined startup function for database and debug routes"""
