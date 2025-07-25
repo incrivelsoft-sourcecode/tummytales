@@ -17,8 +17,6 @@ from user_info import UserDatabase
 #embedding vector should be size 1024
 load_dotenv()
 
-#to do: split RAG content generation into its own agent API after discussion with Product team
-
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
     db = client.get_database(os.getenv("MONGODB_DB_NAME"))
