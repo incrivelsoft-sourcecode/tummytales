@@ -55,7 +55,7 @@ class ContentAPI:
             "https://www.tummytales.info"
         ],
         allow_credentials=True,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PUT"],
         allow_headers=["*"]
     )
 
