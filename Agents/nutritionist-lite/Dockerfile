@@ -7,14 +7,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install essential OS packages (especially for MongoDB Atlas SSL)
+# Install essential OS packages including OpenSSL (for MongoDB Atlas TLS)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libffi-dev \
     libssl-dev \
+    openssl \
     ca-certificates \
     curl \
-    gnupg \
     netbase \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -26,6 +26,7 @@ COPY . .
 EXPOSE 6001
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6001", "--reload"]
+
 
 
 
