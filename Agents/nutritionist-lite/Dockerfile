@@ -32,6 +32,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "6001", "--reload"]
 
 
 
+
 # # Use Python slim image
 # FROM python:3.10-slim
 
