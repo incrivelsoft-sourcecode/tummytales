@@ -24,7 +24,8 @@ const surveySchema = new mongoose.Schema(
       Zip_code: String,
     },
     pregnancyStatus: {
-      currentlyPregnant: { type: Boolean, default: false },
+      //currentlyPregnant: { type: Boolean, default: false },
+      currentlyPregnant:String,
       Last_menstrualperiod: Date,
       estimatedDueDate: Date,
 
@@ -94,8 +95,8 @@ const surveySchema = new mongoose.Schema(
     dosage: String,
     frequency: String,
   },
-
-      consumesAlcoholOrSmokes: { type: Boolean, default: false },
+     consumesAlcoholOrSmokes:String,
+     // consumesAlcoholOrSmokes: { type: Boolean, default: false },
     },
     lifestylePreferences: {
       preferredLanguage: String,
@@ -106,7 +107,8 @@ const surveySchema = new mongoose.Schema(
     experienceAndExpectations: {
       expectations: String,
       challenges: String,
-      wantsPersonalizedResources: { type: Boolean, default: false },
+     // wantsPersonalizedResources: { type: Boolean, default: false },
+     wantsPersonalizedResources:String,
       additionalComments: String,
     },
   },
