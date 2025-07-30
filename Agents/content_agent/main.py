@@ -12,7 +12,7 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import Anthropic
 
 #for user's saved articles
-from user_info import UserDatabase
+from .user_info import UserDatabase
 
 #embedding vector should be size 1024
 load_dotenv()
@@ -29,21 +29,6 @@ class ContentAPI:
         
     #for online search/LLM
     claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
-    allowed_tools = [{
-    "type": "web_search_20250305",
-    "name": "web_search",
-    "max_uses": 3,
-    #add more domains we trust later
-    "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
-    #this is a placeholder, replace with fetching actual user info later
-    "user_location": {
-        "type": "approximate",
-        "city": "San Francisco",
-        "region": "California",
-        "country": "US",
-        "timezone": "America/Los_Angeles"
-    }
-    }]
     app = FastAPI()
     app.add_middleware(
         CORSMiddleware,
@@ -59,6 +44,22 @@ class ContentAPI:
 
     def __init__(self, user_id: str):
         self.user_saved_articles = UserDatabase.get_user_saved_news(user_id)
+        self.allowed_tools = [{
+        "type": "web_search_20250305",
+        "name": "web_search",
+        "max_uses": 3,
+        #add more domains we trust later
+        "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
+        #this is a placeholder, replace with fetching actual user info later
+        "user_location": {
+            "type": "approximate",
+            "city": UserDatabase.get_user_city(user_id),
+            "region": UserDatabase.get_user_state(user_id),
+            "country": UserDatabase.get_user_country(user_id),
+            "timezone": "America/Los_Angeles"
+        }
+        }]
+
 
     #welcome message (test)
     @app.get("/")
@@ -96,7 +97,7 @@ class ContentAPI:
                     "content": query
                 }
             ],
-            tools=ContentAPI.allowed_tools
+            tools=self.allowed_tools
         )
         #to do: make sure this is correct syntax!
         for news in resp:

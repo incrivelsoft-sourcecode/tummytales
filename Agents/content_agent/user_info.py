@@ -16,3 +16,12 @@ class UserDatabase:
     async def get_user_saved_news(user_id: str):
         #returns dictionary 
         return find_user(user_id)["saved_news"]
+    
+    async def get_user_country(user_id: str):
+        return find_user(user_id)["generalDetails"]["country"]
+
+    async def get_user_state(user_id: str):
+        return find_user(user_id)["generalDetails"]["state"]
+
+    async def get_user_city(user_id: str):
+        return find_user(user_id)["generalDetails"]["city"]
