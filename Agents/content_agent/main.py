@@ -12,7 +12,7 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import Anthropic
 
 #for user's saved articles
-from .user_info import UserDatabase
+from user_info import UserDatabase
 
 #embedding vector should be size 1024
 load_dotenv()

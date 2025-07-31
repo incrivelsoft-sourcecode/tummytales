@@ -8,7 +8,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 # Add import for Agents module
-from .main import ContentAPI
+from Agents.content_agent.main import ContentAPI
 
 content_api = ContentAPI(user_id="")
 app = content_api.app
