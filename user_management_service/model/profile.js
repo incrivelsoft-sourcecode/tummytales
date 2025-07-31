@@ -28,7 +28,7 @@ const surveySchema = new mongoose.Schema(
       currentlyPregnant:String,
       Last_menstrualperiod: Date,
       estimatedDueDate: Date,
-
+      weeksPregnant: Number,
       PregnancyLossInfo: {
         hasPregnancyLoss: { type: Boolean, default: false },
         details: {
@@ -103,6 +103,12 @@ const surveySchema = new mongoose.Schema(
       dietaryPreferences: String,
       physicalActivity: String,
       primaryInfoSource: String,
+      // physical activity fileds
+      heightCm: Number, // Height (cm)
+      weightKg: Number, // Weight (kg)
+      prePregnancyFitnessLevel: String, // Pre-pregnancy fitness level
+      preExistingConditions:String,
+      preferredExercises:String,
     },
     experienceAndExpectations: {
       expectations: String,

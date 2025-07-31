@@ -30,6 +30,7 @@ const createsurvey = async (req, res) => {
         currentlyPregnant,
         Last_menstrualperiod,
         estimatedDueDate,
+        weeksPregnant,
         hasPregnancyLoss,
         dateOfLoss,
         reason,
@@ -77,12 +78,18 @@ const createsurvey = async (req, res) => {
         medication2Name,
         medication2Dosage,
         medication2Frequency,
-         consumesAlcoholOrSmokes,
-
+        consumesAlcoholOrSmokes,
+        //lifestylePreferences
         preferredLanguage,
         dietaryPreferences,
         physicalActivity,
         primaryInfoSource,
+         heightCm,
+         weightKg,
+         prePregnancyFitnessLevel,
+         preExistingConditions,
+         preferredExercises,
+        //experienceAndExpectations
         expectations,
         challenges,
         wantsPersonalizedResources,
@@ -136,6 +143,7 @@ const createsurvey = async (req, res) => {
           currentlyPregnant,
           Last_menstrualperiod,
           estimatedDueDate,
+          weeksPregnant,
           PregnancyLossInfo: {
             hasPregnancyLoss,
             details: hasPregnancyLoss ? {
@@ -201,7 +209,13 @@ const createsurvey = async (req, res) => {
           },
           consumesAlcoholOrSmokes,
         },
-        lifestylePreferences: { preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource },
+        lifestylePreferences: {
+          preferredLanguage, dietaryPreferences, physicalActivity, primaryInfoSource, heightCm,
+          weightKg,
+          prePregnancyFitnessLevel,
+          preExistingConditions,
+          preferredExercises,
+        },
           experienceAndExpectations: { expectations, challenges, wantsPersonalizedResources, additionalComments }
       });
   
