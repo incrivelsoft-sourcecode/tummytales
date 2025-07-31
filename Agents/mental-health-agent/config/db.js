@@ -1,6 +1,6 @@
 // config/db.js
 const mongoose = require('mongoose');
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://vk319:vinay123@cluster0.tkygegl.mongodb.net/questionnaireDB?retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI;
 
 async function connectDB() {
   try {
