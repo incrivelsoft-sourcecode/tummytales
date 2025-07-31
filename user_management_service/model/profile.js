@@ -106,9 +106,9 @@ const surveySchema = new mongoose.Schema(
       // physical activity fileds
       heightCm: Number, // Height (cm)
       weightKg: Number, // Weight (kg)
-      prePregnancyFitnessLevel: String, // Pre-pregnancy fitness level
-      preExistingConditions:String,
-      preferredExercises:String,
+      prePregnancyFitnessLevel: [String],
+      preExistingConditions: [String],
+      preferredExercises: [String],      
     },
     experienceAndExpectations: {
       expectations: String,
