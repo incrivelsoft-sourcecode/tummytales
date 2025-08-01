@@ -10,12 +10,16 @@ from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import Pinecone as LangChainPinecone
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import Anthropic
+from pydantic import BaseModel
 
 #for user's saved articles
 from user_info import UserDatabase
 
 #embedding vector should be size 1024
 load_dotenv()
+
+class RSSRequest(BaseModel):
+    url: str
 
 class ContentAPI:
     client = MongoClient(os.getenv("MONGODB_URL"))
@@ -29,51 +33,49 @@ class ContentAPI:
         
     #for online search/LLM
     claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
-    app = FastAPI()
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
-            "http://localhost:8000",
-            "https://tummytales.info",
-            "https://www.tummytales.info"
-        ],
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT"],
-        allow_headers=["*"]
-    )
 
     def __init__(self, user_id: str):
-        # to do: make these accessible in other methods
+        # Make these accessible in other methods
         self.user_saved_articles = UserDatabase.get_user_saved_news(user_id)
         self.allowed_tools = [{
-        "type": "web_search_20250305",
-        "name": "web_search",
-        "max_uses": 3,
-        #add more domains we trust later
-        "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
-        #this is a placeholder, replace with fetching actual user info later
-        "user_location": {
-            "type": "approximate",
-            "city": UserDatabase.get_user_city(user_id),
-            "region": UserDatabase.get_user_state(user_id),
-            "country": UserDatabase.get_user_country(user_id),
-            "timezone": "America/Los_Angeles"
-        }
+            "type": "web_search_20250305",
+            "name": "web_search",
+            "max_uses": 3,
+            # Add more domains we trust later
+            "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
+            "user_location": {
+                "type": "approximate",
+                "city": UserDatabase.get_user_city(user_id),
+                "region": UserDatabase.get_user_state(user_id),
+                "country": UserDatabase.get_user_country(user_id),
+                "timezone": "America/Los_Angeles" # This is a placeholder, replace with fetching actual user info later
+            }
         }]
+        self.app = FastAPI()
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[
+                "http://localhost:8000",
+                "https://tummytales.info",
+                "https://www.tummytales.info"
+            ],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT"],
+            allow_headers=["*"]
+        )
+        self.app.add_api_route("/", self.read_root, methods=["GET"])
+        self.app.add_api_route("/rss-url/", self.parse_rss, methods=["POST"])
+        self.app.add_api_route("/news-query/", self.get_relevant_news, methods=["POST"])
+        self.app.add_api_route("/mark-saved/", self.mark_article_as_saved, methods=["PUT"])
 
-
-    #welcome message (test)
-    @app.get("/")
-    def read_root():
+    def read_root(self):
         return {"Hello": "This is the Content Aggregation API!"}
 
-    #adds rss feed info to mongodb, returns news stories from url as a list
-    @app.post("/rss-url/")
-    async def parse_rss(url: dict = Body(...)):
-        rss_url = url["rss_url"]
+    async def parse_rss(self, url: RSSRequest):
+        rss_url = url.url  # Access the validated `url` field
         feed = feedparser.parse(rss_url)
         feed_info = feed['feed']
-        ContentAPI.rss_feeds.insert_one({"URL": rss_url, "Title": feed_info["title"], "Description": feed_info["description"], "Feed": feed})
+        await self.rss_feeds.insert_one({"URL": rss_url, "Title": feed_info["title"], "Feed": feed})
         news_stories = []
         for entry in feed.entries:
             desc = {"Title": entry.title, "Link": entry.link, "Date": "", "Summary": ""}
@@ -83,36 +85,47 @@ class ContentAPI:
                 desc["Summary"] = entry.summary
             news_stories.append(desc)
         return {"news_stories": news_stories}
-            
-    #searches internet based on query, returns relevant news
-    # to do: parse llm response, add more trusted domains, error handling
-    @app.post("/news-query/")
-    async def get_relevant_news(query):
-        resp = ContentAPI.claude.messages.create(
-        model="claude-opus-4-20250514",
-        max_tokens=1024,
-        system="You must find 5 news articles related to this query online. Only return the article title, URL, thumbnail image, and a short summary.",
-        messages=[
-                {
-                    "role": "user",
-                    "content": query
-                }
-            ],
-            tools=self.allowed_tools
-        )
-        #to do: make sure this is correct syntax!
-        for news in resp:
-            news_stories.append(news)
-        # currently returns the raw llm json response
-        return{"response": resp}
 
-    # given desc of article, allow users to mark an article as saved
-    # to do: mark article as saved by id instead
-    @app.put("/mark-saved/")
-    async def mark_article_as_saved(desc: dict = Body(...)):
-        self.user_saved_articles.insert_one(desc)
-        st = "Article", desc["Title"], "saved!"
+    async def get_relevant_news(self, query: str):
+        #currently returns a typeerror
+        try:
+            # Call the Claude API with the query and allowed tools
+            resp = self.claude.messages.create(
+                model="claude-opus-4-20250514",
+                max_tokens=1024,
+                system="You must find 5 news articles related to this query online. Only return the article title, URL, thumbnail image, and a short summary.",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": query
+                    }
+                ],
+                tools=self.allowed_tools
+            )
+
+            # Ensure the response is JSON-serializable
+            if isinstance(resp, dict):
+                return {"response": resp}
+            elif hasattr(resp, "to_dict"):
+                return {"response": resp.to_dict()}
+            else:
+                return {"response": str(resp)}
+
+        except Exception as e:
+            # Handle any unexpected errors
+            return {"error": f"Failed to process response: {str(e)}"}
+
+    def _serialize_item(self, item):
+        # Helper method to serialize individual items
+        if isinstance(item, (dict, list, str, int, float, bool, type(None))):
+            return item
+        return str(item)  # Convert non-serializable items to strings
+
+    async def mark_article_as_saved(self, desc: dict = Body(...)):
+        await self.user_saved_articles.insert_one(desc)
+        st = f"Article '{desc['Title']}' saved!"
         return {"response": st}
-    
-content_api = ContentAPI(user_id = "sample_user_id")
+
+# Initialize the ContentAPI instance
+content_api = ContentAPI(user_id="sample_user_id")
 app = content_api.app
