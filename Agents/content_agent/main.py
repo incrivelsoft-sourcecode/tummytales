@@ -43,6 +43,7 @@ class ContentAPI:
     )
 
     def __init__(self, user_id: str):
+        # to do: make these accessible in other methods
         self.user_saved_articles = UserDatabase.get_user_saved_news(user_id)
         self.allowed_tools = [{
         "type": "web_search_20250305",

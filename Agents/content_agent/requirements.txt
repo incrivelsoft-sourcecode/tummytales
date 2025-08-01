@@ -1,8 +1,7 @@
-os
-dotenv
 fastapi
 pymongo
 feedparser
 anthropic
 langchain
 langchain_community
+uvicorn
