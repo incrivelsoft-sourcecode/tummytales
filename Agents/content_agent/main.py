@@ -1,7 +1,7 @@
 # filepath: content_agent/main.py
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, HTTPException  # Add HTTPException for error handling
 from pymongo import MongoClient
 import feedparser
 import anthropic
@@ -35,8 +35,8 @@ class ContentAPI:
     claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
 
     def __init__(self, user_id: str):
-        # Make these accessible in other methods
-        self.user_saved_articles = UserDatabase.get_user_saved_news(user_id)
+        self.user_id = user_id
+        self.user_saved_articles = None  # Initialize as None
         self.allowed_tools = [{
             "type": "web_search_20250305",
             "name": "web_search",
@@ -67,6 +67,10 @@ class ContentAPI:
         self.app.add_api_route("/rss-url/", self.parse_rss, methods=["POST"])
         self.app.add_api_route("/news-query/", self.get_relevant_news, methods=["POST"])
         self.app.add_api_route("/mark-saved/", self.mark_article_as_saved, methods=["PUT"])
+
+    async def initialize(self):
+        # Properly instantiate UserDatabase
+        self.user_saved_articles = await UserDatabase(self.user_id).get_user_saved_news()
 
     def read_root(self):
         return {"Hello": "This is the Content Aggregation API!"}
@@ -122,10 +126,33 @@ class ContentAPI:
         return str(item)  # Convert non-serializable items to strings
 
     async def mark_article_as_saved(self, desc: dict = Body(...)):
-        await self.user_saved_articles.insert_one(desc)
-        st = f"Article '{desc['Title']}' saved!"
-        return {"response": st}
+        try:
+            # Validate that the input is a dictionary
+            if not isinstance(desc, dict):
+                raise HTTPException(status_code=400, detail="Invalid input format. Expected a JSON object.")
+
+            # Log the incoming data for debugging
+            print(f"Received data to save: {desc}")
+
+            # Insert the article into the database
+            await self.user_saved_articles.insert_one(desc)
+            st = f"Article '{desc['Title']}' saved!"
+            return {"response": st}
+
+        except Exception as e:
+            # Handle unexpected errors
+            return {"error": f"Failed to save article: {str(e)}"}
 
 # Initialize the ContentAPI instance
 content_api = ContentAPI(user_id="sample_user_id")
+
+# Perform async initialization
+async def initialize_content_api():
+    await content_api.initialize()
+
+# Use FastAPI's startup event to initialize the ContentAPI instance
+@content_api.app.on_event("startup")
+async def startup_event():
+    await initialize_content_api()
+
 app = content_api.app
