@@ -5,7 +5,7 @@ import os
 import sys
 
 # Add import for Agents module
-from main import ContentAPI
+from content_agent.main import ContentAPI
 
 content_api = ContentAPI(user_id="")
 app = content_api.app
@@ -15,17 +15,17 @@ client = TestClient(app)
 # to do: fix 3 below to insert/find in right database
 @pytest.fixture
 def mock_mongo_insert():
-    with patch("ContentAPI.rss_feeds.insert_one") as mock:
+    with patch("content_agent.main.ContentAPI.rss_feeds.insert_one") as mock:
         yield mock
 
 @pytest.fixture
 def mock_mongo_find():
-    with patch("ContentAPI.rss_feeds.find") as mock:
+    with patch("content_agent.main.ContentAPI.rss_feeds.find") as mock:
         yield mock
 
 @pytest.fixture
 def mock_mongo_find_one():
-    with patch("ContentAPI.rss_feeds.find_one") as mock:
+    with patch("content_agent.main.ContentAPI.rss_feeds.find_one") as mock:
         yield mock
 
 def test_read_root():

@@ -11,6 +11,7 @@ from langchain_community.vectorstores import Pinecone as LangChainPinecone
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import Anthropic
 from pydantic import BaseModel
+import sys
 
 #for user's saved articles
 from user_info import UserDatabase  # Use absolute import

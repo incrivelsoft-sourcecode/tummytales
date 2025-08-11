@@ -52,5 +52,5 @@ To build and run the Docker image for the FastAPI application, follow these step
 ## Testing
 Run tests with
 ```
-pytest test_main.py
+pytest Agents/content_agent/test_main.py
 ```
