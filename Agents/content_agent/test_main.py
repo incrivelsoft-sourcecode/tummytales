@@ -4,11 +4,8 @@ from unittest.mock import AsyncMock, patch
 import os
 import sys
 
-# Add the Agents directory to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
-
 # Add import for Agents module
-from Agents.content_agent.main import ContentAPI
+from main import ContentAPI
 
 content_api = ContentAPI(user_id="")
 app = content_api.app
@@ -18,17 +15,17 @@ client = TestClient(app)
 # to do: fix 3 below to insert/find in right database
 @pytest.fixture
 def mock_mongo_insert():
-    with patch("content_agent.main.ContentAPI.rss_feeds.insert_one") as mock:
+    with patch("ContentAPI.rss_feeds.insert_one") as mock:
         yield mock
 
 @pytest.fixture
 def mock_mongo_find():
-    with patch("content_agent.main.ContentAPI.rss_feeds.find") as mock:
+    with patch("ContentAPI.rss_feeds.find") as mock:
         yield mock
 
 @pytest.fixture
 def mock_mongo_find_one():
-    with patch("content_agent.main.ContentAPI.rss_feeds.find_one") as mock:
+    with patch("ContentAPI.rss_feeds.find_one") as mock:
         yield mock
 
 def test_read_root():
