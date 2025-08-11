@@ -30,13 +30,13 @@ To build and run the Docker image for the FastAPI application, follow these step
 1. Build the Docker image:
 
    ```
-   docker build -t content_agent .
+   docker build -t content_agent:latest agents/content_agent
    ```
 
 2. Run the Docker container:
 
    ```
-   docker run -d -p 8000:8000 content_agent
+   docker run -d -p 8000:8000 content_agent:latest
    ```
 
 3. Access the API at `http://localhost:8000`.
