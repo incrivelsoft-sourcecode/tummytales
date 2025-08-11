@@ -13,7 +13,7 @@ from langchain_community.llms import Anthropic
 from pydantic import BaseModel
 
 #for user's saved articles
-from user_info import UserDatabase
+from .user_info import UserDatabase  # Use relative import
 
 #embedding vector should be size 1024
 load_dotenv()
