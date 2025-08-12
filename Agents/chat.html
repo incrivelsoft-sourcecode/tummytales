@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mom to Mom Chat</title>
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+
+    body.dark {
+      background: #121212;
+      color: #ffffff;
+    }
+
+    h2 {
+      background-color: #128C7E;
+      color: white;
+      padding: 15px;
+      margin: 0;
+      text-align: center;
+    }
+
+    #online-count {
+      padding: 10px 20px;
+      background: #e0f2f1;
+      color: #00695c;
+      font-weight: bold;
+    }
+
+    #user-list {
+      padding: 0 20px;
+      list-style-type: none;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    #chat-box {
+      height: 400px;
+      overflow-y: scroll;
+      padding: 10px;
+      margin: 10px 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.dark #chat-box {
+      background: #1e1e1e;
+      border-color: #333;
+    }
+
+    .message {
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 18px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+
+    .me {
+      background: #dcf8c6;
+      align-self: flex-end;
+      text-align: right;
+    }
+
+    body.dark .me {
+      background: #2e7d32;
+    }
+
+    .other {
+      background: #f1f0f0;
+      align-self: flex-start;
+      text-align: left;
+    }
+
+    body.dark .other {
+      background: #424242;
+    }
+
+    .seen-tag {
+      font-size: 11px;
+      color: gray;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    #chat-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 20px 20px 20px;
+    }
+
+    #msg-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #128C7E;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0e6f60;
+    }
+
+    input[type="file"] {
+      background: #fff;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    body.dark input[type="file"],
+    body.dark button,
+    body.dark #msg-input {
+      background: #222;
+      color: #eee;
+      border-color: #555;
+    }
+
+    #typing-indicator {
+      padding: 0 20px;
+      font-style: italic;
+      color: #888;
+      height: 20px;
+    }
+
+    img, video, audio {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Mom to Mom Chat</h2>
+
+<div style="text-align: right; padding: 10px 20px;">
+  <label>
+    <input type="checkbox" id="dark-toggle" /> 🌙 Dark Mode
+  </label>
+</div>
+
+<div id="online-count"></div>
+<ul id="user-list"></ul>
+<div id="chat-box"></div>
+<div id="typing-indicator"></div>
+
+<div id="chat-controls">
+  <input type="text" id="msg-input" placeholder="Type a message..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <div>
+    <button onclick="startRecording()">🎙 Start Recording</button>
+    <button onclick="stopRecording()" id="stop-btn" disabled>Stop & Send</button>
+  </div>
+
+  <div>
+    <input type="file" id="file-input" />
+    <button onclick="uploadFile()">Send File</button>
+  </div>
+</div>
+
+<script>
+  const socket = io();
+  const username = prompt("Enter your name:");
+  let mediaRecorder;
+  let audioChunks = [];
+
+  socket.emit("join", { username });
+
+  document.getElementById("msg-input").addEventListener("input", () => {
+    socket.emit("typing", { user: username });
+  });
+
+  document.getElementById("dark-toggle").addEventListener("change", function () {
+    document.body.classList.toggle("dark");
+  });
+
+  socket.on("all_users", users => {
+    document.getElementById("user-list").innerHTML = users.map(u => `<li>${u}</li>`).join('');
+    document.getElementById("online-count").innerText = `👥 ${users.length} online`;
+  });
+
+  socket.on("message", data => {
+    const box = document.getElementById("chat-box");
+    const msg = document.createElement("div");
+    msg.classList.add("message", data.from === username ? "me" : "other");
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    msg.innerHTML = `<b>${data.from}:</b><br>${data.text}<br><small style="font-size: 11px; color: gray;">${time}</small>`;
+    box.appendChild(msg);
+    box.scrollTop = box.scrollHeight;
+
+    if (data.from !== username) {
+      socket.emit("seen", { sid: socket.id });
+    }
+  });
+
+  socket.on("seen", () => {
+    const messages = document.querySelectorAll(".me");
+    if (messages.length) {
+      const last = messages[messages.length - 1];
+      if (!last.querySelector('.seen-tag')) {
+        const seenTag = document.createElement("div");
+        seenTag.className = "seen-tag";
+        seenTag.innerText = "✓ Seen";
+        last.appendChild(seenTag);
+      }
+    }
+  });
+
+  socket.on("typing", data => {
+    const ti = document.getElementById("typing-indicator");
+    ti.innerText = `${data.user} is typing...`;
+    setTimeout(() => { ti.innerText = ""; }, 1000);
+  });
+
+  function sendMessage() {
+    const input = document.getElementById("msg-input");
+    if (input.value.trim() !== "") {
+      socket.emit("message", { from: username, text: input.value });
+      input.value = "";
+    }
+  }
+
+  function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      document.getElementById("stop-btn").disabled = false;
+    });
+  }
+
+  function stopRecording() {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const file = new File([blob], `voice_${Date.now()}.webm`);
+        const formData = new FormData();
+        formData.append('file', file);
+        fetch('/upload_file', { method: 'POST', body: formData })
+          .then(res => res.json())
+          .then(data => {
+            socket.emit("message", {
+              from: username,
+              text: `<audio controls><source src="${data.url}" type="audio/webm">`
+            });
+          });
+      };
+      document.getElementById("stop-btn").disabled = true;
+    }
+  }
+
+  function uploadFile() {
+    const file = document.getElementById("file-input").files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/upload_file', { method: 'POST', body: formData })
+      .then(res => res.json())
+      .then(data => {
+        const ext = data.ext;
+        let preview = '';
+        if (['jpg', 'jpeg', 'png'].includes(ext)) {
+          preview = `<img src="${data.url}" width="150">`;
+        } else if (['mp3', 'wav', 'webm'].includes(ext)) {
+          preview = `<audio controls><source src="${data.url}" type="audio/${ext}">`;
+        } else if (['mp4', 'mov'].includes(ext)) {
+          preview = `<video width="200" controls><source src="${data.url}" type="video/${ext}">`;
+        } else {
+          preview = `<a href="${data.url}" target="_blank">📄 ${data.name}</a>`;
+        }
+        socket.emit("message", { from: username, text: preview });
+      });
+  }
+</script>
+
+</body>
+</html>
