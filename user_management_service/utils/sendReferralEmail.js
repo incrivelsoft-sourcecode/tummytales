@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://54.163.147.226:3000" || "https://tummytales.info";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://54.163.147.226:8080" || "https://tummytales.info";
 
 const sendReferralEmail = async (supporters, referralName, referal_code) => {
   const transporter = nodemailer.createTransport({
@@ -36,7 +36,7 @@ const sendReferralEmail = async (supporters, referralName, referal_code) => {
         <div class="content">
           <p><strong>${referralName}</strong> has invited you to track her health and medications.</p>
           <p>Click below to register or log in and start tracking her journey.</p>
-          <a href="${FRONTEND_URL}/supporter-register?referal_code=${referal_code}&permissions=${permissions}&role=${role}" class="button">Join Now</a>
+          <a href="${FRONTEND_URL}/supporter-signup?referal_code=${referal_code}&permissions=${permissions}&role=${role}" class="button">Join Now</a>
         </div>
         <div class="footer">
           <p>If you didn't request this email, you can ignore it.</p>
