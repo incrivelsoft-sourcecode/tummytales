@@ -1,35 +1,59 @@
-from pymongo import MongoClient
-from fastapi import HTTPException
-import os  # Ensure os is imported for environment variables
 
-# Class for interacting with user info
-class UserDatabase:
-    def __init__(self, user_id: str):
-        self.uid = user_id
-        client = MongoClient(os.getenv("MONGODB_URL"))
-        db = client.get_database(os.getenv("MONGODB_DB_NAME"))
-        self.profiles = db.get_collection("profiles")  # Define as an instance variable
+import requests
+import os
 
-    async def find_user(self):
-        # Use self.profiles and self.uid
-        profile = await self.profiles.find_one({"userId": self.uid})
-        if not profile:
-            raise HTTPException(status_code=404, detail="No profile found for this user.")
-        return profile  # Return the profile
+API_URL = "https://tummytales-db-api.onrender.com"
+# You need to set these environment variables
+API_KEY = os.getenv("X_API_KEY")
+AGENT_KEY = os.getenv("X_AGENT_KEY")
 
-    async def get_user_saved_news(self):
-        # Fetch the user profile and return saved news
-        profile = await self.find_user()
-        return profile.get("saved_news", {})  # Use .get() to avoid KeyError
+def get_user_profile(user_id: str):
+    """
+    Fetches a user's profile from the API.
+    """
+    headers = {
+        "accept": "application/json",
+        "X-API-Key": API_KEY,
+        "X-Agent-Key": AGENT_KEY
+    }
+    response = requests.get(f"{API_URL}/useronboarding/mom?user_id={user_id}", headers=headers)
+    response.raise_for_status()
+    return response.json()
 
-    async def get_user_country(self):
-        profile = await self.find_user()
-        return profile.get("generalDetails", {}).get("country", "Unknown")
+def get_user_country(user_id: str):
+    """
+    Gets a user's country from their profile.
+    """
+    profile = get_user_profile(user_id)
+    return profile.get("generalDetails", {}).get("country", "Unknown")
 
-    async def get_user_state(self):
-        profile = await self.find_user()
-        return profile.get("generalDetails", {}).get("state", "Unknown")
+def get_user_state(user_id: str):
+    """
+    Gets a user's state from their profile.
+    """
+    profile = get_user_profile(user_id)
+    return profile.get("generalDetails", {}).get("State", "Unknown")
 
-    async def get_user_city(self):
-        profile = await self.find_user()
-        return profile.get("generalDetails", {}).get("city", "Unknown")
+def get_user_city(user_id: str):
+    """
+    Gets a user's city from their profile.
+    """
+    profile = get_user_profile(user_id)
+    return profile.get("generalDetails", {}).get("city", "Unknown")
+
+def get_user_saved_news(user_id: str):
+    """
+    Gets a user's saved news.
+    NOTE: This functionality is not yet implemented in the API.
+    """
+    # Returning an empty list as a placeholder
+    return []
+
+def save_user_article(user_id: str, article: dict):
+    """
+    Saves an article for a user.
+    NOTE: This functionality is not yet implemented in the API.
+    """
+    # Placeholder function
+    print(f"Article saving not implemented. User: {user_id}, Article: {article}")
+    pass

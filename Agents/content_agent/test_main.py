@@ -5,7 +5,7 @@ import os
 import sys
 
 # Add import for Agents module
-from content_agent.main import ContentAPI
+from main import ContentAPI
 
 content_api = ContentAPI(user_id="")
 app = content_api.app

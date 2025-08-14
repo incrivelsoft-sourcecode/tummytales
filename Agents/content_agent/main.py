@@ -14,7 +14,7 @@ from pydantic import BaseModel
 import sys
 
 #for user's saved articles
-from user_info import UserDatabase  # Use absolute import
+from user_info import get_user_city, get_user_state, get_user_country, get_user_saved_news, save_user_article # Use absolute import
 
 #embedding vector should be size 1024
 load_dotenv()
@@ -46,9 +46,9 @@ class ContentAPI:
             "allowed_domains": ["healthline.com", "nih.gov", "webmd.com", "mayoclinic.org", "health.harvard.edu"],
             "user_location": {
                 "type": "approximate",
-                "city": UserDatabase.get_user_city(user_id),
-                "region": UserDatabase.get_user_state(user_id),
-                "country": UserDatabase.get_user_country(user_id),
+                "city": get_user_city(user_id),
+                "region": get_user_state(user_id),
+                "country": get_user_country(user_id),
                 "timezone": "America/Los_Angeles" # This is a placeholder, replace with fetching actual user info later
             }
         }]
@@ -71,7 +71,7 @@ class ContentAPI:
 
     async def initialize(self):
         # Properly instantiate UserDatabase
-        self.user_saved_articles = await UserDatabase(self.user_id).get_user_saved_news()
+        self.user_saved_articles = get_user_saved_news(self.user_id)
 
     def read_root(self):
         return {"Hello": "This is the Content Aggregation API!"}
@@ -136,7 +136,7 @@ class ContentAPI:
             print(f"Received data to save: {desc}")
 
             # Insert the article into the database
-            await self.user_saved_articles.insert_one(desc)
+            save_user_article(self.user_id, desc)
             st = f"Article '{desc['Title']}' saved!"
             return {"response": st}
 
@@ -145,6 +145,7 @@ class ContentAPI:
             return {"error": f"Failed to save article: {str(e)}"}
 
 # Initialize the ContentAPI instance
+# to do: change this to get user_id on login
 content_api = ContentAPI(user_id="sample_user_id")
 
 # Perform async initialization
