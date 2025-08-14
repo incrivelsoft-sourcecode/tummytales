@@ -23,11 +23,9 @@ class RSSRequest(BaseModel):
     url: str
 
 class ContentAPI:
-    client = MongoClient(os.getenv("MONGODB_URL"))
-    db = client.get_database(os.getenv("MONGODB_DB_NAME"))
 
     #incorporate this into populating the News tab on the website
-    rss_feeds = db.get_collection("rss_feeds")
+    rss_feeds = None
 
     #for news aggregation
     news_stories = [] #temp storage; only favorited articles are saved between sessions
@@ -49,7 +47,6 @@ class ContentAPI:
                 "city": get_user_city(user_id),
                 "region": get_user_state(user_id),
                 "country": get_user_country(user_id),
-                "timezone": "America/Los_Angeles" # This is a placeholder, replace with fetching actual user info later
             }
         }]
         self.app = FastAPI()
