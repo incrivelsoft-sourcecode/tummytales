@@ -13,10 +13,8 @@ from langchain_community.llms import Anthropic
 from pydantic import BaseModel
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 #for user's saved articles
-from content_agent.user_info import get_user_city, get_user_state, get_user_country, get_user_saved_news, save_user_article # Use absolute import
+from user_info import get_user_city, get_user_state, get_user_country, get_user_saved_news, save_user_article # Use absolute import
 
 #embedding vector should be size 1024
 load_dotenv()
