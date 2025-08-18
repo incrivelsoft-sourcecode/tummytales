@@ -56,14 +56,13 @@ claude = anthropic.Anthropic(api_key=os.getenv("CLAUDE_KEY"))
 def read_root():
     return {"Hello": "This is the Content Aggregation API!"}
 
+#has not been implemented in mom account api yet
 @app.post("/rss-url/")
 async def parse_rss(url: RSSRequest):
     rss_url = url.url
     feed = feedparser.parse(rss_url)
-    # This was trying to write to a database collection that wasn't initialized.
-    # I'm commenting it out as it seems incomplete and would crash.
-    # feed_info = feed['feed']
-    # await self.rss_feeds.insert_one({"URL": rss_url, "Title": feed_info["title"], "Feed": feed})
+    feed_info = feed['feed']
+    await rss_feeds.insert_one({"URL": rss_url, "Title": feed_info["title"], "Feed": feed})
     news_stories = []
     for entry in feed.entries:
         desc = {"Title": entry.title, "Link": entry.link, "Date": "", "Summary": ""}
