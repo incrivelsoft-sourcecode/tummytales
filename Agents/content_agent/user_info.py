@@ -52,6 +52,7 @@ def get_user_saved_news(user_id: str):
 def save_user_article(user_id: str, article: dict):
     """
     Saves an article for a user.
+    Need to send a get request using the render API
     NOTE: This functionality is not yet implemented in the API.
     """
     # Placeholder function
