@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from db.mongo import entries_col, profile_col, memory_col
 from dotenv import load_dotenv
 from agents.superkick import SuperKickFeedbackAgent
-from routes import kick, feedback, test
+from routes import kick, feedback, test, user_id, report
 import os
 
 # ───────────────────────────────
@@ -24,7 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:8080"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -48,3 +48,5 @@ app.state.superkick_agent = superkick_agent
 app.include_router(kick.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
 app.include_router(test.router, prefix="/api")
+app.include_router(user_id.router, prefix="/api")
+app.include_router(report.router, prefix="/api")
