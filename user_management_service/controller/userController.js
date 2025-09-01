@@ -110,8 +110,10 @@ const loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ $or: [{ email: emailOrUsername }, { user_name: emailOrUsername }] });
     if (!user) return res.status(404).json({ message: 'Invalid email or password' });
-
+   
+    console.log("User found:", user);
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match result:", isMatch);
     if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
 
     if (user.status !== "verified") {
@@ -135,6 +137,7 @@ const loginUser = async (req, res) => {
       userId: user._id
     });
   } catch (err) {
+     console.error("Login error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -292,9 +295,12 @@ const resetPassword = async (req, res) => {
     const user = await User.findOne({ _id: decoded.user_id, email: decoded.email });
     if (!user) return res.status(404).json({ message: 'Invalid or expired token' });
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    await user.save();
+    // const salt = await bcrypt.genSalt(10);
+    // user.password = await bcrypt.hash(password, salt);
+    // await user.save();
+    user.password = password; // plain text
+    await user.save(); // pre-save hook will hash it once
+
 
     return res.json({ message: 'Password reset successful.' });
   } catch (err) {

@@ -25,22 +25,23 @@ Before running the application, ensure you have the following environment variab
 
 ## Docker
 
-To build and run the Docker image for the FastAPI application, follow these steps:
+To run this project, you will need a .env file with the following variables:
 
-1. Build the Docker image:
+```
+CLAUDE_KEY=...      #your Anthropic API key
+```
 
-   ```
-   docker build -t content_agent:latest agents/content_agent
-   ```
+To run the Docker container, use the following commands:
 
-2. Run the Docker container:
+```
+#build the container
+docker build -t content_agent .
 
-   ```
-   docker run -d -p 8000:8000 content_agent:latest
-   ```
+#run the container
+docker run -p 8000:8000 content_agent
+```
 
-3. Access the API at `http://localhost:8000`.
-4. Access docs at `http://localhost:8000/docs`
+This will start the FastAPI server on `localhost:8000`.
 
 ## API Endpoints
 

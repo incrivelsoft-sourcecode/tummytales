@@ -10,8 +10,6 @@ class MovementModel(BaseModel):
     session_id: str
     timestamp: datetime
     strength: Optional[str]
-    duration: Optional[int]
-    notes: Optional[str]
 
 # ----------------------------
 # Feedback Summary Model

@@ -4,29 +4,11 @@ from unittest.mock import AsyncMock, patch
 import os
 import sys
 
-# Add import for Agents module
-from content_agent.main import ContentAPI
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-content_api = ContentAPI(user_id="")
-app = content_api.app
+from main import app
+
 client = TestClient(app)
-
-# currently all methods return 404 since mongodb not set up yet
-# to do: fix 3 below to insert/find in right database
-@pytest.fixture
-def mock_mongo_insert():
-    with patch("content_agent.main.ContentAPI.rss_feeds.insert_one") as mock:
-        yield mock
-
-@pytest.fixture
-def mock_mongo_find():
-    with patch("content_agent.main.ContentAPI.rss_feeds.find") as mock:
-        yield mock
-
-@pytest.fixture
-def mock_mongo_find_one():
-    with patch("content_agent.main.ContentAPI.rss_feeds.find_one") as mock:
-        yield mock
 
 def test_read_root():
     response = client.get("/")
@@ -44,7 +26,7 @@ async def test_parse_rss():
                 {"title": "News 2", "link": "http://example.com/news2", "summary": "Summary 2"},
             ],
         }
-        response = client.post("/rss-url/", json={"rss_url": rss_url})
+        response = client.post("/rss-url/", json={"url": rss_url})
         assert response.status_code == 200
         assert response.json() == {
             "news_stories": [
@@ -54,47 +36,51 @@ async def test_parse_rss():
         }
 
 @pytest.mark.asyncio
-async def test_save_news(mock_mongo_insert):
-    news_item = {
-        "Title": "News 1",
-        "Link": "http://example.com/news1",
-        "Date": "2023-01-01",
-        "Summary": "Summary 1",
+@patch("content_agent.main.get_user_city", return_value="Test City")
+@patch("content_agent.main.get_user_state", return_value="Test State")
+@patch("content_agent.main.get_user_country", return_value="Test Country")
+@patch("content_agent.main.claude.messages.create")
+async def test_get_relevant_news(mock_claude_create, mock_get_country, mock_get_state, mock_get_city):
+    # Mock the response from the Claude API
+    mock_claude_create.return_value = {
+        "id": "msg_01Fp8b4A4g8p8g8g8g8g8g8g8g8g8g8g",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+            {
+                "type": "text",
+                "text": "Here are some articles about pregnancy nutrition..."
+            }
+        ],
+        "model": "claude-opus-4-20250514",
+        "stop_reason": "end_turn",
+        "usage": {
+            "input_tokens": 10,
+            "output_tokens": 25
+        }
     }
-    response = client.post("/save-news/", json=news_item)
+
+    request_data = {
+        "user_id": "test_user",
+        "query": "pregnancy nutrition"
+    }
+    response = client.post("/news-query/", json=request_data)
+
     assert response.status_code == 200
-    assert response.json() == {"message": "News saved successfully!"}
-    mock_mongo_insert.assert_called_once_with(news_item)
+    assert "response" in response.json()
 
 @pytest.mark.asyncio
-async def test_get_saved_news(mock_mongo_find):
-    mock_mongo_find.return_value = [
-        {"Title": "News 1", "Link": "http://example.com/news1", "Date": "2023-01-01", "Summary": "Summary 1"},
-        {"Title": "News 2", "Link": "http://example.com/news2", "Date": "2023-01-02", "Summary": "Summary 2"},
-    ]
-    response = client.get("/saved-news/")
-    assert response.status_code == 200
-    assert response.json() == {
-        "saved_news": [
-            {"Title": "News 1", "Link": "http://example.com/news1", "Date": "2023-01-01", "Summary": "Summary 1"},
-            {"Title": "News 2", "Link": "http://example.com/news2", "Date": "2023-01-02", "Summary": "Summary 2"},
-        ]
+@patch("content_agent.main.save_user_article")
+async def test_mark_article_as_saved(mock_save_user_article):
+    request_data = {
+        "user_id": "test_user",
+        "desc": {
+            "Title": "Test Article",
+            "Link": "http://example.com/article"
+        }
     }
-    mock_mongo_find.assert_called_once()
+    response = client.put("/mark-saved/", json=request_data)
 
-@pytest.mark.asyncio
-async def test_get_saved_news_by_user(mock_mongo_find):
-    user_id = "user123"
-    mock_mongo_find.return_value = [
-        {"Title": "News 1", "Link": "http://example.com/news1", "Date": "2023-01-01", "Summary": "Summary 1", "user_id": user_id},
-        {"Title": "News 2", "Link": "http://example.com/news2", "Date": "2023-01-02", "Summary": "Summary 2", "user_id": user_id},
-    ]
-    response = client.get(f"/saved-news/{user_id}")
     assert response.status_code == 200
-    assert response.json() == {
-        "saved_news": [
-            {"Title": "News 1", "Link": "http://example.com/news1", "Date": "2023-01-01", "Summary": "Summary 1"},
-            {"Title": "News 2", "Link": "http://example.com/news2", "Date": "2023-01-02", "Summary": "Summary 2"},
-        ]
-    }
-    mock_mongo_find.assert_called_once_with({"user_id": user_id})
+    assert response.json() == {"response": "Article 'Test Article' saved!"}
+    mock_save_user_article.assert_called_once_with("test_user", {"Title": "Test Article", "Link": "http://example.com/article"})

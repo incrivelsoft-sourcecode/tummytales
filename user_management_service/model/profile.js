@@ -102,7 +102,7 @@ const surveySchema = new mongoose.Schema(
       preferredLanguage: String,
       dietaryPreferences: String,
       physicalActivity: String,
-      primaryInfoSource: String,
+      primaryInfoSource: String,//supporter description
       // physical activity fileds
       heightCm: Number, // Height (cm)
       weightKg: Number, // Weight (kg)

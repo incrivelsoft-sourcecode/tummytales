@@ -10,3 +10,4 @@ python-jose
 langchain-pinecone
 openai
 pinecone
+opnpyxl
