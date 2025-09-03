@@ -9,7 +9,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - MONGO_URI=mongodb://mongo:27017/mentalhealth
+      - MONGO_URI=mongodb://localhost:27017/mentalhealth
       - CO_API_KEY=${CO_API_KEY}
       - COHERE_API_KEY=${COHERE_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
