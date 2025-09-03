@@ -35,6 +35,9 @@ async function startServer() {
   // Mount routes
   app.use("/api", quizRoutes);
   app.use("/api", agentRoutes);
+app.get("/api", (req, res) => {
+  res.json({ status: "ok", service: "mental-health-agent-backend" });
+});
 
   const PORT = process.env.PORT || 4000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
