@@ -75,7 +75,7 @@ jobs:
               "docker pull docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }} --force",
               "docker stop mental-health-agent-backend || true",
               "docker rm mental-health-agent-backend || true",
-              "docker run -d --pull=always --name mental-health-agent-backend -p 6002:6002 --network host --env-file /home/ubuntu/env/mental-health-agent.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
+              "docker run -d --pull=always --name mental-health-agent-backend -p 4000:4000 --network host --env-file /home/ubuntu/env/mental-health-agent.env docker.io/${{ env.REGISTRY_HOSTNAME }}/${{ env.IMAGE }}:${{ env.TAG }}",
               "docker image prune -af || true",
               "docker system prune -af --volumes || true"
             ]' \
