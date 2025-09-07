@@ -3,6 +3,10 @@ const cors = require('cors');
 const dotenv  = require('dotenv');
 const session  = require('express-session');
 const passport  = require('passport');
+
+// Load environment variables FIRST
+dotenv.config();
+
 require("./utils/passport.js");
 const connectDB = require('./config/db.js');
 
@@ -11,9 +15,7 @@ const userRouter  = require('./route/userRoutes.js');
 const momsurvey_router=require('./route/momsurvey_router.js');
 const booknow_router = require("./route/booknow_router.js");
 
-const port = process.env.DB_PORT || 5001;  
-
-dotenv.config();
+const port = process.env.DB_PORT || 5001;
 
 const app = express();
 
