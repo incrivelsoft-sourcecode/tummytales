@@ -1,0 +1,102 @@
+[
+  {
+    "question": "I have been able to laugh and see the funny side of things.",
+    "answers": [
+      { "text": "As much as I always could", "score": 0 },
+      { "text": "Not quite so much now", "score": 1 },
+      { "text": "Definitely not so much now", "score": 2 },
+      { "text": "Not at all", "score": 3 }
+    ],
+    "serialNumber": 1
+  },
+  {
+    "question": "I have looked forward with enjoyment to things",
+    "answers": [
+      { "text": "As much as I ever did", "score": 0 },
+      { "text": "Rather less than I used to", "score": 1 },
+      { "text": "Definitely less than I used to", "score": 2 },
+      { "text": "Hardly at all", "score": 3 }
+    ],
+    "serialNumber": 2
+  },
+  {
+    "question": "I have blamed myself unnecessarily when things go wrong",
+    "answers": [
+      { "text": "Yes, most of the time", "score": 3 },
+      { "text": "Yes, some of the time", "score": 2 },
+      { "text": "Not very often", "score": 1 },
+      { "text": "No, never", "score": 0 }
+    ],
+    "serialNumber": 3
+  },
+  {
+    "question": "I have felt anxious or worried for no good reason",
+    "answers": [
+      { "text": "Yes, very often", "score": 0 },
+      { "text": "Yes, sometimes", "score": 1 },
+      { "text": "Hardly ever", "score": 2 },
+      { "text": "No, not at all", "score": 3 }
+    ],
+    "serialNumber": 4
+  },
+  {
+    "question": "I have felt scared or panicky for no very good reason",
+    "answers": [
+      { "text": "Yes, quite a lot", "score": 3 },
+      { "text": "Yes, sometimes", "score": 2 },
+      { "text": "No, not much", "score": 1 },
+      { "text": "No, not at all", "score": 0 }
+    ],
+    "serialNumber": 5
+  },
+  {
+    "question": "I have felt overwhelmed or unable to cope",
+    "answers": [
+      { "text": "Yes, most of the time", "score": 3 },
+      { "text": "Yes, sometimes", "score": 2 },
+      { "text": "Rarely", "score": 1 },
+      { "text": "No, not at all", "score": 0 }
+    ],
+    "serialNumber": 6
+  },
+  {
+    "question": "I have been so unhappy that I’ve had difficulty sleeping",
+    "answers": [
+      { "text": "Yes, most of the time", "score": 3 },
+      { "text": "Yes, sometimes", "score": 2 },
+      { "text": "Not very often", "score": 1 },
+      { "text": "No, not at all", "score": 0 }
+    ],
+    "serialNumber": 7
+  },
+  {
+    "question": "I have felt sad or miserable",
+    "answers": [
+      { "text": "Yes, most of the time", "score": 3 },
+      { "text": "Yes, quite often", "score": 2 },
+      { "text": "Not very often", "score": 1 },
+      { "text": "No, not at all", "score": 0 }
+    ],
+    "serialNumber": 8
+  },
+  {
+    "question": "I have been so unhappy that I have been crying",
+    "answers": [
+      { "text": "Yes, most of the time", "score": 3 },
+      { "text": "Yes, quite often", "score": 2 },
+      { "text": "Only occasionally", "score": 1 },
+      { "text": "No, never", "score": 0 }
+    ],
+    "serialNumber": 9
+  },
+  {
+    "question": "I have thought of harming myself",
+    "answers": [
+      { "text": "Yes, quite often", "score": 3 },
+      { "text": "Sometimes", "score": 2 },
+      { "text": "Hardly ever", "score": 1 },
+      { "text": "Never", "score": 0 }
+    ],
+    "serialNumber": 10
+  }
+]

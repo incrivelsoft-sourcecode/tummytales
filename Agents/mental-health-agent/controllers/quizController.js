@@ -1,7 +1,8 @@
 // controllers/quizController.js
-const Scores    = require('../models/scores');
-const Questions = require('../models/questions');
-const { upsertTexts, toPineconeSafeMetadata } = require('../services/memoryService'); // <- sanitizer exported
+require('dotenv').config();
+
+const data = require('../services/data'); // http | mongo via DATA_PROVIDER
+const { upsertTexts, toPineconeSafeMetadata } = require('../services/memoryService');
 
 // Helper: coerce any value to a Pinecone-safe list of strings for metadata
 function asStringList(value) {
@@ -35,78 +36,106 @@ async function calculateScore(req, res) {
       return res.status(400).json({ error: 'Invalid testResponses format' });
     }
 
-    // Load & validate questions
-    const questions = await Questions.find().sort({ serialNumber: 1 }).lean();
-    if (questions.length !== 10) {
+    // 1) Load & validate questions (via repo; works for http or mongo)
+    const questions = await data.getQuestions();
+    if (!Array.isArray(questions) || questions.length !== 10) {
       return res
         .status(500)
-        .json({ error: 'Expected 10 questions in DB, found ' + questions.length });
+        .json({ error: 'Expected 10 questions in DB, found ' + (questions?.length ?? 0) });
     }
 
-    // Compute totalScore, scoreInfo, answers
+    // 2) Compute totalScore, scoreInfo, answers
     let totalScore = 0;
     const scoreInfo = [];
     const answers   = [];
 
-    for (const q of questions) {
-      const idx = testResponses[q.serialNumber];
-      if (idx == null || idx < 0 || idx >= q.answers.length) {
+    // Normalize keys in case client sent them as strings
+    const responseBySerial = new Map(
+      Object.entries(testResponses).map(([k, v]) => [Number(k), Number(v)])
+    );
+
+    // Ensure questions are processed in serialNumber order (defensive)
+    const sorted = [...questions].sort((a, b) => Number(a.serialNumber) - Number(b.serialNumber));
+
+    for (const q of sorted) {
+      const serial = Number(q.serialNumber);
+      const idx = responseBySerial.has(serial) ? responseBySerial.get(serial) : undefined;
+
+      if (
+        idx == null ||
+        !Array.isArray(q.answers) ||
+        idx < 0 ||
+        idx >= q.answers.length ||
+        typeof q.answers[idx]?.score === 'undefined'
+      ) {
         return res
           .status(400)
-          .json({ error: `Invalid answer for question ${q.serialNumber}` });
+          .json({ error: `Invalid answer for question ${serial}` });
       }
-      const sc = q.answers[idx].score;
+
+      const sc = Number(q.answers[idx].score ?? 0);
       totalScore += sc;
-      scoreInfo.push({ questionId: q.serialNumber, score: sc });
-      answers.push({ questionId: q.serialNumber, answerIndex: idx });
+      scoreInfo.push({ questionId: serial, score: sc });
+      answers.push({ questionId: serial, answerIndex: Number(idx) });
     }
 
-    // Pick feedback message
-    const lastScore = scoreInfo[scoreInfo.length - 1].score;
+    // 3) Pick feedback message
+    const lastScore = scoreInfo[scoreInfo.length - 1]?.score ?? 0;
     const message =
       totalScore > 10 || lastScore > 0
         ? "Thank you for completing the questionnaire. It looks like you might be facing some emotional challenges—consider reaching out for support."
         : "Thank you for completing the questionnaire!";
 
-    // Save score
-    const saved = await Scores.create({
-      user,
-      totalScore,
-      scoreInfo,
-      answers,
-      message
-    });
+    // 4) Persist score (via repo)
+    // Unified API requires createdAt/updatedAt at TOP LEVEL (camelCase)
+    const nowIso = new Date().toISOString();
+    let saved;
+    try {
+      saved = await data.createScore({
+        user,
+        totalScore,
+        scoreInfo,
+        answers,
+        message,
+        createdAt: nowIso,
+        updatedAt: nowIso
+      });
+    } catch (e) {
+      const detail = e?.response?.data || e?.message || e;
+      console.error('createScore failed:', detail);
+      return res.status(422).json({ error: 'Score persist failed', detail });
+    }
 
-    // ---- Pinecone upsert (fire & forget) ----
-    // Build Pinecone-safe metadata explicitly.
+    const savedId = String(saved?._id || saved?.id || Date.now());
+
+    // 5) Pinecone upsert (fire & forget)
     const metadataRaw = {
-      user: String(saved.user),
-      totalScore: Number(saved.totalScore),
+      user: String(user),
+      totalScore: Number(totalScore),
       type: "quiz",
-      // answers is the common offender; ensure it's a list of strings:
-      answers: asStringList(saved.answers),
-      // keep a raw snapshot if you want to search it later
-      answers_raw_json: JSON.stringify(saved.answers),
-      timestamp: saved.createdAt ? saved.createdAt.toISOString() : new Date().toISOString()
+      answers: asStringList(answers),                // Pinecone-safe
+      answers_raw_json: JSON.stringify(answers),     // useful for later parsing
+      scoreId: savedId,
+      timestamp: nowIso
     };
-
-    // Option A: Let service sanitizer do the final pass (recommended)
     const metadataSafe = toPineconeSafeMetadata
       ? toPineconeSafeMetadata(metadataRaw)
-      : metadataRaw; // fallback if you didn't export it
+      : metadataRaw;
 
     upsertTexts(
-      [String(saved._id)],
-      [saved.message], // text to embed
-      [metadataSafe]
+      [savedId],
+      [message],      // text to embed
+      [metadataSafe],
+      'mental_health' // optional namespace
     ).catch(err => {
       console.error('Non-critical Pinecone upsert error (quiz):', err);
     });
 
+    // 6) Respond
     return res.status(201).json({
-      id: saved._id,
-      totalScore: saved.totalScore,
-      message: saved.message
+      id: savedId,
+      totalScore,
+      message
     });
   } catch (err) {
     console.error('Quiz submission failed:', err);
@@ -118,45 +147,48 @@ async function saveFollowUp(req, res) {
   try {
     const { id, followUp } = req.body;
 
-    // If your follow-up count can vary, drop the strict length check:
-    if (!id || !Array.isArray(followUp) /* || followUp.length !== 5 */) {
+    if (!id || !Array.isArray(followUp)) {
       return res.status(400).json({ error: 'Invalid followUp submission' });
     }
 
-    const updated = await Scores.findByIdAndUpdate(
-      id,
-      { followUp },
-      { new: true, runValidators: true }
-    );
+    // 1) Update follow-up (via repo) -> POST /mental_health/score with { id, followUp }
+    let updated;
+    try {
+      updated = await data.updateFollowUp(id, followUp);
+    } catch (e) {
+      const detail = e?.response?.data || e?.message || e;
+      console.error('updateFollowUp failed:', detail);
+      return res.status(422).json({ error: 'Follow-up persist failed', detail });
+    }
     if (!updated) {
       return res.status(404).json({ error: 'Score document not found' });
     }
 
-    // ---- Pinecone upsert for follow-up (fire & forget) ----
-    // You can embed a compact summary or the message again.
-    const followupText = `Follow-up responses saved for score ${String(updated._id)}.`;
+    // 2) Pinecone upsert for follow-up (fire & forget)
+    const nowIso = new Date().toISOString();
+    const followupText = `Follow-up responses saved for score ${String(id)}.`;
     const metadataRaw = {
       type: "followup",
       user: String(updated.user || "guest"),
-      scoreDocId: String(updated._id),
-      // followUp may be array of indices or objects; make it list of strings:
-      answers: asStringList(updated.followUp),
-      answers_raw_json: JSON.stringify(updated.followUp),
-      timestamp: new Date().toISOString()
+      scoreDocId: String(id),
+      answers: asStringList(followUp),
+      answers_raw_json: JSON.stringify(followUp),
+      timestamp: nowIso
     };
     const metadataSafe = toPineconeSafeMetadata
       ? toPineconeSafeMetadata(metadataRaw)
       : metadataRaw;
 
     upsertTexts(
-      [String(updated._id) + "-followup"],
+      [String(id) + "-followup"],
       [followupText],
-      [metadataSafe]
+      [metadataSafe],
+      'mental_health'
     ).catch(err => {
       console.error('Non-critical Pinecone upsert error (follow-up):', err);
     });
 
-    return res.json({ message: 'Follow-up saved' });
+    return res.json({ message: 'Follow-up saved', id, followUp });
   } catch (err) {
     console.error('Follow-up save failed:', err);
     return res.status(500).json({ error: 'Internal server error' });

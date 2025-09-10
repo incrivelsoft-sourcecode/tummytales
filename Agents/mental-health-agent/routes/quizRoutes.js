@@ -1,48 +1,45 @@
 // routes/quizRoutes.js
+const express = require('express');
+const router = express.Router();
 
-const express           = require('express');
-const router            = express.Router();
-const Questions         = require('../models/questions');
-const followUps         = require('../data/followUpQuestions.json');
-const { calculateScore,
-        saveFollowUp   } = require('../controllers/quizController');
+const data = require('../services/data'); // http | mongo via DATA_PROVIDER
+const followUps = require('../data/followUpQuestions.json');
+const { calculateScore, saveFollowUp } = require('../controllers/quizController');
+
+// Helper to surface async errors to Express' error middleware
+const asyncRoute = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
 /**
  * GET /api/questions
- * Returns the 10 scored questions from MongoDB
+ * Returns the 10 scored questions from the configured data provider
+ * (unified HTTP API in http mode, Mongo in mongo mode)
  */
-router.get('/questions', async (req, res, next) => {
-  try {
-    const qs = await Questions
-      .find()
-      .sort({ serialNumber: 1 })
-      .lean();
-    res.json(qs);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get('/questions', asyncRoute(async (_req, res) => {
+  const qs = await data.getQuestions();           // <-- no Mongoose here
+  res.json(qs);
+}));
 
 /**
  * POST /api/score
- * Body: { user: String, testResponses: { "1": Number, …, "10": Number } }
- * Calculates totalScore, saves raw answers + scoreInfo, and returns { id, totalScore, message }
+ * Body: { user?: String, testResponses: { "1": Number, …, "10": Number } }
+ * Calculates totalScore, persists via repo, and returns { id, totalScore, message }
  */
-router.post('/score', calculateScore);
+router.post('/score', asyncRoute(calculateScore));
 
 /**
  * GET /api/followup
- * Returns the 5 static follow-up questions
+ * Returns the 5 static follow-up questions (served locally)
  */
-router.get('/followup', (req, res) => {
+router.get('/followup', (_req, res) => {
   res.json(followUps);
 });
 
 /**
  * POST /api/followup
- * Body: { id: "<Scores._id>", followUp: [Number,Number,Number,Number,Number] }
- * Saves the follow-up answers into the existing Scores document
+ * Body: { id: "<Scores._id>", followUp: [Number, Number, Number, Number, Number] }
+ * Saves follow-up answers via repo
  */
-router.post('/followup', saveFollowUp);
+router.post('/followup', asyncRoute(saveFollowUp));
 
 module.exports = router;
