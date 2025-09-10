@@ -38,6 +38,12 @@ useEffect(() => {
   if (!userId) return;
 
   const existingSurveyId = localStorage.getItem("surveyId");
+  const surveysUnavailable = localStorage.getItem("surveysUnavailable");
+  
+  // If we know surveys are unavailable, don't try again this session
+  if (surveysUnavailable === "true") {
+    return;
+  }
 
   const fetchSurvey = async () => {
     try {
@@ -82,6 +88,15 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("Error fetching surveys:", error);
+      // Handle specific error cases gracefully
+      if (error.response?.status === 404) {
+        console.warn("Survey endpoint not found - surveys feature may not be available");
+        localStorage.setItem("surveysUnavailable", "true");
+      } else if (error.code === 'NETWORK_ERROR' || error.code === 'ECONNREFUSED') {
+        console.warn("User service appears to be offline - surveys feature unavailable");
+        localStorage.setItem("surveysUnavailable", "true");
+      }
+      // Don't show error to user for missing survey service
     }
   };
 
@@ -302,6 +317,16 @@ useEffect(() => {
             }`}
           >
             Ask Amma
+          </a>
+        </li>
+        <li>
+          <a
+            href="/quiz-demo"
+            className={`px-3 py-1 ${
+              location.pathname === "/quiz-demo" ? "underline" : ""
+            }`}
+          >
+            Quiz and Flashcard
           </a>
         </li>
         <li>
