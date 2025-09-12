@@ -8,7 +8,7 @@ const AGENT_KEY = process.env.UNIFIED_AGENT_KEY || 'def456';
 const API_KEY   = process.env.UNIFIED_API_KEY   || 'entrykey';
 const SEED_ON_EMPTY = String(process.env.UNIFIED_SEED_ON_EMPTY || 'false').toLowerCase() === 'true';
 
-// Optional kill-switches to completely skip unified writes (useful in prod while backend is flaky)
+// Optional kill-switches (non-blocking UI when unified API is flaky)
 const DISABLE_UNIFIED_WRITE = String(process.env.UNIFIED_DISABLE_WRITES || 'false').toLowerCase() === 'true';
 const DISABLE_UNIFIED_CHAT  = String(process.env.UNIFIED_DISABLE_CHAT   || 'false').toLowerCase() === 'true';
 
@@ -30,21 +30,42 @@ async function withRetry(fn, tries = 2) {
   throw lastErr;
 }
 
+// ---------- QUESTIONS FALLBACKS ----------
+function builtinQuestions() {
+  return Array.from({ length: 10 }, (_, i) => ({
+    serialNumber: i + 1,
+    question: `Placeholder question ${i + 1}`,
+    answers: [
+      { text: 'Never',     score: 0 },
+      { text: 'Sometimes', score: 1 },
+      { text: 'Often',     score: 2 },
+      { text: 'Always',    score: 3 },
+    ],
+  }));
+}
+
 function loadLocalQuestions() {
-  const file = path.join(__dirname, '../../../data/questions.json');
-  const buf = fs.readFileSync(file, 'utf8');
-  return JSON.parse(buf);
+  const file = path.resolve(process.cwd(), 'data/questions.json');
+  try {
+    const buf = fs.readFileSync(file, 'utf8');
+    const parsed = JSON.parse(buf);
+    if (Array.isArray(parsed) && parsed.length === 10) return parsed;
+    console.warn(`⚠️ Local questions invalid: expected 10, got ${Array.isArray(parsed) ? parsed.length : 'non-array'}. Using built-in.`);
+  } catch (err) {
+    console.warn('⚠️ Could not read data/questions.json, using built-in. Reason:', err?.message || err);
+  }
+  return builtinQuestions();
 }
 
 async function seedUnifiedQuestions() {
-  const items = loadLocalQuestions();
+  const items = loadLocalQuestions(); // already guaranteed 10
   console.log(`🟡 Seeding ${items.length} questions to unified API...`);
   for (const q of items) {
     try {
       await client.post('/mental_health/question', q);
     } catch (e) {
       const msg = e?.response?.data || e?.message || e;
-      console.warn('   ⚠️  seed question failed:', msg);
+      console.warn('   ⚠️ seed question failed:', msg);
     }
   }
   console.log('🟢 Seeding attempt finished.');
@@ -76,17 +97,15 @@ module.exports = {
   getQuestions: async () => {
     try {
       const { data } = await withRetry(() => client.get('/mental_health/questions'), 2);
+      if (Array.isArray(data) && data.length === 10) return data;
 
-      if (!Array.isArray(data) || data.length !== 10) {
-        console.warn(`⚠️ Unified API returned ${Array.isArray(data) ? data.length : 'non-array'} questions.`);
-        if (SEED_ON_EMPTY) {
-          await seedUnifiedQuestions();
-          const { data: after } = await client.get('/mental_health/questions');
-          if (Array.isArray(after) && after.length === 10) return after;
-        }
-        return loadLocalQuestions();
+      console.warn(`⚠️ Unified API returned ${Array.isArray(data) ? data.length : 'non-array'} questions.`);
+      if (SEED_ON_EMPTY) {
+        await seedUnifiedQuestions();
+        const { data: after } = await client.get('/mental_health/questions');
+        if (Array.isArray(after) && after.length === 10) return after;
       }
-      return data;
+      return loadLocalQuestions();
     } catch (e) {
       console.error('Unified API /questions failed, using local fallback:', e?.response?.data || e?.message || e);
       if (SEED_ON_EMPTY) { try { await seedUnifiedQuestions(); } catch {} }
@@ -138,7 +157,7 @@ module.exports = {
       } catch (e) {
         lastErr = e;
         log422('createScore failed variant:', e);
-        if (e?.response?.status !== 422) break; // if not schema-related, stop trying variants
+        if (e?.response?.status !== 422) break; // not schema-related, stop trying variants
       }
     }
 
@@ -166,7 +185,6 @@ module.exports = {
       log422('createScore failed (form score=):', e);
     }
 
-    // Final non-blocking fallback
     console.warn('🟠 Unified /score not accepting payloads; returning synthetic score so UI can continue.');
     return syntheticScoreResponse(camel);
   },
@@ -218,13 +236,11 @@ module.exports = {
 
   // ---------------- CHAT ----------------
   /**
-   * Unified API docs imply:
    * { sessionId, userId, scoreDocId, messages: [{ role, content, timestamp }], createdAt, updatedAt }
-   * If API rejects (expects ?chat=), we acknowledge locally so the agent can keep talking.
+   * If API rejects (or wants ?chat=), acknowledge locally so the agent keeps working.
    */
   upsertChatMessage: async ({ sessionId, userId, role, content, scoreDocId = null }) => {
     const nowIso = new Date().toISOString();
-
     const body = {
       sessionId,
       userId,
@@ -244,8 +260,7 @@ module.exports = {
       return data;
     } catch (e) {
       log422('Unified API /chat failed:', e);
-
-      // Try ?chat=<json> as a one-off
+      // Try ?chat=<json>
       try {
         const { data } = await client.post('/mental_health/chat', null, {
           params: { chat: JSON.stringify(body) }
@@ -254,8 +269,6 @@ module.exports = {
       } catch (e2) {
         log422('Unified API /chat failed (query ?chat=):', e2);
       }
-
-      // Last resort: non-blocking local ack
       console.warn('🟠 Unified /chat not accepting payloads; acknowledging locally.');
       return ok({ sessionId, userId, echo: body });
     }
