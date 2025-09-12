@@ -4,29 +4,34 @@ services:
   backend:
     build: .
     container_name: mental-health-agent
+    restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
-      - NODE_ENV=production
-      - PORT=4000
-      - MONGO_URI=mongodb://localhost:27017/mentalhealth
-      - CO_API_KEY=${CO_API_KEY}
-      - COHERE_API_KEY=${COHERE_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
-      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT}
-      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME}
-      # (add any other env vars you actually use)
-    restart: unless-stopped
-    depends_on:
-      - mongo
+      # Core server
+      NODE_ENV: production
+      PORT: 4000
 
-  mongo:
-    image: mongo:7
-    container_name: mongo
-    volumes:
-      - mongodb_data:/data/db
-    restart: unless-stopped
+      # Use the unified HTTP layer (not local Mongo)
+      DATA_PROVIDER: http
 
-volumes:
-  mongodb_data:
+      # Unified API (HTTP Mongo layer)
+      UNIFIED_API_BASE: https://tummytales-db-api.onrender.com
+      UNIFIED_AGENT_KEY: ${UNIFIED_AGENT_KEY}
+      UNIFIED_API_KEY: ${UNIFIED_API_KEY}
+
+      # Pinecone
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT}
+      PINECONE_HOST: ${PINECONE_HOST}
+      # Support both var names; your app code can read either
+      PINECONE_INDEX: ${PINECONE_INDEX}
+      PINECONE_INDEX_NAME: ${PINECONE_INDEX}
+
+      # Model keys (optional if you use them)
+      CO_API_KEY: ${CO_API_KEY}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Optional: seed behavior
+      UNIFIED_SEED_ON_EMPTY: "false"

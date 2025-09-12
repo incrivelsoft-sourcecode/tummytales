@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   mental-health-agent:
     build: .
@@ -6,4 +7,31 @@ services:
     restart: always
     ports:
       - "4000:4000"
-    env_file: .env
+    environment:
+      # Core server
+      NODE_ENV: production
+      PORT: 4000
+
+      # Use the unified HTTP layer (not local Mongo)
+      DATA_PROVIDER: http
+
+      # Unified API (HTTP Mongo layer)
+      UNIFIED_API_BASE: https://tummytales-db-api.onrender.com
+      UNIFIED_AGENT_KEY: ${UNIFIED_AGENT_KEY}
+      UNIFIED_API_KEY: ${UNIFIED_API_KEY}
+
+      # Pinecone
+      PINECONE_API_KEY: ${PINECONE_API_KEY}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT}
+      PINECONE_HOST: ${PINECONE_HOST}
+      # Support both var names; your app code can read either
+      PINECONE_INDEX: ${PINECONE_INDEX}
+      PINECONE_INDEX_NAME: ${PINECONE_INDEX}
+
+      # Model keys (optional if you use them)
+      CO_API_KEY: ${CO_API_KEY}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Optional: seed behavior
+      UNIFIED_SEED_ON_EMPTY: "false"
