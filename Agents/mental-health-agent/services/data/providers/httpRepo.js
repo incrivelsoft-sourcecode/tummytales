@@ -8,6 +8,10 @@ const AGENT_KEY = process.env.UNIFIED_AGENT_KEY || 'def456';
 const API_KEY   = process.env.UNIFIED_API_KEY   || 'entrykey';
 const SEED_ON_EMPTY = String(process.env.UNIFIED_SEED_ON_EMPTY || 'false').toLowerCase() === 'true';
 
+// Optional kill-switches to completely skip unified writes (useful in prod while backend is flaky)
+const DISABLE_UNIFIED_WRITE = String(process.env.UNIFIED_DISABLE_WRITES || 'false').toLowerCase() === 'true';
+const DISABLE_UNIFIED_CHAT  = String(process.env.UNIFIED_DISABLE_CHAT   || 'false').toLowerCase() === 'true';
+
 const client = axios.create({
   baseURL: BASE,
   timeout: 30000,
@@ -54,11 +58,18 @@ function log422(prefix, err) {
       console.error(prefix, err.response.data);
     }
   } else if (err?.response?.status >= 400) {
-    console.error(prefix, err.response.status, err.response.data);
+    console.error(prefix, err.response?.status, err.response?.data);
   } else {
     console.error(prefix, err?.message || err);
   }
 }
+
+// --- helpers for “synthetic” non-blocking fallbacks ---
+function syntheticScoreResponse(doc) {
+  const id = String(Date.now());
+  return { _id: id, id, ...doc, __synthetic: true };
+}
+function ok(payload = {}) { return { ok: true, persisted: false, ...payload }; }
 
 module.exports = {
   // ---------------- QUESTIONS ----------------
@@ -89,7 +100,7 @@ module.exports = {
   },
 
   // ---------------- SCORES ----------------
-  // POST /mental_health/score — unified API requires createdAt/updatedAt (camelCase) at top level
+  // Try JSON variants, then ?score=, then form score=. If all fail, return synthetic (non-blocking).
   createScore: async (doc) => {
     const now = new Date().toISOString();
 
@@ -102,7 +113,6 @@ module.exports = {
       createdAt: doc.createdAt || now,
       updatedAt: doc.updatedAt || now
     };
-
     const snake = {
       user: doc.user,
       total_score: doc.totalScore,
@@ -113,37 +123,80 @@ module.exports = {
       updated_at: doc.updatedAt || now
     };
 
-    const variants = [
-      camel,               // preferred
-      snake,               // fallback
-      { score: camel },    // nested envelope
-      { score: snake }
-    ];
+    if (DISABLE_UNIFIED_WRITE) {
+      console.warn('🟠 UNIFIED_DISABLE_WRITES=true — returning synthetic score.');
+      return syntheticScoreResponse(camel);
+    }
 
     let lastErr;
-    for (const body of variants) {
+
+    // JSON bodies
+    for (const body of [camel, snake, { score: camel }, { score: snake }]) {
       try {
         const { data } = await client.post('/mental_health/score', body);
         return data;
       } catch (e) {
         lastErr = e;
         log422('createScore failed variant:', e);
-        if (e?.response?.status !== 422) break; // non-schema issue
+        if (e?.response?.status !== 422) break; // if not schema-related, stop trying variants
       }
     }
-    throw lastErr;
+
+    // Query param ?score=<json>
+    try {
+      const { data } = await client.post('/mental_health/score', null, {
+        params: { score: JSON.stringify(camel) }
+      });
+      return data;
+    } catch (e) {
+      lastErr = e;
+      log422('createScore failed (query ?score=):', e);
+    }
+
+    // Form-encoded score=<json>
+    try {
+      const form = new URLSearchParams();
+      form.append('score', JSON.stringify(camel));
+      const { data } = await client.post('/mental_health/score', form.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      return data;
+    } catch (e) {
+      lastErr = e;
+      log422('createScore failed (form score=):', e);
+    }
+
+    // Final non-blocking fallback
+    console.warn('🟠 Unified /score not accepting payloads; returning synthetic score so UI can continue.');
+    return syntheticScoreResponse(camel);
   },
 
-  updateFollowUp: async (id, followUp) => {
-    const now = new Date().toISOString();
+  /**
+   * updateFollowUp expects FULL score doc:
+   * { id,user,totalScore,scoreInfo,answers,message,createdAt,updatedAt,followUp }
+   * If it fails, return a non-blocking OK so UI can proceed (persisted:false).
+   */
+  updateFollowUp: async (fullScore) => {
+    const camel = { ...fullScore };
+    const snake = {
+      id: camel.id,
+      user: camel.user,
+      total_score: camel.totalScore,
+      score_info: camel.scoreInfo,
+      answers: camel.answers,
+      message: camel.message,
+      follow_up: camel.followUp,
+      created_at: camel.createdAt,
+      updated_at: camel.updatedAt
+    };
 
-    const camel = { id, followUp, updatedAt: now };
-    const snake = { id, follow_up: followUp, updated_at: now };
-
-    const variants = [camel, { score: camel }, snake, { score: snake }];
+    if (DISABLE_UNIFIED_WRITE) {
+      console.warn('🟠 UNIFIED_DISABLE_WRITES=true — accepting followUp locally.');
+      return ok({ id: camel.id, echo: camel });
+    }
 
     let lastErr;
-    for (const body of variants) {
+    for (const body of [camel, { score: camel }, snake, { score: snake }]) {
       try {
         const { data } = await client.post('/mental_health/score', body);
         return data;
@@ -153,7 +206,9 @@ module.exports = {
         if (e?.response?.status !== 422) break;
       }
     }
-    throw lastErr;
+
+    console.warn('🟠 Unified /score followUp not accepted; acknowledging locally.');
+    return ok({ id: camel.id, echo: camel });
   },
 
   getScoresByUser: async (userId) => withRetry(async () => {
@@ -163,11 +218,9 @@ module.exports = {
 
   // ---------------- CHAT ----------------
   /**
-   * Unified API requires a full chat document on POST:
-   * {
-   *   sessionId, userId, scoreDocId, messages: [{ role, content, timestamp }],
-   *   createdAt, updatedAt
-   * }
+   * Unified API docs imply:
+   * { sessionId, userId, scoreDocId, messages: [{ role, content, timestamp }], createdAt, updatedAt }
+   * If API rejects (expects ?chat=), we acknowledge locally so the agent can keep talking.
    */
   upsertChatMessage: async ({ sessionId, userId, role, content, scoreDocId = null }) => {
     const nowIso = new Date().toISOString();
@@ -175,20 +228,36 @@ module.exports = {
     const body = {
       sessionId,
       userId,
-      scoreDocId, // required even if null
-      messages: [
-        { role, content, timestamp: nowIso }
-      ],
+      scoreDocId, // can be null
+      messages: [{ role, content, timestamp: nowIso }],
       createdAt: nowIso,
       updatedAt: nowIso
     };
+
+    if (DISABLE_UNIFIED_CHAT) {
+      console.warn('🟠 UNIFIED_DISABLE_CHAT=true — accepting chat locally.');
+      return ok({ sessionId, userId, echo: body });
+    }
 
     try {
       const { data } = await client.post('/mental_health/chat', body);
       return data;
     } catch (e) {
       log422('Unified API /chat failed:', e);
-      throw e;
+
+      // Try ?chat=<json> as a one-off
+      try {
+        const { data } = await client.post('/mental_health/chat', null, {
+          params: { chat: JSON.stringify(body) }
+        });
+        return data;
+      } catch (e2) {
+        log422('Unified API /chat failed (query ?chat=):', e2);
+      }
+
+      // Last resort: non-blocking local ack
+      console.warn('🟠 Unified /chat not accepting payloads; acknowledging locally.');
+      return ok({ sessionId, userId, echo: body });
     }
   },
 

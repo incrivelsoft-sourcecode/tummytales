@@ -4,23 +4,15 @@ require('dotenv').config();
 const data = require('../services/data'); // http | mongo via DATA_PROVIDER
 const { upsertTexts, toPineconeSafeMetadata } = require('../services/memoryService');
 
-// Helper: coerce any value to a Pinecone-safe list of strings for metadata
+// Pinecone-safe list of strings
 function asStringList(value) {
   if (Array.isArray(value)) {
     return value.map(v => {
       if (v == null) return "";
-      if (typeof v === "string")  return v;
+      if (typeof v === "string") return v;
       if (typeof v === "number" || typeof v === "boolean") return String(v);
-      // common shapes from your schema
       return (
-        v.label ??
-        v.text ??
-        v.name ??
-        v.title ??
-        v.option ??
-        v.id ??
-        v.value ??
-        JSON.stringify(v)
+        v.label ?? v.text ?? v.name ?? v.title ?? v.option ?? v.id ?? v.value ?? JSON.stringify(v)
       );
     });
   }
@@ -36,25 +28,21 @@ async function calculateScore(req, res) {
       return res.status(400).json({ error: 'Invalid testResponses format' });
     }
 
-    // 1) Load & validate questions (via repo; works for http or mongo)
+    // 1) Load questions (repo falls back to local JSON if Unified API errors)
     const questions = await data.getQuestions();
     if (!Array.isArray(questions) || questions.length !== 10) {
-      return res
-        .status(500)
-        .json({ error: 'Expected 10 questions in DB, found ' + (questions?.length ?? 0) });
+      return res.status(500).json({ error: 'Expected 10 questions in DB, found ' + (questions?.length ?? 0) });
     }
 
-    // 2) Compute totalScore, scoreInfo, answers
+    // 2) Compute score
     let totalScore = 0;
     const scoreInfo = [];
     const answers   = [];
 
-    // Normalize keys in case client sent them as strings
     const responseBySerial = new Map(
       Object.entries(testResponses).map(([k, v]) => [Number(k), Number(v)])
     );
 
-    // Ensure questions are processed in serialNumber order (defensive)
     const sorted = [...questions].sort((a, b) => Number(a.serialNumber) - Number(b.serialNumber));
 
     for (const q of sorted) {
@@ -68,9 +56,7 @@ async function calculateScore(req, res) {
         idx >= q.answers.length ||
         typeof q.answers[idx]?.score === 'undefined'
       ) {
-        return res
-          .status(400)
-          .json({ error: `Invalid answer for question ${serial}` });
+        return res.status(400).json({ error: `Invalid answer for question ${serial}` });
       }
 
       const sc = Number(q.answers[idx].score ?? 0);
@@ -79,19 +65,20 @@ async function calculateScore(req, res) {
       answers.push({ questionId: serial, answerIndex: Number(idx) });
     }
 
-    // 3) Pick feedback message
+    // 3) Message heuristic
     const lastScore = scoreInfo[scoreInfo.length - 1]?.score ?? 0;
     const message =
       totalScore > 10 || lastScore > 0
         ? "Thank you for completing the questionnaire. It looks like you might be facing some emotional challenges—consider reaching out for support."
         : "Thank you for completing the questionnaire!";
 
-    // 4) Persist score (via repo)
-    // Unified API requires createdAt/updatedAt at TOP LEVEL (camelCase)
     const nowIso = new Date().toISOString();
-    let saved;
+
+    // 4) Persist via repo — but DON'T BLOCK UI if Unified API rejects
+    let savedId = null;
+    let persisted = true;
     try {
-      saved = await data.createScore({
+      const saved = await data.createScore({
         user,
         totalScore,
         scoreInfo,
@@ -100,42 +87,45 @@ async function calculateScore(req, res) {
         createdAt: nowIso,
         updatedAt: nowIso
       });
+      savedId = String(saved?._id || saved?.id || Date.now());
     } catch (e) {
-      const detail = e?.response?.data || e?.message || e;
-      console.error('createScore failed:', detail);
-      return res.status(422).json({ error: 'Score persist failed', detail });
+      persisted = false;
+      savedId = String(Date.now()); // synthetic id so client can proceed
+      console.warn('createScore warning (Unified API offline or schema mismatch):', e?.response?.data || e?.message || e);
     }
 
-    const savedId = String(saved?._id || saved?.id || Date.now());
-
-    // 5) Pinecone upsert (fire & forget)
+    // 5) Fire-and-forget vector upsert
     const metadataRaw = {
       user: String(user),
       totalScore: Number(totalScore),
       type: "quiz",
-      answers: asStringList(answers),                // Pinecone-safe
-      answers_raw_json: JSON.stringify(answers),     // useful for later parsing
+      answers: asStringList(answers),
+      answers_raw_json: JSON.stringify(answers),
       scoreId: savedId,
-      timestamp: nowIso
+      timestamp: nowIso,
+      persisted
     };
-    const metadataSafe = toPineconeSafeMetadata
-      ? toPineconeSafeMetadata(metadataRaw)
-      : metadataRaw;
+    const metadataSafe = toPineconeSafeMetadata ? toPineconeSafeMetadata(metadataRaw) : metadataRaw;
 
-    upsertTexts(
-      [savedId],
-      [message],      // text to embed
-      [metadataSafe],
-      'mental_health' // optional namespace
-    ).catch(err => {
-      console.error('Non-critical Pinecone upsert error (quiz):', err);
-    });
+    upsertTexts([savedId], [message], [metadataSafe], 'mental_health')
+      .catch(err => console.error('Non-critical Pinecone upsert error (quiz):', err));
 
-    // 6) Respond
+    // 6) Respond (include fullScore echo so the client can immediately submit follow-up)
     return res.status(201).json({
       id: savedId,
       totalScore,
-      message
+      message,
+      persisted,
+      fullScore: {
+        id: savedId,
+        user,
+        totalScore,
+        scoreInfo,
+        answers,
+        message,
+        createdAt: nowIso,
+        updatedAt: nowIso
+      }
     });
   } catch (err) {
     console.error('Quiz submission failed:', err);
@@ -143,52 +133,74 @@ async function calculateScore(req, res) {
   }
 }
 
+/**
+ * Accepts EITHER:
+ *  - { fullScore: { id,user,totalScore,scoreInfo,answers,message,createdAt,updatedAt,followUp } }
+ *  - { id: "<id>", followUp: [..] }
+ * Persists if Unified API accepts; otherwise returns success with persisted:false so UI is not blocked.
+ */
 async function saveFollowUp(req, res) {
   try {
-    const { id, followUp } = req.body;
+    const { fullScore } = req.body;
 
-    if (!id || !Array.isArray(followUp)) {
-      return res.status(400).json({ error: 'Invalid followUp submission' });
+    // Shape 1: minimal
+    if (!fullScore && req.body && req.body.id && Array.isArray(req.body.followUp)) {
+      return res.json({
+        message: 'Follow-up accepted (temp, not persisted)',
+        id: String(req.body.id),
+        followUp: req.body.followUp,
+        persisted: false
+      });
     }
 
-    // 1) Update follow-up (via repo) -> POST /mental_health/score with { id, followUp }
-    let updated;
+    // Shape 2: full
+    if (
+      !fullScore ||
+      !fullScore.id ||
+      !Array.isArray(fullScore.followUp) ||
+      typeof fullScore.user !== 'string'
+    ) {
+      return res.status(400).json({
+        error: 'Invalid followUp submission. Send fullScore { id, user, totalScore, scoreInfo[], answers[], message, createdAt, updatedAt, followUp[] } or { id, followUp[] }.'
+      });
+    }
+
+    fullScore.updatedAt = new Date().toISOString();
+
     try {
-      updated = await data.updateFollowUp(id, followUp);
+      const updated = await data.updateFollowUp(fullScore);
+      if (!updated) {
+        return res.status(404).json({ error: 'Score document not found' });
+      }
+
+      // Vector upsert (fire & forget)
+      const followupText = `Follow-up responses saved for score ${String(fullScore.id)}.`;
+      const metadataRaw = {
+        type: "followup",
+        user: String(fullScore.user || "guest"),
+        scoreDocId: String(fullScore.id),
+        answers: asStringList(fullScore.followUp),
+        answers_raw_json: JSON.stringify(fullScore.followUp),
+        timestamp: new Date().toISOString(),
+        persisted: true
+      };
+      const metadataSafe = toPineconeSafeMetadata ? toPineconeSafeMetadata(metadataRaw) : metadataRaw;
+
+      upsertTexts([String(fullScore.id) + "-followup"], [followupText], [metadataSafe], 'mental_health')
+        .catch(err => console.error('Non-critical Pinecone upsert error (follow-up):', err));
+
+      return res.json({ message: 'Follow-up saved', id: fullScore.id, followUp: fullScore.followUp, persisted: true });
     } catch (e) {
-      const detail = e?.response?.data || e?.message || e;
-      console.error('updateFollowUp failed:', detail);
-      return res.status(422).json({ error: 'Follow-up persist failed', detail });
+      console.warn('updateFollowUp warning (Unified API offline or schema mismatch):', e?.response?.data || e?.message || e);
+
+      // Don’t block the user; accept locally
+      return res.json({
+        message: 'Follow-up accepted (temp, not persisted)',
+        id: fullScore.id,
+        followUp: fullScore.followUp,
+        persisted: false
+      });
     }
-    if (!updated) {
-      return res.status(404).json({ error: 'Score document not found' });
-    }
-
-    // 2) Pinecone upsert for follow-up (fire & forget)
-    const nowIso = new Date().toISOString();
-    const followupText = `Follow-up responses saved for score ${String(id)}.`;
-    const metadataRaw = {
-      type: "followup",
-      user: String(updated.user || "guest"),
-      scoreDocId: String(id),
-      answers: asStringList(followUp),
-      answers_raw_json: JSON.stringify(followUp),
-      timestamp: nowIso
-    };
-    const metadataSafe = toPineconeSafeMetadata
-      ? toPineconeSafeMetadata(metadataRaw)
-      : metadataRaw;
-
-    upsertTexts(
-      [String(id) + "-followup"],
-      [followupText],
-      [metadataSafe],
-      'mental_health'
-    ).catch(err => {
-      console.error('Non-critical Pinecone upsert error (follow-up):', err);
-    });
-
-    return res.json({ message: 'Follow-up saved', id, followUp });
   } catch (err) {
     console.error('Follow-up save failed:', err);
     return res.status(500).json({ error: 'Internal server error' });
