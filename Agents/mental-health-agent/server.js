@@ -6,10 +6,9 @@ const cors = require('cors');
 const quizRoutes = require('./routes/quizRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 
-// Switchable data provider: 'mongo' | 'http'
-const DATA_PROVIDER = process.env.DATA_PROVIDER || 'mongo';
-const shouldUseMongo = DATA_PROVIDER === 'mongo';
-const connectDB = shouldUseMongo ? require('./config/db') : null;
+// Force HTTP provider mode only
+const DATA_PROVIDER = 'http';
+console.log(`Data provider locked to: ${DATA_PROVIDER} (HTTP)`);
 
 // Small helper to delay startup (useful when waiting for other services)
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
@@ -22,14 +21,7 @@ async function startServer() {
 
   console.log('Starting service initialization...');
   console.log(`Data provider: ${DATA_PROVIDER}`);
-
-  // Connect to MongoDB only if using 'mongo' provider
-  if (shouldUseMongo) {
-    await connectDB();
-    console.log('✅ MongoDB connected');
-  } else {
-    console.log('🛰️  Skipping Mongo connection (using unified HTTP API)');
-  }
+  console.log('🛰️  Skipping Mongo connection (HTTP-only mode)');
 
   const app = express();
 

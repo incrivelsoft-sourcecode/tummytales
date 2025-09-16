@@ -1,19 +1,27 @@
 // services/data/providers/httpRepo.js
+// HTTP-backed data provider for the mental-health app.
+// Calls the unified API and contains robust fallbacks so the UI continues to work
+// if the unified API is unavailable or returns unexpected schemas.
+
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 
-const BASE = process.env.UNIFIED_API_BASE || 'https://tummytales-db-api.onrender.com';
+const BASE = process.env.UNIFIED_API_BASE || '';
+if (!BASE) {
+  console.warn('⚠️ UNIFIED_API_BASE not set — default host will be used if present in code. Set UNIFIED_API_BASE in production to avoid unexpected traffic.');
+  // Note: we intentionally don't throw here to keep developer convenience, but you can change to throw in production.
+}
 const AGENT_KEY = process.env.UNIFIED_AGENT_KEY || 'def456';
-const API_KEY   = process.env.UNIFIED_API_KEY   || 'entrykey';
+const API_KEY = process.env.UNIFIED_API_KEY || 'entrykey';
 const SEED_ON_EMPTY = String(process.env.UNIFIED_SEED_ON_EMPTY || 'false').toLowerCase() === 'true';
 
 // Optional kill-switches (non-blocking UI when unified API is flaky)
 const DISABLE_UNIFIED_WRITE = String(process.env.UNIFIED_DISABLE_WRITES || 'false').toLowerCase() === 'true';
-const DISABLE_UNIFIED_CHAT  = String(process.env.UNIFIED_DISABLE_CHAT   || 'false').toLowerCase() === 'true';
+const DISABLE_UNIFIED_CHAT = String(process.env.UNIFIED_DISABLE_CHAT || 'false').toLowerCase() === 'true';
 
 const client = axios.create({
-  baseURL: BASE,
+  baseURL: BASE || 'https://tummytales-db-api.onrender.com',
   timeout: 30000,
   headers: {
     'X-Agent-Key': AGENT_KEY,
@@ -25,7 +33,14 @@ const client = axios.create({
 async function withRetry(fn, tries = 2) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
-    try { return await fn(); } catch (e) { lastErr = e; }
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      // small backoff with jitter
+      const delayMs = 150 * (i + 1) + Math.floor(Math.random() * 100);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
   }
   throw lastErr;
 }
@@ -36,10 +51,10 @@ function builtinQuestions() {
     serialNumber: i + 1,
     question: `Placeholder question ${i + 1}`,
     answers: [
-      { text: 'Never',     score: 0 },
+      { text: 'Never', score: 0 },
       { text: 'Sometimes', score: 1 },
-      { text: 'Often',     score: 2 },
-      { text: 'Always',    score: 3 },
+      { text: 'Often', score: 2 },
+      { text: 'Always', score: 3 },
     ],
   }));
 }
@@ -72,16 +87,19 @@ async function seedUnifiedQuestions() {
 }
 
 function log422(prefix, err) {
+  const method = err?.config?.method?.toUpperCase();
+  const url = err?.config?.url;
+  const meta = method && url ? `${method} ${url}` : '';
   if (err?.response?.status === 422) {
     try {
-      console.error(prefix, JSON.stringify(err.response.data, null, 2));
+      console.error(prefix, meta, JSON.stringify(err.response.data, null, 2));
     } catch {
-      console.error(prefix, err.response.data);
+      console.error(prefix, meta, err.response.data);
     }
   } else if (err?.response?.status >= 400) {
-    console.error(prefix, err.response?.status, err.response?.data);
+    console.error(prefix, meta, err.response?.status, err.response?.data);
   } else {
-    console.error(prefix, err?.message || err);
+    console.error(prefix, meta, err?.message || err);
   }
 }
 
@@ -90,9 +108,14 @@ function syntheticScoreResponse(doc) {
   const id = String(Date.now());
   return { _id: id, id, ...doc, __synthetic: true };
 }
-function ok(payload = {}) { return { ok: true, persisted: false, ...payload }; }
+function ok(payload = {}) {
+  return { ok: true, persisted: false, ...payload };
+}
 
 module.exports = {
+  // expose client for tests/inspection
+  __client: client,
+
   // ---------------- QUESTIONS ----------------
   getQuestions: async () => {
     try {
@@ -108,7 +131,11 @@ module.exports = {
       return loadLocalQuestions();
     } catch (e) {
       console.error('Unified API /questions failed, using local fallback:', e?.response?.data || e?.message || e);
-      if (SEED_ON_EMPTY) { try { await seedUnifiedQuestions(); } catch {} }
+      if (SEED_ON_EMPTY) {
+        try {
+          await seedUnifiedQuestions();
+        } catch {}
+      }
       return loadLocalQuestions();
     }
   },
@@ -229,10 +256,11 @@ module.exports = {
     return ok({ id: camel.id, echo: camel });
   },
 
-  getScoresByUser: async (userId) => withRetry(async () => {
-    const { data } = await client.get(`/mental_health/scores/${encodeURIComponent(userId)}`);
-    return data;
-  }),
+  getScoresByUser: async (userId) =>
+    withRetry(async () => {
+      const { data } = await client.get(`/mental_health/scores/${encodeURIComponent(userId)}`);
+      return data;
+    }, 2),
 
   // ---------------- CHAT ----------------
   /**
