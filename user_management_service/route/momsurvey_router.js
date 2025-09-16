@@ -1,15 +1,15 @@
 const express = require('express');
 const {authorizeMommiddleware,momAndSupporterMiddleware} =require('../middleware/authMiddleware')
-const {createsurvey,update_momsurvey,delete_momsurvey,getbyid_momsurvey, getAllSurveys,
+const {createsurvey,update_momsurvey,delete_momsurvey,get_momsurvey, getAllSurveys,
     deleteallsurveys}=require('../controller/momsurvey_controller')
 
 
 const momsurvey_router = express.Router();
 
 momsurvey_router.post('/survey',momAndSupporterMiddleware,createsurvey);
-momsurvey_router.put('/update/:id',momAndSupporterMiddleware,update_momsurvey);
+momsurvey_router.put('/update',momAndSupporterMiddleware,update_momsurvey);
 momsurvey_router.get('/all/surveys',momAndSupporterMiddleware,getAllSurveys);
-momsurvey_router.get('/survey/:id',momAndSupporterMiddleware,getbyid_momsurvey);
+momsurvey_router.get('/survey',momAndSupporterMiddleware,get_momsurvey);
 momsurvey_router.delete('/delete/:userId',momAndSupporterMiddleware,delete_momsurvey);
 
 momsurvey_router.delete('/alldel',deleteallsurveys)

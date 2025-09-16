@@ -120,7 +120,12 @@ const createsurvey = async (req, res) => {
       if (missingFields.length > 0) {
         return res.status(400).json({ error: `Missing fields: ${missingFields.join(", ")}` });
       }
-  
+      
+// Check if survey already exists
+    const existingSurvey = await MomProfile.findOne({ userId });
+    if (existingSurvey) {
+      return res.status(400).json({ error: "Survey already exists for this user" });
+    }
       const newSurvey = new MomProfile({
        // user_name,
         userId,
@@ -232,16 +237,15 @@ await User.findByIdAndUpdate(userId, { isActive: true });
   };
 
 
-const getbyid_momsurvey = async(req,res)=>{
+const get_momsurvey = async(req,res)=>{
     try{
-        const {id}=req.params;
-       // const { userId } = req.query;
+       
         const userId = req.user.id;
         //const userId = req.user.effectiveUserId || req.user.id;
         if (!userId) {
           return res.status(400).json({ error: "User Id is required" });
       }
-        const survey = await MomProfile.findOne({_id: id, userId } );
+        const survey = await MomProfile.findOne({userId } );
         if(!survey){
             return res.status(404).json({error:'survey not found'});
         }
@@ -277,14 +281,14 @@ const getAllSurveys = async (req, res) => {
 
 const update_momsurvey = async (req, res) => {
   try {
-    const { id } = req.params; // ID of the survey
+   // const { id } = req.params; // ID of the survey
     const { ...updates } = req.body; // userId and other fields to update
     const userId = req.user.id;
     if (!userId) {
       return res.status(400).json({ error: "User Id is required for verification" });
     }
 
-    const existingSurvey = await MomProfile.findOne({ _id: id });
+    const existingSurvey = await MomProfile.findOne({ userId });
 
     if (!existingSurvey) {
       return res.status(404).json({ error: "Survey not found" });
@@ -303,7 +307,7 @@ const update_momsurvey = async (req, res) => {
     }
 
     const updatedSurvey = await MomProfile.findOneAndUpdate(
-      { _id: id },
+      { userId },
       { $set: updateQuery },
       { new: true, runValidators: true }
     );
@@ -350,7 +354,7 @@ const deleteallsurveys = async(req,res)=>{
 }
 
 
-module.exports = {createsurvey ,update_momsurvey,getAllSurveys,getbyid_momsurvey,delete_momsurvey,
+module.exports = {createsurvey ,update_momsurvey,getAllSurveys,get_momsurvey,delete_momsurvey,
   deleteallsurveys} 
 
 
