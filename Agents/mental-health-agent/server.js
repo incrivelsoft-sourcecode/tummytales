@@ -3,7 +3,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-
 const quizRoutes = require('./routes/quizRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 
@@ -29,14 +28,40 @@ async function startServer() {
   // If behind a proxy (Render/NGINX/Cloudflare), trust X-Forwarded-* headers
   app.set('trust proxy', 1);
 
-  // CORS
-  app.use(
-    cors({
-      origin: process.env.CORS_ORIGIN || '*',
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Agent-Key', 'X-API-Key'],
-    })
-  );
+  // ---------- CORS (must be before routes) ----------
+  // If you DO NOT use browser credentials (cookies), you can leave CORS_ORIGIN unset
+  // and keep wildcard behavior. If you DO use credentials, set:
+  //   CORS_ORIGIN=https://your-frontend.example,https://another.example
+  //   CORS_CREDENTIALS=true
+  const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const USE_CREDENTIALS =
+    String(process.env.CORS_CREDENTIALS || 'false').toLowerCase() === 'true';
+
+  const corsOptions = {
+    origin(origin, cb) {
+      // Allow non-browser clients (curl/Postman → no Origin)
+      if (!origin) return cb(null, true);
+
+      // If no explicit origins configured, allow all (for non-credentialed browser calls)
+      if (ALLOWED_ORIGINS.length === 0) return cb(null, true);
+
+      // Only allow whitelisted origins
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+
+      return cb(new Error(`Not allowed by CORS: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Agent-Key', 'X-API-Key'],
+    credentials: USE_CREDENTIALS, // adds Access-Control-Allow-Credentials: true when enabled
+  };
+
+  app.use(cors(corsOptions));
+  // Ensure preflight replies include the same headers
+  app.options('*', cors(corsOptions));
 
   // JSON body parsing
   app.use(express.json({ limit: '1mb' }));
