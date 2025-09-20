@@ -1,8 +1,7 @@
 // controllers/agentController.js
 require("dotenv").config();
 const fetch = require("node-fetch");
-const Scores = require("../models/scores");
-const Chat = require("../models/chat");
+const data = require("../services/data"); // http | mongo via DATA_PROVIDER
 const { upsertTexts, queryText } = require("../services/memoryService");
 
 const COHERE_KEY = process.env.COHERE_API_KEY;
@@ -16,42 +15,39 @@ if (!COHERE_KEY) {
 async function agentHandler(req, res) {
   try {
     let { message, scoreDocId, sessionId, userId } = req.body;
-    message   = (message   || "").trim();
+    message = (message || "").trim();
     sessionId = (sessionId || "").trim();
+    userId = userId || "guest";
 
     if (!message)   return res.status(400).json({ error: "Empty message." });
     if (!sessionId) return res.status(400).json({ error: "Missing sessionId." });
 
-    // 1) Optionally load quiz context
+    // 1) Optionally load latest score for the user (best-effort)
     let scoreDoc = null;
-    if (scoreDocId) {
+    if (userId) {
       try {
-        scoreDoc = await Scores.findById(scoreDocId).lean();
+        const scores = await data.getScoresByUser(userId);
+        if (Array.isArray(scores) && scores.length) {
+          scoreDoc =
+            (scoreDocId && scores.find(s => String(s._id) === String(scoreDocId))) ||
+            scores[0];
+        }
       } catch (e) {
-        console.warn("⚠️ Could not load scoreDoc:", e.message);
+        console.warn("⚠️ Could not load scores for user:", e.message);
       }
     }
 
-    // 2) Load or create chat session
-    let chatDoc = await Chat.findOne({ sessionId });
-    if (!chatDoc) {
-      chatDoc = await Chat.create({
-        sessionId,
-        userId: userId || null,
-        scoreDocId: scoreDocId || undefined,
-        messages: []
-      });
-    } else if (scoreDocId && !chatDoc.scoreDocId) {
-      chatDoc.scoreDocId = scoreDocId;
-      await chatDoc.save();
-    }
-
-    // 3) Persist user message (DB)
+    // 2) Persist the user message to unified API (NOTE: now sends the required shape)
     const userTimestamp = new Date();
-    chatDoc.messages.push({ role: "user", content: message, timestamp: userTimestamp });
-    await chatDoc.save();
+    await data.upsertChatMessage({
+      sessionId,
+      userId,
+      scoreDocId: scoreDocId ?? null,
+      role: "user",
+      content: message
+    });
 
-    // 3a) Upsert user message to Pinecone (non-blocking)
+    // 2a) Pinecone upsert (non-blocking)
     (async () => {
       try {
         await upsertTexts(
@@ -71,22 +67,32 @@ async function agentHandler(req, res) {
       }
     })();
 
-    // 4) Retrieve relevant history from Pinecone (best-effort)
+    // 3) Load session history for Cohere context (best-effort)
+    let chatSession = null;
+    try {
+      chatSession = await data.getChatBySession(sessionId);
+    } catch (e) {
+      console.warn("⚠️ Could not load chat session:", e.message);
+    }
+
+    // 4) RAG from vector DB (best-effort)
     let ragBlock = "";
     try {
       const relevant = await queryText(message, 7, { sessionId: String(sessionId) });
-      if (Array.isArray(relevant) && relevant.length) {
+      const matches = Array.isArray(relevant?.matches) ? relevant.matches : Array.isArray(relevant) ? relevant : [];
+      if (matches.length) {
         ragBlock =
           "\n\n### Context from your history:\n" +
-          relevant
+          matches
             .map((r) => {
+              const meta = r.metadata || {};
               let label = "";
-              if (r.metadata?.type === "quiz") label = "**Quiz:** ";
-              else if (r.metadata?.type === "followup") label = "**Follow-Up:** ";
-              else if (r.metadata?.role === "user") label = "**You:** ";
-              else if (r.metadata?.role === "assistant") label = "**Counselor:** ";
-              const t = r.text || r.metadata?.text || "";
-              return `${label}${t}`;
+              if (meta.type === "quiz") label = "**Quiz:** ";
+              else if (meta.type === "followup") label = "**Follow-Up:** ";
+              else if (meta.role === "user") label = "**You:** ";
+              else if (meta.role === "assistant") label = "**Counselor:** ";
+              const t = r.text || meta.text || "";
+              return t ? `${label}${t}` : "";
             })
             .filter(Boolean)
             .join("\n\n");
@@ -100,7 +106,7 @@ async function agentHandler(req, res) {
     let followUpAnswers = "";
     if (scoreDoc) {
       quizFeedback = scoreDoc.message || "";
-      followUpAnswers = Array.isArray(scoreDoc.followUp) ? scoreDoc.followUp.join(", ") : "";
+      if (Array.isArray(scoreDoc.followUp)) followUpAnswers = scoreDoc.followUp.join(", ");
     }
 
     const systemPrompt = `
@@ -109,14 +115,13 @@ You are an empathetic, compassionate mental health counselor AI, specifically de
 Your goals:
 - Listen non-judgmentally to each user, understanding they are pregnant and may be experiencing a wide range of emotions or challenges.
 - Always use a gentle, caring, and human tone.
-- Offer practical resources for pregnant women (such as support helplines, meditation videos, articles on pregnancy wellbeing, etc.) when appropriate.
+- Offer practical resources for pregnant women when appropriate.
 - Ask open-ended, empathetic questions to encourage sharing and reflection.
-- Validate feelings, normalize common pregnancy worries, and show warmth and understanding in your responses.
-- Structure your replies using markdown: **bold headings**, bullet points, and links as needed.
+- Validate feelings, normalize common pregnancy worries, and show warmth and understanding.
+- Structure replies using markdown.
 - Never mention scores, numbers, or anything clinical.
-- Avoid offering medical diagnoses or advice—focus on emotional support and well-being.
-- When recommending a video, article, or support line, ALWAYS include a working web link (https://...) or phone number.
-- Do not just say "here's a video" or "here's an article"—include the actual clickable URL.
+- Avoid medical diagnoses or medical advice—focus on emotional support and well-being.
+- When recommending a video, article, or support line, ALWAYS include a working link (https://...) or phone number.
 
 ${quizFeedback ? `**Quiz feedback:** ${quizFeedback}` : ""}
 ${followUpAnswers ? `\nFollow-up answers: [${followUpAnswers}]` : ""}
@@ -125,12 +130,15 @@ ${ragBlock}
 Always remember you are here to help and listen as a supportive companion during pregnancy.
     `.trim();
 
-    // 6) Call Cohere
+    // 6) Compose chat history for Cohere
+    const history = Array.isArray(chatSession?.messages) ? chatSession.messages : [];
     const payload = [
       { role: "system", content: systemPrompt },
-      ...chatDoc.messages.map((m) => ({ role: m.role, content: m.content })),
+      ...history.map((m) => ({ role: m.role, content: m.content })),
+      { role: "user", content: message }
     ];
 
+    // 7) Cohere call
     const apiRes = await fetch(COHERE_CHAT_URL, {
       method: "POST",
       headers: {
@@ -152,14 +160,11 @@ Always remember you are here to help and listen as a supportive companion during
       return res.status(502).json({ error: "Cohere failed", details: apiJson });
     }
 
-    // 7) Extract AI reply (defensive)
-    let reply = "";
-    // Primary (v2)
-    reply = apiJson?.message?.content?.[0]?.text?.trim?.() || reply;
-    // Legacy fallback
-    reply = reply || apiJson?.generations?.[0]?.text?.trim?.();
-    // Another fallback fields sometimes seen
-    reply = reply || apiJson?.text?.trim?.();
+    let reply =
+      apiJson?.message?.content?.[0]?.text?.trim?.() ||
+      apiJson?.generations?.[0]?.text?.trim?.() ||
+      apiJson?.text?.trim?.() ||
+      "";
 
     if (!reply) {
       console.warn("⚠️ Empty/unknown Cohere reply shape:", JSON.stringify(apiJson).slice(0, 500));
@@ -167,34 +172,37 @@ Always remember you are here to help and listen as a supportive companion during
         "I'm here with you. Could you try rephrasing that or telling me a bit more about how you're feeling right now?";
     }
 
-    // 8) Save assistant reply (DB)
+    // 8) Persist assistant message back to unified API
     const asstTimestamp = new Date();
-    chatDoc.messages.push({ role: "assistant", content: reply, timestamp: asstTimestamp });
-    await chatDoc.save();
+    await data.upsertChatMessage({
+      sessionId,
+      userId,                // still include; backend keys by session
+      scoreDocId: scoreDocId ?? null,
+      role: "assistant",
+      content: reply
+    });
 
-    // 8a) Upsert assistant reply to Pinecone (non-blocking)
+    // 8a) Pinecone (non-blocking)
     (async () => {
       try {
         await upsertTexts(
           [`${String(sessionId)}-assistant-${asstTimestamp.getTime()}`],
           [reply],
-          [
-            {
-              sessionId: String(sessionId),
-              userId: String(userId || ""),
-              type: "chat",
-              role: "assistant",
-              scoreDocId: scoreDocId ? String(scoreDocId) : undefined,
-              timestamp: asstTimestamp.toISOString(),
-            },
-          ]
+          [{
+            sessionId: String(sessionId),
+            userId: String(userId || ""),
+            type: "chat",
+            role: "assistant",
+            scoreDocId: scoreDocId ? String(scoreDocId) : undefined,
+            timestamp: asstTimestamp.toISOString()
+          }]
         );
       } catch (e) {
         console.warn("⚠️ Pinecone upsert (assistant) failed:", e.message);
       }
     })();
 
-    // 9) Return
+    // 9) Respond to caller
     return res.json({ reply, sessionId });
   } catch (err) {
     console.error("agentHandler error:", err);

@@ -1,25 +1,18 @@
 // controllers/quizController.js
-const Scores    = require('../models/scores');
-const Questions = require('../models/questions');
-const { upsertTexts, toPineconeSafeMetadata } = require('../services/memoryService'); // <- sanitizer exported
+require('dotenv').config();
 
-// Helper: coerce any value to a Pinecone-safe list of strings for metadata
+const data = require('../services/data'); // http | mongo via DATA_PROVIDER
+const { upsertTexts, toPineconeSafeMetadata } = require('../services/memoryService');
+
+// Pinecone-safe list of strings
 function asStringList(value) {
   if (Array.isArray(value)) {
     return value.map(v => {
       if (v == null) return "";
-      if (typeof v === "string")  return v;
+      if (typeof v === "string") return v;
       if (typeof v === "number" || typeof v === "boolean") return String(v);
-      // common shapes from your schema
       return (
-        v.label ??
-        v.text ??
-        v.name ??
-        v.title ??
-        v.option ??
-        v.id ??
-        v.value ??
-        JSON.stringify(v)
+        v.label ?? v.text ?? v.name ?? v.title ?? v.option ?? v.id ?? v.value ?? JSON.stringify(v)
       );
     });
   }
@@ -35,78 +28,104 @@ async function calculateScore(req, res) {
       return res.status(400).json({ error: 'Invalid testResponses format' });
     }
 
-    // Load & validate questions
-    const questions = await Questions.find().sort({ serialNumber: 1 }).lean();
-    if (questions.length !== 10) {
-      return res
-        .status(500)
-        .json({ error: 'Expected 10 questions in DB, found ' + questions.length });
+    // 1) Load questions (repo falls back to local JSON if Unified API errors)
+    const questions = await data.getQuestions();
+    if (!Array.isArray(questions) || questions.length !== 10) {
+      return res.status(500).json({ error: 'Expected 10 questions in DB, found ' + (questions?.length ?? 0) });
     }
 
-    // Compute totalScore, scoreInfo, answers
+    // 2) Compute score
     let totalScore = 0;
     const scoreInfo = [];
     const answers   = [];
 
-    for (const q of questions) {
-      const idx = testResponses[q.serialNumber];
-      if (idx == null || idx < 0 || idx >= q.answers.length) {
-        return res
-          .status(400)
-          .json({ error: `Invalid answer for question ${q.serialNumber}` });
+    const responseBySerial = new Map(
+      Object.entries(testResponses).map(([k, v]) => [Number(k), Number(v)])
+    );
+
+    const sorted = [...questions].sort((a, b) => Number(a.serialNumber) - Number(b.serialNumber));
+
+    for (const q of sorted) {
+      const serial = Number(q.serialNumber);
+      const idx = responseBySerial.has(serial) ? responseBySerial.get(serial) : undefined;
+
+      if (
+        idx == null ||
+        !Array.isArray(q.answers) ||
+        idx < 0 ||
+        idx >= q.answers.length ||
+        typeof q.answers[idx]?.score === 'undefined'
+      ) {
+        return res.status(400).json({ error: `Invalid answer for question ${serial}` });
       }
-      const sc = q.answers[idx].score;
+
+      const sc = Number(q.answers[idx].score ?? 0);
       totalScore += sc;
-      scoreInfo.push({ questionId: q.serialNumber, score: sc });
-      answers.push({ questionId: q.serialNumber, answerIndex: idx });
+      scoreInfo.push({ questionId: serial, score: sc });
+      answers.push({ questionId: serial, answerIndex: Number(idx) });
     }
 
-    // Pick feedback message
-    const lastScore = scoreInfo[scoreInfo.length - 1].score;
+    // 3) Message heuristic
+    const lastScore = scoreInfo[scoreInfo.length - 1]?.score ?? 0;
     const message =
       totalScore > 10 || lastScore > 0
         ? "Thank you for completing the questionnaire. It looks like you might be facing some emotional challenges—consider reaching out for support."
         : "Thank you for completing the questionnaire!";
 
-    // Save score
-    const saved = await Scores.create({
-      user,
-      totalScore,
-      scoreInfo,
-      answers,
-      message
-    });
+    const nowIso = new Date().toISOString();
 
-    // ---- Pinecone upsert (fire & forget) ----
-    // Build Pinecone-safe metadata explicitly.
+    // 4) Persist via repo — but DON'T BLOCK UI if Unified API rejects
+    let savedId = null;
+    let persisted = true;
+    try {
+      const saved = await data.createScore({
+        user,
+        totalScore,
+        scoreInfo,
+        answers,
+        message,
+        createdAt: nowIso,
+        updatedAt: nowIso
+      });
+      savedId = String(saved?._id || saved?.id || Date.now());
+    } catch (e) {
+      persisted = false;
+      savedId = String(Date.now()); // synthetic id so client can proceed
+      console.warn('createScore warning (Unified API offline or schema mismatch):', e?.response?.data || e?.message || e);
+    }
+
+    // 5) Fire-and-forget vector upsert
     const metadataRaw = {
-      user: String(saved.user),
-      totalScore: Number(saved.totalScore),
+      user: String(user),
+      totalScore: Number(totalScore),
       type: "quiz",
-      // answers is the common offender; ensure it's a list of strings:
-      answers: asStringList(saved.answers),
-      // keep a raw snapshot if you want to search it later
-      answers_raw_json: JSON.stringify(saved.answers),
-      timestamp: saved.createdAt ? saved.createdAt.toISOString() : new Date().toISOString()
+      answers: asStringList(answers),
+      answers_raw_json: JSON.stringify(answers),
+      scoreId: savedId,
+      timestamp: nowIso,
+      persisted
     };
+    const metadataSafe = toPineconeSafeMetadata ? toPineconeSafeMetadata(metadataRaw) : metadataRaw;
 
-    // Option A: Let service sanitizer do the final pass (recommended)
-    const metadataSafe = toPineconeSafeMetadata
-      ? toPineconeSafeMetadata(metadataRaw)
-      : metadataRaw; // fallback if you didn't export it
+    upsertTexts([savedId], [message], [metadataSafe], 'mental_health')
+      .catch(err => console.error('Non-critical Pinecone upsert error (quiz):', err));
 
-    upsertTexts(
-      [String(saved._id)],
-      [saved.message], // text to embed
-      [metadataSafe]
-    ).catch(err => {
-      console.error('Non-critical Pinecone upsert error (quiz):', err);
-    });
-
+    // 6) Respond (include fullScore echo so the client can immediately submit follow-up)
     return res.status(201).json({
-      id: saved._id,
-      totalScore: saved.totalScore,
-      message: saved.message
+      id: savedId,
+      totalScore,
+      message,
+      persisted,
+      fullScore: {
+        id: savedId,
+        user,
+        totalScore,
+        scoreInfo,
+        answers,
+        message,
+        createdAt: nowIso,
+        updatedAt: nowIso
+      }
     });
   } catch (err) {
     console.error('Quiz submission failed:', err);
@@ -114,49 +133,74 @@ async function calculateScore(req, res) {
   }
 }
 
+/**
+ * Accepts EITHER:
+ *  - { fullScore: { id,user,totalScore,scoreInfo,answers,message,createdAt,updatedAt,followUp } }
+ *  - { id: "<id>", followUp: [..] }
+ * Persists if Unified API accepts; otherwise returns success with persisted:false so UI is not blocked.
+ */
 async function saveFollowUp(req, res) {
   try {
-    const { id, followUp } = req.body;
+    const { fullScore } = req.body;
 
-    // If your follow-up count can vary, drop the strict length check:
-    if (!id || !Array.isArray(followUp) /* || followUp.length !== 5 */) {
-      return res.status(400).json({ error: 'Invalid followUp submission' });
+    // Shape 1: minimal
+    if (!fullScore && req.body && req.body.id && Array.isArray(req.body.followUp)) {
+      return res.json({
+        message: 'Follow-up accepted (temp, not persisted)',
+        id: String(req.body.id),
+        followUp: req.body.followUp,
+        persisted: false
+      });
     }
 
-    const updated = await Scores.findByIdAndUpdate(
-      id,
-      { followUp },
-      { new: true, runValidators: true }
-    );
-    if (!updated) {
-      return res.status(404).json({ error: 'Score document not found' });
+    // Shape 2: full
+    if (
+      !fullScore ||
+      !fullScore.id ||
+      !Array.isArray(fullScore.followUp) ||
+      typeof fullScore.user !== 'string'
+    ) {
+      return res.status(400).json({
+        error: 'Invalid followUp submission. Send fullScore { id, user, totalScore, scoreInfo[], answers[], message, createdAt, updatedAt, followUp[] } or { id, followUp[] }.'
+      });
     }
 
-    // ---- Pinecone upsert for follow-up (fire & forget) ----
-    // You can embed a compact summary or the message again.
-    const followupText = `Follow-up responses saved for score ${String(updated._id)}.`;
-    const metadataRaw = {
-      type: "followup",
-      user: String(updated.user || "guest"),
-      scoreDocId: String(updated._id),
-      // followUp may be array of indices or objects; make it list of strings:
-      answers: asStringList(updated.followUp),
-      answers_raw_json: JSON.stringify(updated.followUp),
-      timestamp: new Date().toISOString()
-    };
-    const metadataSafe = toPineconeSafeMetadata
-      ? toPineconeSafeMetadata(metadataRaw)
-      : metadataRaw;
+    fullScore.updatedAt = new Date().toISOString();
 
-    upsertTexts(
-      [String(updated._id) + "-followup"],
-      [followupText],
-      [metadataSafe]
-    ).catch(err => {
-      console.error('Non-critical Pinecone upsert error (follow-up):', err);
-    });
+    try {
+      const updated = await data.updateFollowUp(fullScore);
+      if (!updated) {
+        return res.status(404).json({ error: 'Score document not found' });
+      }
 
-    return res.json({ message: 'Follow-up saved' });
+      // Vector upsert (fire & forget)
+      const followupText = `Follow-up responses saved for score ${String(fullScore.id)}.`;
+      const metadataRaw = {
+        type: "followup",
+        user: String(fullScore.user || "guest"),
+        scoreDocId: String(fullScore.id),
+        answers: asStringList(fullScore.followUp),
+        answers_raw_json: JSON.stringify(fullScore.followUp),
+        timestamp: new Date().toISOString(),
+        persisted: true
+      };
+      const metadataSafe = toPineconeSafeMetadata ? toPineconeSafeMetadata(metadataRaw) : metadataRaw;
+
+      upsertTexts([String(fullScore.id) + "-followup"], [followupText], [metadataSafe], 'mental_health')
+        .catch(err => console.error('Non-critical Pinecone upsert error (follow-up):', err));
+
+      return res.json({ message: 'Follow-up saved', id: fullScore.id, followUp: fullScore.followUp, persisted: true });
+    } catch (e) {
+      console.warn('updateFollowUp warning (Unified API offline or schema mismatch):', e?.response?.data || e?.message || e);
+
+      // Don’t block the user; accept locally
+      return res.json({
+        message: 'Follow-up accepted (temp, not persisted)',
+        id: fullScore.id,
+        followUp: fullScore.followUp,
+        persisted: false
+      });
+    }
   } catch (err) {
     console.error('Follow-up save failed:', err);
     return res.status(500).json({ error: 'Internal server error' });
