@@ -790,8 +790,37 @@ def _generate_flashcards(user_id: str, week: int, num_cards: int, correlation_id
                     # Add duplicate candidates to valid list for final attempt
                     valid_candidates.extend(duplicate_candidates)
                 
+                # Check if we have sufficient valid candidates
+                if len(valid_candidates) < num_cards and attempt < 3:
+                    logger.warning("Insufficient valid candidates, regenerating", extra={
+                        "extra_fields": {
+                            "correlation_id": correlation_id,
+                            "user_id": user_id,
+                            "week": week,
+                            "attempt": attempt,
+                            "requested_count": num_cards,
+                            "valid_candidates": len(valid_candidates)
+                        }
+                    })
+                    previous_rejections.append(f"Attempt {attempt}: Only {len(valid_candidates)} valid candidates generated, need {num_cards}")
+                    continue
+                
+                # ENFORCE EXACT COUNT: Limit valid candidates to requested number
+                candidates_to_create = valid_candidates[:num_cards]
+                
+                logger.info("Enforcing exact flashcard count", extra={
+                    "extra_fields": {
+                        "correlation_id": correlation_id,
+                        "user_id": user_id,
+                        "week": week,
+                        "requested_count": num_cards,
+                        "valid_candidates": len(valid_candidates),
+                        "will_create": len(candidates_to_create)
+                    }
+                })
+                
                 # Persist accepted Flashcards and add to SimilarityIndex
-                for candidate in valid_candidates:
+                for candidate in candidates_to_create:
                     try:
                         card_data = candidate['card_data']
                         embedding_vector = candidate['vector']

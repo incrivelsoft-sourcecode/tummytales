@@ -43,11 +43,13 @@ class LLMClient:
         # Import anthropic client
         try:
             import anthropic
+            # Initialize with only required parameters to avoid compatibility issues
             self.client = anthropic.Anthropic(api_key=api_key)
             logger.info("LLM client initialized successfully", extra={
                 "extra_fields": {
                     "debug_mode": debug_mode,
-                    "max_retries": self.max_retries
+                    "max_retries": self.max_retries,
+                    "anthropic_version": anthropic.__version__
                 }
             })
         except ImportError as e:

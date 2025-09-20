@@ -1,0 +1,84 @@
+services:
+  gamifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gamifier-service
+    ports:
+      - "5002:5002"
+    environment:
+      # Flask Application Configuration
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_DEBUG=${FLASK_DEBUG:-false}
+      
+      # Database Configuration
+      - MONGO_URI=${MONGO_URI:-mongodb://host.docker.internal:27017/gamifier}
+      
+      # Security Configuration
+      - SECRET_KEY=${SECRET_KEY:-change_this_secret_key_in_production}
+      
+      # External Service URLs
+      - USER_SERVICE_URL=${USER_SERVICE_URL:-http://host.docker.internal:5001}
+      
+      # Pinecone Vector Database Configuration
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_ENV=${PINECONE_ENV:-us-west1-gcp}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-gamifier-quiz}
+      
+      # AI/LLM Configuration (Anthropic Claude)
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      
+      # Embedding Model Configuration
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      
+      # Application Business Logic Configuration
+      - MAX_QUIZZES_PER_DAY=${MAX_QUIZZES_PER_DAY:-2}
+      - QUIZ_SESSION_MAX_MINUTES=${QUIZ_SESSION_MAX_MINUTES:-5}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.6}
+      - DEFAULT_TIMEZONE=${DEFAULT_TIMEZONE:-America/Chicago}
+      
+      # CORS Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://host.docker.internal:3000}
+      
+      # Performance & Optimization
+      - TOKENIZERS_PARALLELISM=false
+    
+    # Uncomment if you have environment variables file
+    # env_file:
+    #   - .env
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Optional: MongoDB service (if you want to run MongoDB in Docker too)
+  # mongodb:
+  #   image: mongo:5.0
+  #   container_name: gamifier-mongodb
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_DATABASE=gamifier
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   restart: unless-stopped
+
+# volumes:
+#   mongodb_data:

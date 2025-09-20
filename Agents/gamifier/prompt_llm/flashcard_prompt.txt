@@ -22,10 +22,12 @@ Substance use: {substance_use}
 </context>
 
 # TASK
-Generate {num_cards} educational flashcards for a pregnant woman based on her profile & context.
+Generate EXACTLY {num_cards} educational flashcards for a pregnant woman based on her profile & context.
+
+CRITICAL REQUIREMENT: You MUST generate exactly {num_cards} flashcards - no more, no less.
 
 # RESPONSE FORMAT
-You MUST respond with ONLY the following XML format. Do not include any other text, explanations, or formatting:
+You MUST respond with ONLY the following XML format containing exactly {num_cards} flashcard elements. Do not include any other text, explanations, or formatting:
 
 <flashcards>
 <flashcard>

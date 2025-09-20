@@ -1,6 +1,7 @@
 # Core Flask dependencies
 Flask==3.0.0
 Werkzeug==3.0.1
+gunicorn==21.2.0
 
 # Database dependencies
 mongoengine==0.28.2
@@ -16,7 +17,7 @@ torch==2.6.0
 pinecone-client==2.2.4
 
 # AI/LLM dependencies
-anthropic==0.68.0
+anthropic==0.34.2
 
 # HTTP requests
 requests==2.31.0
@@ -31,10 +32,6 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
 idna==3.7
 
-# Development tools
-wheel==0.43.0
-setuptools==69.2.0
-
 # Data validation and serialization
 pydantic==2.9.2
 
@@ -42,8 +39,5 @@ pydantic==2.9.2
 flask-cors==4.0.0
 python-dotenv==1.0.1
 
-# Authentication
-PyJWT==2.8.0
-
-# Testing
-pytest==7.4.3
+# Production server
+gunicorn==21.2.0
