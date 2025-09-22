@@ -2,6 +2,7 @@
 Main Flask application factory for the Gamifier service.
 """
 
+
 from flask import Flask, jsonify, request, redirect, url_for
 from typing import Optional
 from config.env_loader import get_config, Config
