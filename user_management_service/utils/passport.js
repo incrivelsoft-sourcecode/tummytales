@@ -5,14 +5,16 @@ const User = require("../model/User.js");
 
 dotenv.config();
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${process.env.USER_SERVICE_URL}/users/google/callback`,
-      passReqToCallback: true, // ✅ Allows access to req in callback
-    },
+// Check if Google OAuth credentials are provided
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: `${process.env.USER_SERVICE_URL}/users/google/callback`,
+        passReqToCallback: true, // ✅ Allows access to req in callback
+      },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         // Extract and parse `state`
@@ -81,6 +83,10 @@ passport.use(
     }
   )
 );
+} else {
+  console.warn('⚠️  Google OAuth credentials not found. Google authentication will not be available.');
+  console.warn('   Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your .env file.');
+}
 
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {

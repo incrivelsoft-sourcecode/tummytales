@@ -30,6 +30,7 @@ import GeneticScreening from "./pages/auth/GeneticScreening";
 import NuchalTranslucency from "./pages/auth/NuchalTranslucency";
 import MandatoryHealthCare from "./pages/auth/MandatoryHealthCare";
 import CulturalPractices from "./pages/auth/CulturalPractices";
+import QuizDemo from "./pages/auth/QuizDemo";
 
 function App() {
   const [activeTab, setActiveTab] = useState("");
@@ -83,6 +84,7 @@ function App() {
           <Route path="/nuchal-translucency" element={<NuchalTranslucency/>}/>
           <Route path="/mandatoryhealthcare" element={<MandatoryHealthCare/>}/>
           <Route path="/culturalpractices" element={<CulturalPractices/>}/>
+          <Route path="/quiz-demo" element={<QuizDemo/>}/>
           {/* Handle unknown routes */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
