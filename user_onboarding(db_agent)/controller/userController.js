@@ -18,12 +18,44 @@ const createUser = async (req, res) => {
 		return res.status(400).json({ message: "Invalid role. Must be 'mom' or 'supporter'." });
 	  }
   
-	  // Check if user already exists
-	  const existingUser = await UserDetails.findOne({ $or: [{ email }, { user_name }] });
-	  if (existingUser) {
-		return res.status(400).json({ message: "Email or username already in use." });
-	  }
+	  // // Check if user already exists
+	  // const existingUser = await UserDetails.findOne({ $or: [{ email }, { user_name }] });
+	  // if (existingUser) {
+		// return res.status(400).json({ message: "Email or username already in use." });
+	  // }
   
+    // Check if user already exists (by email or username)
+let existingUser = null;
+try {
+  const existingUserResponse = await axios.get(
+    `${process.env.PYTHON_USER_ONBOARDING_URL}/useronboarding/user/search`,
+    {
+      params: { email, user_name },
+      headers: {
+        "X-API-Key": process.env.API_KEY,
+        "X-Agent-Key": process.env.API_KEY_USER_ONBOARDING,
+      },
+    }
+  );
+  existingUser = existingUserResponse.data.user; // ✅ now directly user or null
+} catch (err) {
+  // Only rethrow for actual server errors
+  throw err;
+}
+
+if (existingUser) {
+  return res.status(400).json({ message: "Email or username already in use." });
+}
+
+if (existingUser) {
+  return res.status(400).json({ message: "Email or username already in use." });
+}
+
+
+if (existingUser) {
+  return res.status(400).json({ message: "Email or username already in use." });
+}
+
 	  // Password match
 	  if (confirm_password !== password) {
 		return res.status(400).json({ message: "Passwords do not match." });
@@ -82,33 +114,33 @@ if (role === "supporter") {
 	  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 	  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
   
-	  // Create user (status = unverified)
-	  const user = new UserDetails({
-		user_name,
-		email,
-		password,
-		role,
-		referal_code: role === "supporter" ? referal_code : null,
-		permissions,
-		otp,
-		otpExpiresAt,
-		status: "unverified"
-	  });
+	  // // Create user (status = unverified)
+	  // const user = new UserDetails({
+		// user_name,
+		// email,
+		// password,
+		// role,
+		// referal_code: role === "supporter" ? referal_code : null,
+		// permissions,
+		// otp,
+		// otpExpiresAt,
+		// status: "unverified"
+	  // });
   
 	  //await user.save();
    // ✅ Build clean payload for Python
     const userPayload = {
-      user_name: user.user_name,
-      email: user.email,
-      password: user.password,
-      role: user.role,
-      referal_code: user.referal_code,
-      permissions: user.permissions,
-      otp: user.otp,
-     // otpExpiresAt: user.otpExpiresAt,
-      otpExpiresAt: user.otpExpiresAt?.toISOString(), // 👈 must be ISO string
-      status: user.status,
-    };
+  user_name,
+  email,
+  password,
+  role,
+  referal_code: role === "supporter" ? referal_code : null,
+  permissions,
+  otp,
+  otpExpiresAt: otpExpiresAt.toISOString(),
+  status: "unverified",
+};
+
 console.log("Payload sending to Python:", userPayload);
 console.log("Final Payload:", JSON.stringify(userPayload, null, 2));
 
@@ -129,14 +161,15 @@ console.log("Final Payload:", JSON.stringify(userPayload, null, 2));
 	await sendEmail(email, `Your OTP Code`, otp, email);
 
 	  return res.status(201).json({
-		message: "User created. OTP sent to email for verification.",
-		user: {
-		  userId: user._id,
-      user_name: user.user_name,
-		  email: user.email,
-		  role: user.role,
-		  status: user.status
-		}
+  message: "User created. OTP sent to email for verification.",
+  user: {
+    user_name,
+    email,
+    role,
+    status: "unverified"
+  }
+
+
 	  });
     } catch (err) {
   const errData = err.response?.data;

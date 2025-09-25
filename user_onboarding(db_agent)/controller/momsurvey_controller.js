@@ -287,7 +287,7 @@ const get_momsurvey = async(req,res)=>{
     if (!response.data) {
       return res.status(404).json({ error: "Survey not found" });
     }
-        return res.status(200).json({message:'Survey retrived successfully',surveys: response.data})
+        return res.status(200).json({message:'Survey retrived successfully',survey: response.data})
 
     }catch(error){
         console.error('failed to fetch detials',error);
@@ -315,7 +315,7 @@ const getAllSurveys = async (req, res) => {
       }
     );
  
-    return res.status(200).json({ success: true,  surveys: response.data, });
+    return res.status(200).json({ success: true,  survey: response.data, });
   } catch (error) {
     console.error("Failed to get all surveys", error);
     console.error("Failed to get all surveys", error.response?.data || error.message);
